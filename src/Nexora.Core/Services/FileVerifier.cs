@@ -43,9 +43,23 @@ namespace Nexora.Core.Services
 
                 var fullPath = Path.Combine(installPath, relativePath);
 
-                if (!File.Exists(fullPath))
+                // A remote catalog must not be able to make the verifier hash files
+                // outside the game folder (../ traversal).
+                var fullRoot = Path.GetFullPath(installPath).TrimEnd(Path.DirectorySeparatorChar)
+                               + Path.DirectorySeparatorChar;
+                var resolvedPath = Path.GetFullPath(fullPath);
+                if (!resolvedPath.StartsWith(fullRoot, StringComparison.OrdinalIgnoreCase))
                 {
-                    _logger.LogWarning("Missing file: {Path}", fullPath);
+                    _logger.LogWarning("Checksum path escapes the install folder: {Path}", relativePath);
+                    result.FailedFiles.Add(relativePath);
+                    result.Passed = false;
+                    done++;
+                    continue;
+                }
+
+                if (!File.Exists(resolvedPath))
+                {
+                    _logger.LogWarning("Missing file: {Path}", resolvedPath);
                     result.MissingFiles.Add(relativePath);
                     result.Passed = false;
                     done++;
@@ -54,7 +68,7 @@ namespace Nexora.Core.Services
 
                 try
                 {
-                    var actualHash = await HashHelper.ComputeSha256Async(fullPath, ct).ConfigureAwait(false);
+                    var actualHash = await HashHelper.ComputeSha256Async(resolvedPath, ct).ConfigureAwait(false);
                     if (!HashHelper.HashesMatch(actualHash, expectedHash))
                     {
                         _logger.LogWarning("Hash mismatch for {File}: expected {Expected}, got {Actual}",

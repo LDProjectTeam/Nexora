@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Nexora.Core.Helpers;
 using Nexora.Core.Interfaces;
@@ -27,7 +29,10 @@ namespace Nexora.Tests
 
         public LauncherTests()
         {
-            _testCatalogPath = Path.Combine("d:\\launcher", "data", "test_game", "games_test.json");
+            _testCatalogPath = Path.Combine(
+                Path.GetDirectoryName(PathHelper.BuiltInCatalogPath)!,
+                "test_game",
+                "games_test.json");
 
             _settings = new SettingsService(
                 NullLogger<SettingsService>.Instance);
@@ -243,6 +248,78 @@ namespace Nexora.Tests
             await _gameManager.RemoveDownloadAsync("queue-game-2");
             Assert.Equal(InstallState.NotInstalled, g1.State);
             Assert.Equal(InstallState.NotInstalled, g2.State);
+        }
+
+        [Fact]
+        public async Task Test_5_Checksum_Mismatch_Aborts_Install_And_Removes_Payload()
+        {
+            var root = Path.Combine(Path.GetTempPath(), "NexoraChecksum_" + Guid.NewGuid().ToString("N"));
+            var libraryDir = Path.Combine(root, "library");
+            Directory.CreateDirectory(libraryDir);
+
+            var gameId = "checksum-mismatch-game";
+            var demoZip = Path.Combine(
+                Path.GetDirectoryName(PathHelper.BuiltInCatalogPath)!, "test_game", "demo_game_v1.0.zip");
+            var catalogPath = Path.Combine(root, "catalog.json");
+            Assert.True(File.Exists(demoZip), $"Test fixture missing: {demoZip}");
+
+            var catalog = new
+            {
+                catalogVersion = "1.0",
+                games = new[]
+                {
+                    new
+                    {
+                        id = gameId,
+                        name = "Checksum Mismatch Game",
+                        version = "1.0.0",
+                        installSubfolder = "ChecksumGame",
+                        sizeBytes = 1024L,
+                        downloadSizeBytes = 1024L,
+                        downloadSources = new[]
+                        {
+                            new { type = "local", priority = 1, url = demoZip }
+                        },
+                        checksums = new
+                        {
+                            algorithm = "SHA256",
+                            files = new Dictionary<string, string>
+                            {
+                                ["DemoGame.exe"] = new string('0', 64)
+                            }
+                        }
+                    }
+                }
+            };
+
+            await File.WriteAllTextAsync(catalogPath, JsonSerializer.Serialize(catalog));
+            _settings.Settings.AdditionalCatalogUrls.Add(catalogPath);
+
+            try
+            {
+                var result = await _gameManager.InstallAsync(gameId, libraryDir);
+
+                Assert.False(result.Success, "Installation must fail when the checksums do not match.");
+
+                var installation = _gameManager.GetInstallation(gameId);
+                Assert.Equal(InstallState.Error, installation.State);
+                Assert.False(string.IsNullOrWhiteSpace(installation.LastErrorMessage));
+
+                // The archive must have been unpacked before the post-install checksum
+                // check ran; otherwise this test would pass for the wrong reason.
+                var installPath = Path.Combine(libraryDir, "ChecksumGame");
+                Assert.True(
+                    File.Exists(Path.Combine(installPath, "DemoGame.exe")),
+                    "The archive should have been extracted before the checksum check failed.");
+
+                var staging = PathHelper.GetStagingPath(libraryDir, gameId);
+                Assert.False(Directory.Exists(staging),
+                    "The corrupt payload must be removed so Retry downloads it again.");
+            }
+            finally
+            {
+                try { Directory.Delete(root, recursive: true); } catch { }
+            }
         }
     }
 }

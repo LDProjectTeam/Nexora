@@ -217,16 +217,26 @@ namespace Nexora.Core.Services
                     await SaveLibraryAsync().ConfigureAwait(false);
                 }
 
-                // --- Verify downloaded files (if checksums available) ---
-                if (definition.Checksums.Files.Count > 0)
+                // --- Verify the downloaded payload before touching the target folder ---
+                // Catalog checksums describe the final game files. A portable folder can be
+                // checked in staging, but an archive/repack can only be checked after it is
+                // unpacked into the install folder. Previously a mismatch was only logged and
+                // the install continued, so corrupt (or tampered) files could be executed.
+                var verifiedInStaging = false;
+                if (definition.Checksums.Files.Count > 0 && ChecksumFilesExist(definition, stagingPath))
                 {
                     SetState(installation, InstallState.Verifying);
                     var verResult = await _verifier.VerifyAsync(definition, stagingPath, trackedProgress, cts.Token).ConfigureAwait(false);
                     if (!verResult.Passed)
-                    {
-                        _logger.LogWarning("Verification failed after download for {GameId}", gameId);
-                        // Continue anyway (warn only) - user can re-verify later
-                    }
+                        return await FailChecksumVerificationAsync(installation, stagingPath, verResult).ConfigureAwait(false);
+
+                    verifiedInStaging = true;
+                }
+                else if (definition.Checksums.Files.Count == 0)
+                {
+                    _logger.LogWarning(
+                        "No checksums defined for {GameId}; downloaded payload integrity cannot be verified.",
+                        gameId);
                 }
 
                 // --- Install phase ---
@@ -289,6 +299,20 @@ namespace Nexora.Core.Services
 
                 if (!string.IsNullOrWhiteSpace(installResult.InstallPath))
                     installation.InstallPath = installResult.InstallPath;
+
+                // --- Verify the final files (archive/repack layouts) ---
+                // Staging held the archive, not the game exe, so the checksums could not be
+                // checked there. Now the files are in place: a mismatch is fatal.
+                if (!verifiedInStaging && definition.Checksums.Files.Count > 0)
+                {
+                    SetState(installation, InstallState.Verifying);
+                    await SaveLibraryAsync().ConfigureAwait(false);
+
+                    var finalCheck = await _verifier.VerifyAsync(
+                        definition, installation.InstallPath, trackedProgress, cts.Token).ConfigureAwait(false);
+                    if (!finalCheck.Passed)
+                        return await FailChecksumVerificationAsync(installation, null, finalCheck).ConfigureAwait(false);
+                }
 
                 // Remove only this game's files; preserve staging for any other queued download.
                 if (!PathHelper.DeleteGameStagingDirectory(stagingPath, gameId))
@@ -622,6 +646,15 @@ namespace Nexora.Core.Services
                 {
                     installation.DownloadCompleted = true;
                     await SaveLibraryAsync().ConfigureAwait(false);
+                }
+
+                if (definition.Checksums.Files.Count == 0)
+                {
+                    // Scraped releases do not provide SHA-256 hashes; torrent piece hashes
+                    // and the size check above are the only integrity signals.
+                    _logger.LogWarning(
+                        "Release {Title} has no checksums; the downloaded payload cannot be verified with SHA-256.",
+                        release.CleanTitle);
                 }
 
                 if (release.VersionType != GameVersionType.Portable)
@@ -981,6 +1014,88 @@ namespace Nexora.Core.Services
 
             _removedDownloads.TryRemove(gameId, out _);
             return await _verifier.VerifyAsync(definition, installation.InstallPath, progress, ct);
+        }
+
+        /// <summary>
+        /// Removes a payload that failed checksum verification and leaves the card in a
+        /// retryable Error state. Corrupt data must never reach the installer, and it must
+        /// not stay on disk — otherwise Retry would instantly "resume" it and fail again.
+        /// </summary>
+        private async Task<OperationResult> FailChecksumVerificationAsync(
+            GameInstallation installation,
+            string? stagingPath,
+            VerificationResult verification)
+        {
+            var problems = verification.FailedFiles.Count + verification.MissingFiles.Count;
+            var message = string.Format(
+                Localizer.T("InstallChecksumMismatch",
+                    "Проверка контрольных сумм не пройдена (проблемных файлов: {0}). Повреждённые данные удалены — нажмите «Повторить», чтобы скачать игру заново."),
+                problems);
+
+            _logger.LogError(
+                "Checksum verification failed for {GameId}: {Failed} corrupted, {Missing} missing. Removing the corrupt payload.",
+                installation.GameId, verification.FailedFiles.Count, verification.MissingFiles.Count);
+
+            if (!string.IsNullOrWhiteSpace(stagingPath))
+            {
+                // Release the torrent engine before deleting files it still manages.
+                await _downloadManager.StopSeedingAsync(installation.GameId).ConfigureAwait(false);
+
+                if (!PathHelper.DeleteGameStagingDirectory(stagingPath, installation.GameId))
+                {
+                    // A locked file must not make the next attempt resume the same corrupt
+                    // payload: move the folder aside so the downloader starts from scratch.
+                    try
+                    {
+                        var quarantine = stagingPath + ".corrupt-" + DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+                        Directory.Move(stagingPath, quarantine);
+                        _logger.LogWarning("Could not delete corrupt staging; moved it to {Path}", quarantine);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Could not remove or quarantine corrupt staging {Path}", stagingPath);
+                    }
+                }
+            }
+
+            installation.LastErrorMessage = message;
+            ClearDownloadProgress(installation);
+            SetState(installation, InstallState.Error);
+            await SaveLibraryAsync().ConfigureAwait(false);
+
+            return OperationResult.Fail(message);
+        }
+
+        /// <summary>
+        /// True when every path listed in the catalog checksums exists inside
+        /// <paramref name="root"/> and stays inside it (no ../ traversal).
+        /// </summary>
+        private static bool ChecksumFilesExist(GameDefinition definition, string root)
+        {
+            if (definition.Checksums.Files.Count == 0 || string.IsNullOrWhiteSpace(root))
+                return false;
+
+            try
+            {
+                var fullRoot = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar)
+                               + Path.DirectorySeparatorChar;
+
+                foreach (var relative in definition.Checksums.Files.Keys)
+                {
+                    if (string.IsNullOrWhiteSpace(relative))
+                        return false;
+
+                    var fullPath = Path.GetFullPath(Path.Combine(fullRoot, relative));
+                    if (!fullPath.StartsWith(fullRoot, StringComparison.OrdinalIgnoreCase) || !File.Exists(fullPath))
+                        return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex) when (ex is ArgumentException or IOException or NotSupportedException or PathTooLongException)
+            {
+                return false;
+            }
         }
 
         public async Task<OperationResult> UpdateAsync(
