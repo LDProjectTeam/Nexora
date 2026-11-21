@@ -123,6 +123,35 @@ public class PathHelperTests
     }
 
     [Fact]
+    public void FindFileWalkingUp_ResolvesRelativeFilesAndRejectsAbsoluteMisses()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "Nexora-WalkTest-" + Guid.NewGuid().ToString("N"));
+        var dataDir = Path.Combine(root, "data");
+        Directory.CreateDirectory(dataDir);
+        var probe = Path.Combine(dataDir, "probe.txt");
+        File.WriteAllText(probe, "probe");
+
+        var originalDirectory = Environment.CurrentDirectory;
+        try
+        {
+            Environment.CurrentDirectory = root;
+            var resolved = PathHelper.FindFileWalkingUp(Path.Combine("data", "probe.txt"));
+            Assert.NotNull(resolved);
+            Assert.Equal(Path.GetFullPath(probe), resolved);
+
+            Assert.Equal(Path.GetFullPath(probe), PathHelper.FindFileWalkingUp(probe));
+            Assert.Null(PathHelper.FindFileWalkingUp(Path.Combine(root, "missing.txt")));
+            Assert.Null(PathHelper.FindFileWalkingUp(null!));
+        }
+        finally
+        {
+            Environment.CurrentDirectory = originalDirectory;
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public void IsSafeToDeleteTree_RejectsDangerousPathsAndRespectsTheLibraryRoot()
     {
         Assert.False(PathHelper.IsSafeToDeleteTree(null));

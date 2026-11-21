@@ -304,63 +304,24 @@ namespace Nexora.Core.Services
             if (string.IsNullOrWhiteSpace(rawPath))
                 return OperationResult.Fail("Local source has no path.");
 
-            var localPath = Path.IsPathRooted(rawPath)
-                ? rawPath
-                : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, rawPath);
+            // Resolve relative paths against the working/app folders and their parents.
+            // Absolute paths are used as-is. The old hardcoded "d:\launcher" fallback
+            // made published builds depend on the developer's machine.
+            string? localPath = Path.IsPathRooted(rawPath)
+                ? (File.Exists(rawPath) ? rawPath : null)
+                : PathHelper.FindFileWalkingUp(rawPath);
 
-            if (!File.Exists(localPath))
+            if (localPath == null && !string.IsNullOrWhiteSpace(_settings.Settings.DefaultInstallPath))
             {
-                // rawPath is relative — try additional search roots in order:
-                // 1. Current working directory
-                // 2. Parent directories walking up from BaseDirectory (e.g. running inside bin\Debug\net8.0)
-                // 3. User's configured game library path from settings
-                // 4. Common fallback directories
-                if (!Path.IsPathRooted(rawPath))
-                {
-                    string? found = null;
-                    if (File.Exists(Path.Combine(Environment.CurrentDirectory, rawPath)))
-                    {
-                        found = Path.Combine(Environment.CurrentDirectory, rawPath);
-                    }
-                    else
-                    {
-                        var dir = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
-                        for (int i = 0; i < 6 && dir != null; i++)
-                        {
-                            var candidate = Path.Combine(dir.FullName, rawPath);
-                            if (File.Exists(candidate))
-                            {
-                                found = candidate;
-                                break;
-                            }
-                            dir = dir.Parent;
-                        }
-                    }
-
-                    if (found == null && !string.IsNullOrWhiteSpace(_settings.Settings.DefaultInstallPath))
-                    {
-                        var candidate = Path.Combine(_settings.Settings.DefaultInstallPath, rawPath);
-                        if (File.Exists(candidate))
-                            found = candidate;
-                    }
-
-                    if (found == null && Directory.Exists(@"d:\launcher"))
-                    {
-                        var candidate = Path.Combine(@"d:\launcher", rawPath);
-                        if (File.Exists(candidate))
-                            found = candidate;
-                    }
-
-                    if (found != null)
-                        localPath = found;
-                    else
-                        return OperationResult.Fail($"Local source file not found: {localPath}");
-                }
-                else
-                {
-                    return OperationResult.Fail($"Local source file not found: {localPath}");
-                }
+                var candidate = Path.Combine(_settings.Settings.DefaultInstallPath, rawPath);
+                if (File.Exists(candidate))
+                    localPath = candidate;
             }
+
+            if (localPath == null)
+                return OperationResult.Fail($"Local source file not found: {rawPath}");
+
+            localPath = Path.GetFullPath(localPath);
 
             Directory.CreateDirectory(destFolder);
             var destPath = Path.Combine(destFolder, Path.GetFileName(localPath));

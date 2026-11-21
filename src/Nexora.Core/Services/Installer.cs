@@ -1093,8 +1093,7 @@ namespace Nexora.Core.Services
             {
                 Path.Combine(AppContext.BaseDirectory, fileName),
                 Path.Combine(AppContext.BaseDirectory, "tools", "bin", fileName),
-                Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "tools", "bin", fileName)),
-                Path.Combine(@"d:\launcher\tools\bin", fileName)
+                PathHelper.FindFileWalkingUp(Path.Combine("tools", "bin", fileName))
             };
             return candidates.FirstOrDefault(p => !string.IsNullOrEmpty(p) && File.Exists(p));
         }

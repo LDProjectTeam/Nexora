@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -342,6 +343,52 @@ namespace Nexora.Core.Helpers
             return string.Equals(normalizedPath, normalizedParent, StringComparison.OrdinalIgnoreCase)
                 || normalizedPath.StartsWith(normalizedParent + Path.DirectorySeparatorChar,
                     StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Finds a file by a relative path next to the application or in one of its
+        /// parent folders. Replaces the old absolute "d:\launcher\..." development
+        /// fallbacks, so a published build works from any location.
+        /// </summary>
+        public static string? FindFileWalkingUp(string relativePath, int maxParentLevels = 6)
+        {
+            if (string.IsNullOrWhiteSpace(relativePath))
+                return null;
+
+            if (Path.IsPathRooted(relativePath))
+                return File.Exists(relativePath) ? Path.GetFullPath(relativePath) : null;
+
+            var candidates = new List<string>();
+            try
+            {
+                candidates.Add(Path.Combine(Environment.CurrentDirectory, relativePath));
+            }
+            catch
+            {
+                // CurrentDirectory can be unavailable; the app folder is the main source.
+            }
+
+            var directory = new DirectoryInfo(AppContext.BaseDirectory);
+            for (var level = 0; level < maxParentLevels && directory != null; level++)
+            {
+                candidates.Add(Path.Combine(directory.FullName, relativePath));
+                directory = directory.Parent;
+            }
+
+            foreach (var candidate in candidates)
+            {
+                try
+                {
+                    if (File.Exists(candidate))
+                        return Path.GetFullPath(candidate);
+                }
+                catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+                {
+                    // Skip malformed candidates.
+                }
+            }
+
+            return null;
         }
 
         /// <summary>Built-in catalog path (next to the executable or walking up to repo root).</summary>

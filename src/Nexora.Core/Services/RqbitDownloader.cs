@@ -53,6 +53,7 @@ namespace Nexora.Core.Services
         private int _activeDownloads;
         private bool _priorityRaised;
         private ProcessPriorityClass _prevPriority;
+        private Process? _priorityProcess;
 
         public RqbitDownloader(ILogger<RqbitDownloader> logger, HttpClient http, ISettingsService? settings = null)
         {
@@ -485,7 +486,7 @@ namespace Nexora.Core.Services
                             {
                                 foreach (var gid in activeIds)
                                 {
-                                    if (outputFolder.IndexOf(gid, StringComparison.OrdinalIgnoreCase) >= 0)
+                                    if (PathHasSegment(outputFolder, gid))
                                     {
                                         isValid = true;
                                         break;
@@ -586,7 +587,7 @@ namespace Nexora.Core.Services
                                 {
                                     foreach (var gid in activeIds)
                                     {
-                                        if (outputFolder.IndexOf(gid, StringComparison.OrdinalIgnoreCase) >= 0)
+                                        if (PathHasSegment(outputFolder, gid))
                                         {
                                             isValid = true;
                                             break;
@@ -763,9 +764,8 @@ namespace Nexora.Core.Services
                 Path.Combine(AppContext.BaseDirectory, "rqbit.exe"),
                 // 3. In tools/bin relative to executable
                 Path.Combine(AppContext.BaseDirectory, "tools", "bin", "rqbit.exe"),
-                // 4. In dev workspace layout
-                Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "tools", "bin", "rqbit.exe")),
-                @"d:\launcher\tools\bin\rqbit.exe"
+                // 4. Development workspace layout, wherever it is checked out
+                PathHelper.FindFileWalkingUp(Path.Combine("tools", "bin", "rqbit.exe"))
             };
 
             return candidates.FirstOrDefault(p => !string.IsNullOrEmpty(p) && File.Exists(p));
@@ -856,9 +856,6 @@ namespace Nexora.Core.Services
             {
                 ct.ThrowIfCancellationRequested();
 
-                AcquirePriority();
-                priorityAcquired = true;
-
                 progress?.Report(new DownloadProgress
                 {
                     GameId = gameId,
@@ -876,6 +873,11 @@ namespace Nexora.Core.Services
                     effectiveUploadBps = 1;
 
                 await EnsureServerRunningAsync(maxDownloadSpeedBps, effectiveUploadBps, ct).ConfigureAwait(false);
+
+                // The sidecar is alive now: raise its priority (not the launcher's) so the
+                // UI stays responsive while the torrent engine gets the CPU it needs.
+                AcquirePriority();
+                priorityAcquired = true;
 
                 // rqbit restores its persisted session after process restart, while
                 // this in-memory mapping is empty. Rebind by output folder before
@@ -1341,6 +1343,11 @@ namespace Nexora.Core.Services
             if (string.IsNullOrEmpty(_apiBaseUrl))
                 return;
 
+            // Exact folders recorded in library.json for this game. Never match by a
+            // substring: "doom" must not forget the torrent of "doom-eternal".
+            var expectedFolders = GetFoldersForGame(gameId);
+            var sanitizedId = PathHelper.SanitizeFileName(gameId);
+
             try
             {
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
@@ -1357,11 +1364,18 @@ namespace Nexora.Core.Services
                         if (item.TryGetProperty("id", out var idProp) && idProp.TryGetInt32(out var torrentId))
                         {
                             var outputFolder = item.TryGetProperty("output_folder", out var ofProp) ? ofProp.GetString() : null;
-                            if (!string.IsNullOrEmpty(outputFolder) &&
-                                outputFolder.IndexOf(gameId, StringComparison.OrdinalIgnoreCase) >= 0)
-                            {
+                            if (string.IsNullOrWhiteSpace(outputFolder))
+                                continue;
+
+                            var fullOutput = Path.GetFullPath(outputFolder);
+                            var matches = expectedFolders.Any(folder =>
+                                    string.Equals(fullOutput, folder, StringComparison.OrdinalIgnoreCase))
+                                // Fallback for entries missing from library.json: the
+                                // folder name must equal the id, not merely contain it.
+                                || PathHasSegment(fullOutput, sanitizedId);
+
+                            if (matches)
                                 await SafeForgetAsync(torrentId).ConfigureAwait(false);
-                            }
                         }
                     }
                 }
@@ -1369,6 +1383,74 @@ namespace Nexora.Core.Services
             catch (Exception ex)
             {
                 _logger.LogDebug(ex, "Failed to query rqbit torrents while forgetting game {GameId}", gameId);
+            }
+        }
+
+        /// <summary>
+        /// Download/install folders recorded for a game in library.json. Used to match
+        /// restored torrents exactly after a restart.
+        /// </summary>
+        private static List<string> GetFoldersForGame(string gameId)
+        {
+            var result = new List<string>();
+            try
+            {
+                var libraryFile = PathHelper.LibraryFile;
+                if (!File.Exists(libraryFile))
+                    return result;
+
+                using var doc = JsonDocument.Parse(File.ReadAllText(libraryFile));
+                if (doc.RootElement.ValueKind != JsonValueKind.Array)
+                    return result;
+
+                var sanitized = PathHelper.SanitizeFileName(gameId);
+                foreach (var el in doc.RootElement.EnumerateArray())
+                {
+                    var id = el.TryGetProperty("GameId", out var idProp) ? idProp.GetString() : null;
+                    if (!string.Equals(id, gameId, StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    var installPath = el.TryGetProperty("InstallPath", out var ip) ? ip.GetString() : null;
+                    var targetLibrary = el.TryGetProperty("TargetLibraryPath", out var tp) ? tp.GetString() : null;
+
+                    if (!string.IsNullOrWhiteSpace(installPath))
+                    {
+                        var fullInstall = Path.GetFullPath(installPath);
+                        result.Add(fullInstall);
+
+                        var parent = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(fullInstall));
+                        if (!string.IsNullOrWhiteSpace(parent))
+                            result.Add(Path.GetFullPath(Path.Combine(parent, "temp", sanitized)));
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(targetLibrary))
+                        result.Add(Path.GetFullPath(Path.Combine(targetLibrary, "temp", sanitized)));
+                }
+            }
+            catch
+            {
+                // A locked/corrupt library file only disables the exact-match path.
+            }
+
+            return result;
+        }
+
+        /// <summary>True when one of the path segments equals <paramref name="segment"/>.</summary>
+        internal static bool PathHasSegment(string path, string segment)
+        {
+            if (string.IsNullOrWhiteSpace(path) || string.IsNullOrWhiteSpace(segment))
+                return false;
+
+            try
+            {
+                var parts = Path.GetFullPath(path).Split(
+                    new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar },
+                    StringSplitOptions.RemoveEmptyEntries);
+                return parts.Any(part => string.Equals(part, segment, StringComparison.OrdinalIgnoreCase));
+            }
+            catch
+            {
+                return false;
             }
         }
 
@@ -1559,17 +1641,25 @@ namespace Nexora.Core.Services
         {
             lock (_priorityLock)
             {
-                if (_activeDownloads++ > 0) return;
+                _activeDownloads++;
+                if (_activeDownloads > 1 || _priorityRaised)
+                    return;
+
+                var process = _serverProcess;
+                if (process == null || process.HasExited)
+                    return;
+
                 try
                 {
-                    var proc = Process.GetCurrentProcess();
-                    _prevPriority = proc.PriorityClass;
-                    proc.PriorityClass = ProcessPriorityClass.AboveNormal;
+                    _prevPriority = process.PriorityClass;
+                    process.PriorityClass = ProcessPriorityClass.AboveNormal;
+                    _priorityProcess = process;
                     _priorityRaised = true;
+                    _logger.LogInformation("rqbit: sidecar priority raised to {Priority}", process.PriorityClass);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "rqbit: could not raise process priority");
+                    _logger.LogWarning(ex, "rqbit: could not raise the sidecar priority");
                 }
             }
         }
@@ -1578,15 +1668,23 @@ namespace Nexora.Core.Services
         {
             lock (_priorityLock)
             {
-                if (_activeDownloads == 0 || --_activeDownloads > 0) return;
-                if (!_priorityRaised) return;
+                if (_activeDownloads == 0)
+                    return;
+
+                _activeDownloads--;
+                if (_activeDownloads > 0 || !_priorityRaised)
+                    return;
+
+                var process = _priorityProcess;
+                _priorityProcess = null;
                 try
                 {
-                    Process.GetCurrentProcess().PriorityClass = _prevPriority;
+                    if (process != null && !process.HasExited)
+                        process.PriorityClass = _prevPriority;
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "rqbit: could not restore process priority");
+                    _logger.LogWarning(ex, "rqbit: could not restore the sidecar priority");
                 }
                 finally
                 {
