@@ -12,9 +12,11 @@
 [![License](https://img.shields.io/badge/license-Proprietary-darkred?style=for-the-badge)](LICENSE)
 [![CI](https://github.com/LDProjectTeam/Nexora/actions/workflows/ci.yml/badge.svg)](https://github.com/LDProjectTeam/Nexora/actions/workflows/ci.yml)
 
-[![Главный экран](website/assets/screens/home.png)](website/assets/screens/home.png)
-[![Библиотека](website/assets/screens/library.png)](website/assets/screens/library.png)
-[![Карточка игры](website/assets/screens/details.png)](website/assets/screens/details.png)
+<p align="center">
+  <a href="website/assets/screens/home.png"><img src="website/assets/screens/home.png" alt="Главный экран Nexora" width="32%"></a>
+  <a href="website/assets/screens/library.png"><img src="website/assets/screens/library.png" alt="Библиотека Nexora" width="32%"></a>
+  <a href="website/assets/screens/details.png"><img src="website/assets/screens/details.png" alt="Карточка игры в Nexora" width="32%"></a>
+</p>
 
 </div>
 
