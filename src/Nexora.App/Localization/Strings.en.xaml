@@ -473,4 +473,10 @@
     <sys:String x:Key="TorrentErrorInvalidSource">The torrent source does not contain a valid link or magnet URI.</sys:String>
     <sys:String x:Key="InstallerNoProcess">Could not start the installer. The elevation (UAC) prompt may have been declined. Try running the launcher as administrator.</sys:String>
     <sys:String x:Key="InstallerCrashedVcRedist">The repack installer failed with error 0xE06D7363. Install Visual C++ Redistributable 2013/2015/2019 (x86 and x64) and try again.</sys:String>
+    <sys:String x:Key="InstallerConsentTitle">Run installer</sys:String>
+    <sys:String x:Key="InstallerConsentFormat">Game: {0}&#10;File: {1}&#10;Size: {2}&#10;&#10;{3}&#10;&#10;Continue?</sys:String>
+    <sys:String x:Key="InstallerConsentSetup">The installer from the downloaded package will be started. Continue only if you trust the source.</sys:String>
+    <sys:String x:Key="InstallerConsentElevated">The installer failed. Retry it with administrator rights?</sys:String>
+    <sys:String x:Key="InstallerConsentPrerequisite">A system component (Visual C++ Redistributable) will be installed from the game package with administrator rights.</sys:String>
+    <sys:String x:Key="InstallationCancelledByUser">Installation cancelled by user.</sys:String>
 </ResourceDictionary>

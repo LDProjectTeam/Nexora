@@ -10,6 +10,7 @@ using Nexora.App.Services;
 using Nexora.App.ViewModels;
 using Nexora.Core.Helpers;
 using Nexora.Core.Interfaces;
+using Nexora.Core.Models;
 using Nexora.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -100,6 +101,9 @@ namespace Nexora.App
                 // Core services produce user-facing text (torrent phases, errors, etc.).
                 Nexora.Core.Services.Localizer.SetResolver(key => LocalizationManager.GetString(key));
 
+                // Core cannot show UI: register the consent dialog for installers.
+                InstallerConsent.SetHandler(request => Dispatcher.Invoke(() => ConfirmInstallerRun(request)));
+
                 // Apply the saved accent color before the window renders.
                 AccentOption.Apply(settingsService.Settings.AccentColor);
 
@@ -164,6 +168,34 @@ namespace Nexora.App
                 ErrorReporter.Report("Dispatcher", args.Exception);
                 args.Handled = true; // keep the launcher alive, but the failure is logged and shown
             };
+        }
+
+        private static bool ConfirmInstallerRun(InstallerRunRequest request)
+        {
+            var reason = request.Reason switch
+            {
+                "elevation-retry" => LocalizationManager.GetString("InstallerConsentElevated",
+                    "The installer failed. Retry it with administrator rights?"),
+                "bundled-prerequisite" => LocalizationManager.GetString("InstallerConsentPrerequisite",
+                    "A system component (Visual C++ Redistributable) will be installed from the game package with administrator rights."),
+                _ => LocalizationManager.GetString("InstallerConsentSetup",
+                    "The installer from the downloaded package will be started. Continue only if you trust the source.")
+            };
+
+            var text = string.Format(
+                LocalizationManager.GetString("InstallerConsentFormat",
+                    "Game: {0}\nFile: {1}\nSize: {2}\n\n{3}\n\nContinue?"),
+                request.GameTitle,
+                request.InstallerPath,
+                PathHelper.FormatBytes(request.FileSizeBytes),
+                reason);
+
+            return MessageBox.Show(
+                text,
+                LocalizationManager.GetString("InstallerConsentTitle", "Run installer"),
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning,
+                MessageBoxResult.No) == MessageBoxResult.Yes;
         }
 
         private static void ConfigureServices(IServiceCollection services)

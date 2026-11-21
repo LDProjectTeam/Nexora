@@ -149,7 +149,14 @@ namespace Nexora.Core.Services
                     KillStaleTorrentEngines(exePath);
 
                     _serverPort = GetAvailablePort(DefaultPort);
-                    var peerPort = GetAvailablePeerPort();
+                    var peerPort = GetAvailablePeerPort(out var peerPortInReservedRange);
+                    if (!peerPortInReservedRange)
+                    {
+                        _logger.LogWarning(
+                            "Torrent peer port {Port} is outside the installed firewall range 4240-4249; " +
+                            "inbound peers may be blocked until the rule covers this port.",
+                            peerPort);
+                    }
                     _apiBaseUrl = $"http://127.0.0.1:{_serverPort}";
 
                     var dataDir = PathHelper.TorrentDataDir;
@@ -791,7 +798,7 @@ namespace Nexora.Core.Services
             }
         }
 
-        private static int GetAvailablePeerPort()
+        private static int GetAvailablePeerPort(out bool inReservedRange)
         {
             for (var port = PeerPortStart; port <= PeerPortEnd; port++)
             {
@@ -800,6 +807,7 @@ namespace Nexora.Core.Services
                     using var listener = new TcpListener(IPAddress.Any, port);
                     listener.Start();
                     using var udpListener = new UdpClient(new IPEndPoint(IPAddress.Any, port));
+                    inReservedRange = true;
                     return port;
                 }
                 catch
@@ -819,6 +827,7 @@ namespace Nexora.Core.Services
                 try
                 {
                     using var udpProbe = new UdpClient(new IPEndPoint(IPAddress.Any, candidate));
+                    inReservedRange = false;
                     return candidate;
                 }
                 catch
@@ -827,6 +836,7 @@ namespace Nexora.Core.Services
                 }
             }
 
+            inReservedRange = false;
             throw new SocketException((int)SocketError.AddressAlreadyInUse);
         }
 

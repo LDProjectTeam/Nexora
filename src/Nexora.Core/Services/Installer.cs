@@ -460,6 +460,15 @@ namespace Nexora.Core.Services
                 "Running {Mode} installer for {GameId}: executable={Setup}, kind={Kind}, arguments={Arguments}, workingDirectory={WorkingDirectory}, expectedInstallPath={Target}",
                 silent ? "silent" : "interactive", gameId, setupExe, kind, args, workingDirectory, fullTarget);
 
+            // Running an executable from a downloaded repack is a security boundary:
+            // ask once, with the exact path/size/mode, before executing it.
+            if (!EnsureInstallerConsent(gameId, setupExe, elevated: false, silent, "setup"))
+            {
+                _logger.LogInformation("User declined to run the installer for {GameId}.", gameId);
+                return OperationResult.Fail(Localizer.T("InstallationCancelledByUser",
+                    "Установка отменена пользователем."));
+            }
+
             Directory.CreateDirectory(fullTarget);
 
             // Before running the main setup, silently install any bundled VCRedist prerequisites
@@ -589,7 +598,7 @@ namespace Nexora.Core.Services
                         "Interactive installer for {GameId} was cancelled by the user (exit code {ExitCode}).",
                         gameId, exitCode);
                     TryCleanupAbandonedInstallTarget(fullTarget);
-                    return OperationResult.Fail("Installation cancelled by user.");
+                    return OperationResult.Fail(Localizer.T("InstallationCancelledByUser", "Установка отменена пользователем."));
                 }
 
                 // 0xE06D7363 (-529697949) is the Windows SEH code for an unhandled C++ exception —
@@ -626,7 +635,7 @@ namespace Nexora.Core.Services
                             goto installerSucceeded;
 
                         if (interactiveResult == 1 || interactiveResult == 2 || interactiveResult == 3)
-                            return OperationResult.Fail("Installation cancelled by user.");
+                            return OperationResult.Fail(Localizer.T("InstallationCancelledByUser", "Установка отменена пользователем."));
 
                         if (interactiveResult != CppSehExceptionCode)
                             return OperationResult.Fail($"Installer exited with code {interactiveResult}.");
@@ -640,6 +649,13 @@ namespace Nexora.Core.Services
                         gameId);
 
                     Report(progress, gameId, "Waiting for installer (as Administrator)", 0, $"Install to: {fullTarget}");
+
+                    if (!EnsureInstallerConsent(gameId, setupExe, elevated: true, silent: false, "elevation-retry"))
+                    {
+                        _logger.LogInformation("User declined the elevated installer retry for {GameId}.", gameId);
+                        return OperationResult.Fail(Localizer.T("InstallationCancelledByUser",
+                            "Установка отменена пользователем."));
+                    }
 
                     var elevatedArgs = kind switch
                     {
@@ -655,7 +671,7 @@ namespace Nexora.Core.Services
                         goto installerSucceeded;
 
                     if (elevatedResult == 1 || elevatedResult == 2 || elevatedResult == 3)
-                        return OperationResult.Fail("Installation cancelled by user.");
+                        return OperationResult.Fail(Localizer.T("InstallationCancelledByUser", "Установка отменена пользователем."));
 
                     if (elevatedResult == CppSehExceptionCode)
                     {
@@ -1143,6 +1159,14 @@ namespace Nexora.Core.Services
 
             foreach (var redistExe in candidates)
             {
+                if (!EnsureInstallerConsent(gameId, redistExe, elevated: true, silent: true, "bundled-prerequisite"))
+                {
+                    _logger.LogWarning(
+                        "Skipping bundled prerequisite {File}: user declined.",
+                        Path.GetFileName(redistExe));
+                    continue;
+                }
+
                 _logger.LogInformation("Running VCRedist: {Path}", redistExe);
                 try
                 {
@@ -1245,6 +1269,18 @@ namespace Nexora.Core.Services
                 _logger.LogWarning(ex, "Could not start installer {Exe} (elevated={Elevated})", exePath, elevated);
                 return int.MinValue;
             }
+        }
+
+        /// <summary>Asks the UI before executing an installer from a downloaded package.</summary>
+        private static bool EnsureInstallerConsent(
+            string gameId, string installerPath, bool elevated, bool silent, string reason)
+        {
+            long size = 0;
+            try { size = new FileInfo(installerPath).Length; }
+            catch { /* the file may disappear between discovery and the prompt */ }
+
+            return InstallerConsent.Request(new InstallerRunRequest(
+                gameId, gameId, installerPath, size, elevated, silent, reason));
         }
 
         private static void Report(IProgress<DownloadProgress>? progress, string gameId,

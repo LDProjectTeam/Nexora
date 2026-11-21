@@ -42,6 +42,11 @@ Name: "english";  MessagesFile: "compiler:Default.isl"
 Name: "russian";  MessagesFile: "compiler:Languages\Russian.isl"
 Name: "ukrainian"; MessagesFile: "compiler:Languages\Ukrainian.isl"
 
+[CustomMessages]
+english.NexoraGameOperation=Nexora is downloading or installing a game. Wait for it to finish (or pause it) before running this installer.
+russian.NexoraGameOperation=Nexora сейчас скачивает или устанавливает игру. Дождитесь завершения (или поставьте на паузу), прежде чем запускать этот установщик.
+ukrainian.NexoraGameOperation=Nexora зараз завантажує або встановлює гру. Дочекайтеся завершення (або поставте на паузу), перш ніж запускати цей інсталятор.
+
 [Tasks]
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional shortcuts:"; Flags: unchecked
 
@@ -76,7 +81,23 @@ function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
   ErrorCode: Integer;
 begin
-  // Terminate any running Nexora process so files can be replaced without lock errors
-  Exec('taskkill.exe', '/im Nexora.exe /f', '', SW_HIDE, ewWaitUntilTerminated, ErrorCode);
+  // The launcher keeps this mutex alive while a game is downloading/installing/
+  // updating. Killing it then would abort the extraction and corrupt game files.
+  if CheckForMutexes('Local\Nexora.GameOperation') then
+  begin
+    Result := ExpandConstant('{cm:NexoraGameOperation}');
+    Exit;
+  end;
+
+  // Ask the running launcher to close, then force it only if it is still alive
+  // (for example when it minimized to the tray instead of exiting).
+  if CheckForMutexes('Local\Nexora.Launcher.SingleInstance') then
+  begin
+    Exec('taskkill.exe', '/im Nexora.exe', '', SW_HIDE, ewWaitUntilTerminated, ErrorCode);
+    Sleep(2000);
+    if CheckForMutexes('Local\Nexora.Launcher.SingleInstance') then
+      Exec('taskkill.exe', '/im Nexora.exe /f', '', SW_HIDE, ewWaitUntilTerminated, ErrorCode);
+  end;
+
   Result := '';
 end;

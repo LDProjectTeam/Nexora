@@ -65,6 +65,10 @@ namespace Nexora.Core.Services
         private readonly List<QueuedDownloadWaiter> _waitingQueue = new();
         private int _nextQueueOrder;
 
+        private static readonly object OperationMarkerGate = new();
+        private static Mutex? _operationMarker;
+        private static int _operationMarkerUsers;
+
         private static readonly JsonSerializerOptions _jsonOptions = new()
         {
             WriteIndented = true,
@@ -164,6 +168,7 @@ namespace Nexora.Core.Services
 
             try
             {
+                BeginOperationMarker();
                 await AcquireDownloadSlotAsync(installation, trackedProgress, cts.Token).ConfigureAwait(false);
 
                 // --- Download phase ---
@@ -303,6 +308,7 @@ namespace Nexora.Core.Services
             }
             finally
             {
+                EndOperationMarker();
                 ReleaseDownloadSlot(gameId);
                 _activeCts.TryRemove(gameId, out _);
                 cts.Dispose();
@@ -403,6 +409,7 @@ namespace Nexora.Core.Services
                 // a failure on resume keeps the "Continue" button visible the whole time.
                 // Previously SetState(Downloading) ran first, making IsPaused=false and
                 // hiding the button while the error dialog was still open.
+                BeginOperationMarker();
                 trackedProgress.Report(new DownloadProgress
                 {
                     GameId = gameId,
@@ -653,6 +660,7 @@ namespace Nexora.Core.Services
             }
             finally
             {
+                EndOperationMarker();
                 ReleaseDownloadSlot(gameId);
                 _activeCts.TryRemove(gameId, out _);
                 cts.Dispose();
@@ -1018,11 +1026,19 @@ namespace Nexora.Core.Services
             SetState(installation, InstallState.Updating);
             await SaveLibraryAsync();
 
-            var result = await _updater.ApplyUpdateAsync(definition, installation, update, progress, ct);
+            BeginOperationMarker();
+            try
+            {
+                var result = await _updater.ApplyUpdateAsync(definition, installation, update, progress, ct);
 
-            SetState(installation, result.Success ? InstallState.Installed : InstallState.Error);
-            await SaveLibraryAsync();
-            return result;
+                SetState(installation, result.Success ? InstallState.Installed : InstallState.Error);
+                await SaveLibraryAsync();
+                return result;
+            }
+            finally
+            {
+                EndOperationMarker();
+            }
         }
 
         public async Task<OperationResult> UninstallAsync(string gameId)
@@ -1046,22 +1062,30 @@ namespace Nexora.Core.Services
 
             SetState(installation, InstallState.Uninstalling);
 
-            // Imported shortcuts point at user-managed game files. Removing the library entry
-            // must never delete the executable's directory.
-            var result = installation.IsExternalShortcut
-                ? OperationResult.Ok()
-                : await _installer.UninstallAsync(gameId, installation.InstallPath);
-            if (result.Success)
+            BeginOperationMarker();
+            try
             {
-                _installations.TryRemove(gameId, out _);
-            }
-            else
-            {
-                SetState(installation, InstallState.Error);
-            }
+                // Imported shortcuts point at user-managed game files. Removing the library entry
+                // must never delete the executable's directory.
+                var result = installation.IsExternalShortcut
+                    ? OperationResult.Ok()
+                    : await _installer.UninstallAsync(gameId, installation.InstallPath);
+                if (result.Success)
+                {
+                    _installations.TryRemove(gameId, out _);
+                }
+                else
+                {
+                    SetState(installation, InstallState.Error);
+                }
 
-            await SaveLibraryAsync();
-            return result;
+                await SaveLibraryAsync();
+                return result;
+            }
+            finally
+            {
+                EndOperationMarker();
+            }
         }
 
         public async Task CheckUpdatesAsync(CancellationToken ct = default)
@@ -1402,6 +1426,46 @@ namespace Nexora.Core.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to save library during download shutdown.");
+            }
+        }
+
+        /// <summary>
+        /// Keeps a named mutex alive while downloads, installs, updates or uninstalls are
+        /// running. The launcher's own installer checks it and refuses to force-close
+        /// Nexora mid-operation (which used to abort repack extraction).
+        /// No ownership is taken, so the object can outlive an async continuation thread.
+        /// </summary>
+        private static void BeginOperationMarker()
+        {
+            lock (OperationMarkerGate)
+            {
+                if (_operationMarkerUsers++ > 0)
+                    return;
+
+                try
+                {
+                    _operationMarker = new Mutex(initiallyOwned: false, @"Local\Nexora.GameOperation");
+                }
+                catch
+                {
+                    _operationMarker = null;
+                }
+            }
+        }
+
+        private static void EndOperationMarker()
+        {
+            lock (OperationMarkerGate)
+            {
+                if (_operationMarkerUsers == 0)
+                    return;
+
+                if (--_operationMarkerUsers > 0)
+                    return;
+
+                try { _operationMarker?.Dispose(); }
+                catch { /* the kernel object may already be gone */ }
+                _operationMarker = null;
             }
         }
 

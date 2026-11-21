@@ -473,4 +473,10 @@
     <sys:String x:Key="TorrentErrorInvalidSource">Источник торрента не содержит действительной ссылки или магнет-ссылки.</sys:String>
     <sys:String x:Key="InstallerNoProcess">Не удалось запустить установщик. Возможно, запрос на повышение прав (UAC) был отклонён. Попробуйте запустить лаунчер от имени администратора.</sys:String>
     <sys:String x:Key="InstallerCrashedVcRedist">Установщик репака завершился с ошибкой 0xE06D7363. Установите Visual C++ Redistributable 2013/2015/2019 (x86 и x64) и повторите попытку.</sys:String>
+    <sys:String x:Key="InstallerConsentTitle">Запуск установщика</sys:String>
+    <sys:String x:Key="InstallerConsentFormat">Игра: {0}&#10;Файл: {1}&#10;Размер: {2}&#10;&#10;{3}&#10;&#10;Продолжить?</sys:String>
+    <sys:String x:Key="InstallerConsentSetup">Будет запущен установщик из скачанного пакета. Продолжайте, только если доверяете источнику.</sys:String>
+    <sys:String x:Key="InstallerConsentElevated">Установщик завершился с ошибкой. Повторить запуск с правами администратора?</sys:String>
+    <sys:String x:Key="InstallerConsentPrerequisite">Будет установлен системный компонент (Visual C++ Redistributable) из комплекта игры, с правами администратора.</sys:String>
+    <sys:String x:Key="InstallationCancelledByUser">Установка отменена пользователем.</sys:String>
 </ResourceDictionary>
