@@ -71,8 +71,6 @@ namespace Nexora.Core.Interfaces
         Task ShutdownAndSaveAllDownloadsAsync();
 
         /// <summary>Returns the IDs of games that were in progress when the launcher was previously closed.</summary>
-        IReadOnlyList<string> GetPendingAutoResumeGameIds();
-
         /// <summary>Moves a download up (delta &lt; 0) or down (delta &gt; 0) in the queue order.</summary>
         void MoveDownloadInQueue(string gameId, int delta);
 

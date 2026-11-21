@@ -196,9 +196,6 @@ namespace Nexora.Tests
             // Re-load library as if launcher was just started
             await _gameManager.LoadLibraryAsync();
 
-            var pendingIds = _gameManager.GetPendingAutoResumeGameIds();
-            Assert.Contains("test-resume-game", pendingIds);
-
             var loaded = _gameManager.GetInstallation("test-resume-game");
             Assert.Equal(InstallState.Paused, loaded.State);
             Assert.True(loaded.WasDownloadingWhenClosed);

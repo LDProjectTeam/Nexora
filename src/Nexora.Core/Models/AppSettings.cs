@@ -13,12 +13,10 @@ namespace Nexora.Core.Models
         /// лаунчер покажет wizard и запишет выбранный путь.
         /// </summary>
         public string DefaultInstallPath { get; set; } = string.Empty;
-        public string DownloadTempPath { get; set; } = string.Empty; // Kept for compatibility; downloads now use the library temp folder.
 
         // --- Locale & Theme ---
         public string Language { get; set; } = string.Empty;
         public bool IsLanguageManuallySelected { get; set; }
-        public string Theme { get; set; } = "Dark"; // "Dark" | "Light"
 
         /// <summary>Ключ цвета акцента: White | Emerald | Blue | Amber | Violet | Rose.</summary>
         public string AccentColor { get; set; } = "White";
@@ -34,12 +32,6 @@ namespace Nexora.Core.Models
 
         /// <summary>Torrent: allow seeding after download completes.</summary>
         public bool AllowSeeding { get; set; } = false;
-
-        /// <summary>
-        /// BitTorrent engine implementation: "librqbit" (Rust sidecar via HTTP API).
-        /// </summary>
-        public string TorrentEngine { get; set; } = "librqbit";
-
 
         // --- Behaviour ---
         public bool AutoCheckUpdates { get; set; } = true;

@@ -980,69 +980,12 @@ namespace Nexora.App.ViewModels
                 });
             }
 
-            // Disabled automatic background resume: downloads should only resume
-            // when the user explicitly clicks the "Continue" (Продолжить) button.
+            // Downloads resume only when the user explicitly clicks "Continue".
         }
 
         public async Task ShutdownAsync()
         {
             await _gameManager.ShutdownAndSaveAllDownloadsAsync();
-        }
-
-        private async Task AutoResumeInterruptedDownloadsAsync()
-        {
-            try
-            {
-                var pendingIds = _gameManager.GetPendingAutoResumeGameIds();
-                if (pendingIds.Count == 0)
-                    return;
-
-                var app = System.Windows.Application.Current;
-
-                // Launch resume tasks in parallel so AcquireDownloadSlotAsync will
-                // allow up to MaxConcurrentDownloads active downloads concurrently,
-                // placing any remaining tasks cleanly into the Queued state.
-                var resumeTasks = pendingIds.Select(async gameId =>
-                {
-                    GameCardViewModel? card = null;
-                    if (app?.Dispatcher != null)
-                    {
-                        await app.Dispatcher.InvokeAsync(() =>
-                        {
-                            card = AllGameCards.FirstOrDefault(c =>
-                                string.Equals(c.Id, gameId, StringComparison.OrdinalIgnoreCase));
-                            card?.UpdateInstallation(_gameManager.GetInstallation(gameId));
-                        });
-                    }
-
-                    var progress = new Progress<DownloadProgress>(p =>
-                    {
-                        var target = card;
-                        if (target == null)
-                            return;
-                        app?.Dispatcher?.Invoke(() => target.ReportProgress(p));
-                    });
-
-                    var result = await _gameManager.ResumeAsync(gameId, progress).ConfigureAwait(false);
-                    if (!result.Success)
-                    {
-                        System.Diagnostics.Debug.WriteLine(
-                            $"Auto-resume for {gameId} did not complete: {result.ErrorMessage}");
-                    }
-
-                    if (app?.Dispatcher != null)
-                    {
-                        await app.Dispatcher.InvokeAsync(() =>
-                            card?.UpdateInstallation(_gameManager.GetInstallation(gameId)));
-                    }
-                });
-
-                await Task.WhenAll(resumeTasks).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Auto-resume of interrupted downloads failed: {ex}");
-            }
         }
 
         public async Task LoadGamesAsync()

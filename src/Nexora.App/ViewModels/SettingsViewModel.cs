@@ -222,17 +222,6 @@ namespace Nexora.App.ViewModels
         /// <summary>Путь можно редактировать только когда выбор папки отключён.</summary>
         public bool IsInstallPathEditable => !_askInstallFolderOnEachInstall;
 
-        private string _selectedTheme = "Dark";
-        public string SelectedTheme
-        {
-            get => _selectedTheme;
-            set
-            {
-                if (SetProperty(ref _selectedTheme, value))
-                    AutoSaveIfReady();
-            }
-        }
-
         private string _selectedAccent = "White";
         public string SelectedAccent
         {
@@ -362,7 +351,6 @@ namespace Nexora.App.ViewModels
                 AllowMultipleGames = s.AllowMultipleGames;
                 PreferPortable = s.PreferPortable;
                 AskInstallFolderOnEachInstall = s.AskInstallFolderOnEachInstall;
-                SelectedTheme = s.Theme;
                 SelectedAccent = s.AccentColor;
 
                 var language = s.IsLanguageManuallySelected && (s.Language is "ru" or "uk" or "en")
@@ -558,7 +546,6 @@ namespace Nexora.App.ViewModels
             s.AllowMultipleGames = AllowMultipleGames;
             s.PreferPortable = PreferPortable;
             s.AskInstallFolderOnEachInstall = AskInstallFolderOnEachInstall;
-            s.Theme = SelectedTheme;
             s.AccentColor = SelectedAccent;
             s.Language = SelectedLanguage;
             s.IsLanguageManuallySelected = true;

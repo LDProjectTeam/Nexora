@@ -1405,15 +1405,6 @@ namespace Nexora.Core.Services
             }
         }
 
-        public IReadOnlyList<string> GetPendingAutoResumeGameIds()
-        {
-            return _installations.Values
-                .Where(i => i.WasDownloadingWhenClosed && i.State == InstallState.Paused)
-                .OrderBy(i => i.QueueOrder > 0 ? i.QueueOrder : int.MaxValue)
-                .Select(i => i.GameId)
-                .ToList();
-        }
-
         private void EnsureQueueOrder(GameInstallation installation)
         {
             if (installation.QueueOrder <= 0)

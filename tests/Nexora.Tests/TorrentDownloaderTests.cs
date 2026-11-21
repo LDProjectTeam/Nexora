@@ -132,10 +132,12 @@ namespace Nexora.Tests
         }
 
         [Fact]
-        public void AppSettings_DefaultsTo_Librqbit_TorrentEngine()
+        public void AppSettings_CreatesForFirstRunWithoutInstallPath()
         {
             var settings = new AppSettings();
-            Assert.Equal("librqbit", settings.TorrentEngine);
+            Assert.True(string.IsNullOrEmpty(settings.DefaultInstallPath));
+            Assert.Equal(1, settings.MaxConcurrentDownloads);
+            Assert.False(settings.AllowSeeding);
         }
 
         [Fact]
