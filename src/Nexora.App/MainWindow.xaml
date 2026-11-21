@@ -91,7 +91,7 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <Border Width="34" Height="34" CornerRadius="17" Background="#343434" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding ProfileInitials}" Foreground="White" FontSize="12" FontWeight="SemiBold"
+                            <TextBlock Text="{Binding ProfileInitials}" Foreground="{StaticResource PureWhiteBrush}" FontSize="12" FontWeight="SemiBold"
                                        HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
@@ -110,7 +110,7 @@
                             <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsHomeActive}" Value="True">
-                                        <Setter Property="Background" Value="#303030" />
+                                        <Setter Property="Background" Value="{StaticResource SurfaceRaisedBrush}" />
                                         <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -133,7 +133,7 @@
                             <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsDownloadsActive}" Value="True">
-                                        <Setter Property="Background" Value="#303030" />
+                                        <Setter Property="Background" Value="{StaticResource SurfaceRaisedBrush}" />
                                         <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -185,7 +185,7 @@
                                     </Style>
                                 </Border.Style>
                                 <TextBlock Text="✓" FontSize="9" FontWeight="Bold"
-                                           Foreground="White"
+                                           Foreground="{StaticResource PureWhiteBrush}"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center"
                                            Margin="0,-1,0,0" />
@@ -199,7 +199,7 @@
                             <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsSettingsActive}" Value="True">
-                                        <Setter Property="Background" Value="#303030" />
+                                        <Setter Property="Background" Value="{StaticResource SurfaceRaisedBrush}" />
                                         <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -227,7 +227,7 @@
                             <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsLibraryActive}" Value="True">
-                                        <Setter Property="Background" Value="#303030" />
+                                        <Setter Property="Background" Value="{StaticResource SurfaceRaisedBrush}" />
                                         <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -245,7 +245,7 @@
 
                     <!-- Sidebar Library Panel: search + installed games list -->
                     <Border Margin="0,8,0,0"
-                            Background="#151515"
+                            Background="{StaticResource SurfaceDeepBrush}"
                             BorderBrush="{StaticResource BorderBrush}"
                             BorderThickness="0"
                             CornerRadius="8"
@@ -343,7 +343,7 @@
                                                     <Style TargetType="Border">
                                                         <Style.Triggers>
                                                             <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter Property="Background" Value="#303030" />
+                                                                <Setter Property="Background" Value="{StaticResource SurfaceRaisedBrush}" />
                                                             </Trigger>
                                                         </Style.Triggers>
                                                     </Style>
@@ -477,7 +477,7 @@
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="bg" Property="Background" Value="#282828" />
+                                            <Setter TargetName="bg" Property="Background" Value="{StaticResource SurfaceSubtleBrush}" />
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -486,7 +486,7 @@
                     </Style>
                 </Button.Style>
                 <Path Data="M4,12 H20" Width="12" Height="2" Stretch="Fill"
-                      Stroke="#94A3B8" StrokeThickness="1.2"
+                      Stroke="{StaticResource SlateTextBrush}" StrokeThickness="1.2"
                       StrokeStartLineCap="Square" StrokeEndLineCap="Square" />
             </Button>
 
@@ -511,7 +511,7 @@
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="bg" Property="Background" Value="#282828" />
+                                            <Setter TargetName="bg" Property="Background" Value="{StaticResource SurfaceSubtleBrush}" />
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -521,7 +521,7 @@
                 </Button.Style>
                 <Path x:Name="MaxIcon" Width="10" Height="10" Stretch="Fill"
                       Data="M5,5 H19 V19 H5 Z" Fill="Transparent"
-                      Stroke="#94A3B8" StrokeThickness="1.1" />
+                      Stroke="{StaticResource SlateTextBrush}" StrokeThickness="1.1" />
             </Button>
 
             <!-- Close -->
@@ -554,7 +554,7 @@
                 </Button.Style>
                 <Path Data="M4,4 L20,20 M20,4 L4,20"
                       Width="14" Height="14" Stretch="Fill"
-                      Stroke="#94A3B8" StrokeThickness="1.7"
+                      Stroke="{StaticResource SlateTextBrush}" StrokeThickness="1.7"
                       StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                       HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Button>

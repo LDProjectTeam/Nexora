@@ -29,17 +29,17 @@
                                   StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
                         </Viewbox>
                         <TextBlock Text="{DynamicResource InstallDialogTitle}" FontSize="16"
-                                   FontWeight="SemiBold" Foreground="White"/>
+                                   FontWeight="SemiBold" Foreground="{StaticResource PureWhiteBrush}"/>
                     </StackPanel>
                     <Button Width="32" Height="28" HorizontalAlignment="Right"
-                            Click="CloseButton_Click" Foreground="#94A3B8"
+                            Click="CloseButton_Click" Foreground="{StaticResource SlateTextBrush}"
                             Background="Transparent" BorderThickness="0" Cursor="Hand"
                             ToolTip="{DynamicResource WindowClose}">
                         <Button.Style>
                             <Style TargetType="Button">
                                 <Setter Property="Background" Value="Transparent"/>
                                 <Setter Property="BorderThickness" Value="0"/>
-                                <Setter Property="Foreground" Value="#94A3B8"/>
+                                <Setter Property="Foreground" Value="{StaticResource SlateTextBrush}"/>
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="Button">
@@ -58,7 +58,7 @@
                         </Style>
                     </Button.Style>
                     <Path Data="M4,4 L20,20 M20,4 L4,20" Width="12" Height="12" Stretch="Fill"
-                          Stroke="#94A3B8" StrokeThickness="1.6" StrokeStartLineCap="Round"
+                          Stroke="{StaticResource SlateTextBrush}" StrokeThickness="1.6" StrokeStartLineCap="Round"
                           StrokeEndLineCap="Round" />
                     </Button>
                 </Grid>
@@ -71,7 +71,7 @@
                     <!-- Loading indicator -->
                     <StackPanel x:Name="LoadingPanel" HorizontalAlignment="Center" Margin="0,30,0,30">
                         <TextBlock Text="{DynamicResource InstallSearch}" FontSize="14"
-                                   Foreground="#C2CAD5" HorizontalAlignment="Center"/>
+                                   Foreground="{StaticResource TextLightBrush}" HorizontalAlignment="Center"/>
                         <ProgressBar IsIndeterminate="True" Height="3" Margin="0,12,0,0"
                                      Foreground="#D5D5D5" Background="#333333" BorderThickness="0"/>
                     </StackPanel>
@@ -92,19 +92,19 @@
 
                         <!-- Game name -->
                         <StackPanel Margin="0,0,0,12">
-                            <TextBlock Text="{DynamicResource InstallGame}" FontSize="10" Foreground="#9AA5B4"
+                            <TextBlock Text="{DynamicResource InstallGame}" FontSize="10" Foreground="{StaticResource TextSoftBrush}"
                                        FontWeight="SemiBold" Margin="0,0,0,3"/>
                             <TextBlock x:Name="GameTitleText" FontSize="20" FontWeight="SemiBold"
-                                       Foreground="White" TextWrapping="Wrap"/>
+                                       Foreground="{StaticResource PureWhiteBrush}" TextWrapping="Wrap"/>
                         </StackPanel>
 
                         <!-- Badges -->
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
                             <Border Background="#3A424D" CornerRadius="5" Padding="9,4" Margin="0,0,8,0">
-                                <TextBlock x:Name="SourceBadge" FontSize="11" Foreground="White" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="SourceBadge" FontSize="11" Foreground="{StaticResource PureWhiteBrush}" FontWeight="SemiBold"/>
                             </Border>
                             <Border x:Name="VersionTypeBorder" Background="#3A424D" CornerRadius="4" Padding="8,3" Margin="0,0,8,0">
-                                <TextBlock x:Name="VersionTypeText" FontSize="11" Foreground="White" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="VersionTypeText" FontSize="11" Foreground="{StaticResource PureWhiteBrush}" FontWeight="SemiBold"/>
                             </Border>
                             <Border x:Name="GameVersionBorder" Visibility="Collapsed" Background="#23272E" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0" CornerRadius="4" Padding="8,3">
                                 <TextBlock x:Name="GameVersionText" FontSize="11" Foreground="#61AFEF" FontWeight="SemiBold"/>
@@ -131,7 +131,7 @@
                                         Height="32"
                                         Margin="2"
                                         Background="{DynamicResource AccentBrush}"
-                                        Foreground="#151515"
+                                        Foreground="{StaticResource SurfaceDeepBrush}"
                                         FontWeight="SemiBold"
                                         FontSize="11"
                                         BorderThickness="0"
@@ -150,7 +150,7 @@
                                         Height="32"
                                         Margin="2"
                                         Background="Transparent"
-                                        Foreground="#94A3B8"
+                                        Foreground="{StaticResource SlateTextBrush}"
                                         FontWeight="SemiBold"
                                         FontSize="11"
                                         BorderThickness="0"
@@ -185,7 +185,7 @@
                                    Visibility="Collapsed"
                                    Text="{DynamicResource InstallChooseOtherRelease}"
                                    FontSize="11"
-                                   Foreground="#94A3B8"
+                                   Foreground="{StaticResource SlateTextBrush}"
                                    Margin="0,0,0,4" />
                         <ComboBox x:Name="ReleaseChoiceBox"
                                   Visibility="Collapsed"
@@ -200,7 +200,7 @@
                                                    FontSize="12"
                                                    TextTrimming="CharacterEllipsis" />
                                         <TextBlock FontSize="10"
-                                                   Foreground="#94A3B8">
+                                                   Foreground="{StaticResource SlateTextBrush}">
                                             <Run Text="{Binding SourceName}" />
                                             <Run Text=" · " />
                                             <Run Text="{Binding VersionType}" />
@@ -248,22 +248,22 @@
                                 </Grid.RowDefinitions>
 
                                 <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,12">
-                                    <TextBlock Text="{DynamicResource InstallDownloadSize}" FontSize="10" Foreground="#9AA5B4" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                                    <TextBlock x:Name="DownloadSizeText" FontSize="16" FontWeight="SemiBold" Foreground="White"/>
+                                    <TextBlock Text="{DynamicResource InstallDownloadSize}" FontSize="10" Foreground="{StaticResource TextSoftBrush}" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                    <TextBlock x:Name="DownloadSizeText" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource PureWhiteBrush}"/>
                                 </StackPanel>
 
                                 <StackPanel Grid.Row="0" Grid.Column="1" Margin="8,0,0,12">
-                                    <TextBlock Text="{DynamicResource InstallAfterInstall}" FontSize="10" Foreground="#9AA5B4" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                                    <TextBlock x:Name="InstalledSizeText" FontSize="16" FontWeight="SemiBold" Foreground="White"/>
+                                    <TextBlock Text="{DynamicResource InstallAfterInstall}" FontSize="10" Foreground="{StaticResource TextSoftBrush}" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                    <TextBlock x:Name="InstalledSizeText" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource PureWhiteBrush}"/>
                                 </StackPanel>
 
                                 <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,0">
-                                    <TextBlock Text="{DynamicResource InstallSeeders}" FontSize="10" Foreground="#9AA5B4" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                    <TextBlock Text="{DynamicResource InstallSeeders}" FontSize="10" Foreground="{StaticResource TextSoftBrush}" FontWeight="SemiBold" Margin="0,0,0,4"/>
                                     <TextBlock x:Name="SeedersText" FontSize="15" FontWeight="SemiBold" Foreground="#D5D5D5"/>
                                 </StackPanel>
 
                                 <StackPanel Grid.Row="1" Grid.Column="1" Margin="8,0,0,0">
-                                    <TextBlock Text="{DynamicResource InstallSource}" FontSize="10" Foreground="#9AA5B4" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                    <TextBlock Text="{DynamicResource InstallSource}" FontSize="10" Foreground="{StaticResource TextSoftBrush}" FontWeight="SemiBold" Margin="0,0,0,4"/>
                                     <TextBlock x:Name="SourceDetailText" FontSize="13" Foreground="#D0D6E0" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </Grid>
@@ -282,11 +282,11 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
                                         <TextBlock Text="{DynamicResource InstallAvailable}" FontSize="11" Foreground="#AAA" Margin="0,0,0,2"/>
-                                        <TextBlock x:Name="AvailableSpaceText" FontSize="15" FontWeight="SemiBold" Foreground="White"/>
+                                        <TextBlock x:Name="AvailableSpaceText" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource PureWhiteBrush}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
                                         <TextBlock Text="{DynamicResource InstallRequired}" FontSize="11" Foreground="#AAA" Margin="0,0,0,2"/>
-                                        <TextBlock x:Name="RequiredSpaceText" FontSize="15" FontWeight="SemiBold" Foreground="White"/>
+                                        <TextBlock x:Name="RequiredSpaceText" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource PureWhiteBrush}"/>
                                     </StackPanel>
                                 </Grid>
 

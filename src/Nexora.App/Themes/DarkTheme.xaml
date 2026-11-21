@@ -24,6 +24,23 @@
     <Color x:Key="SuccessColor">#10B981</Color>
     <Color x:Key="DangerColor">#EF4444</Color>
 
+    <!-- View-level palette. Values match the literals previously inlined in XAML,
+         so screens look identical while colors become centrally editable. -->
+    <Color x:Key="PureWhiteColor">#FFFFFF</Color>
+    <Color x:Key="SurfaceRaisedColor">#303030</Color>
+    <Color x:Key="SurfaceDeepColor">#151515</Color>
+    <Color x:Key="SurfaceDarkerColor">#181818</Color>
+    <Color x:Key="SurfaceLowerColor">#252525</Color>
+    <Color x:Key="SurfaceSubtleColor">#282828</Color>
+    <Color x:Key="ControlSelectedColor">#414141</Color>
+    <Color x:Key="WarningColor">#F59E0B</Color>
+    <Color x:Key="SlateTextColor">#94A3B8</Color>
+    <Color x:Key="SlateMutedColor">#64748B</Color>
+    <Color x:Key="SlateDimColor">#525866</Color>
+    <Color x:Key="TextSoftColor">#9AA5B4</Color>
+    <Color x:Key="TextDimColor">#D0D0D0</Color>
+    <Color x:Key="TextLightColor">#C2CAD5</Color>
+
     <SolidColorBrush x:Key="BgDarkBrush" Color="{StaticResource BgDarkColor}" />
     <SolidColorBrush x:Key="SidebarBgBrush" Color="{StaticResource SidebarBgColor}" />
     <SolidColorBrush x:Key="CardBgBrush" Color="{StaticResource CardBgColor}" />
@@ -36,6 +53,20 @@
     <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}" />
     <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}" />
     <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}" />
+    <SolidColorBrush x:Key="PureWhiteBrush" Color="{StaticResource PureWhiteColor}" />
+    <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="{StaticResource SurfaceRaisedColor}" />
+    <SolidColorBrush x:Key="SurfaceDeepBrush" Color="{StaticResource SurfaceDeepColor}" />
+    <SolidColorBrush x:Key="SurfaceDarkerBrush" Color="{StaticResource SurfaceDarkerColor}" />
+    <SolidColorBrush x:Key="SurfaceLowerBrush" Color="{StaticResource SurfaceLowerColor}" />
+    <SolidColorBrush x:Key="SurfaceSubtleBrush" Color="{StaticResource SurfaceSubtleColor}" />
+    <SolidColorBrush x:Key="ControlSelectedBrush" Color="{StaticResource ControlSelectedColor}" />
+    <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}" />
+    <SolidColorBrush x:Key="SlateTextBrush" Color="{StaticResource SlateTextColor}" />
+    <SolidColorBrush x:Key="SlateMutedBrush" Color="{StaticResource SlateMutedColor}" />
+    <SolidColorBrush x:Key="SlateDimBrush" Color="{StaticResource SlateDimColor}" />
+    <SolidColorBrush x:Key="TextSoftBrush" Color="{StaticResource TextSoftColor}" />
+    <SolidColorBrush x:Key="TextDimBrush" Color="{StaticResource TextDimColor}" />
+    <SolidColorBrush x:Key="TextLightBrush" Color="{StaticResource TextLightColor}" />
 
     <!-- A consistent keyboard focus indicator for templated controls. -->
     <Style x:Key="NexoraFocusVisualStyle" TargetType="Control">

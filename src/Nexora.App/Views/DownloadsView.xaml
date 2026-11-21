@@ -33,7 +33,7 @@
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{StaticResource CardBgHoverBrush}" />
                                 <Setter TargetName="Bd" Property="Background" Value="#2D2D2D" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter Property="Foreground" Value="{StaticResource PureWhiteBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="#181A20" />
@@ -73,7 +73,7 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="ChipBorder" Property="Background" Value="{StaticResource CardBgHoverBrush}" />
-                                <Setter TargetName="ChipBorder" Property="Background" Value="#303030" />
+                                <Setter TargetName="ChipBorder" Property="Background" Value="{StaticResource SurfaceRaisedBrush}" />
                                 <Setter Property="Foreground" Value="#F3F4F6" />
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -110,13 +110,13 @@
                     <Setter Property="Foreground" Value="#6366F1" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding DownloadVisualState}" Value="Waiting">
-                    <Setter Property="Foreground" Value="#F59E0B" />
+                    <Setter Property="Foreground" Value="{StaticResource WarningBrush}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding DownloadVisualState}" Value="Queued">
                     <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding DownloadVisualState}" Value="Paused">
-                    <Setter Property="Foreground" Value="#64748B" />
+                    <Setter Property="Foreground" Value="{StaticResource SlateMutedBrush}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding DownloadVisualState}" Value="Verifying">
                     <Setter Property="Foreground" Value="#EC4899" />
@@ -128,10 +128,10 @@
                     <Setter Property="Foreground" Value="#14B8A6" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding DownloadVisualState}" Value="Completed">
-                    <Setter Property="Foreground" Value="#10B981" />
+                    <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding DownloadVisualState}" Value="Error">
-                    <Setter Property="Foreground" Value="#EF4444" />
+                    <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -181,7 +181,7 @@
                                     <Setter Property="Fill" Value="{DynamicResource AccentBrush}" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding ActiveDownloadsCount}" Value="0">
-                                            <Setter Property="Fill" Value="#525866" />
+                                            <Setter Property="Fill" Value="{StaticResource SlateDimBrush}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -196,7 +196,7 @@
                                    FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
                         <StackPanel Orientation="Horizontal"
                                     Visibility="{Binding HasActiveDownloadSpeed, Converter={StaticResource BoolToVis}}">
-                            <TextBlock Text=" • " Margin="4,0" Foreground="#525866" FontSize="12" VerticalAlignment="Center" />
+                            <TextBlock Text=" • " Margin="4,0" Foreground="{StaticResource SlateDimBrush}" FontSize="12" VerticalAlignment="Center" />
                             <TextBlock Text="{Binding TotalDownloadSpeedText}"
                                        Foreground="{DynamicResource AccentHoverBrush}"
                                        FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
@@ -218,7 +218,7 @@
                                     <Setter Property="Fill" Value="{DynamicResource AccentBrush}" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding QueuedDownloadsCount}" Value="0">
-                                            <Setter Property="Fill" Value="#525866" />
+                                            <Setter Property="Fill" Value="{StaticResource SlateDimBrush}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -302,9 +302,9 @@
                         <Style TargetType="Button" BasedOn="{StaticResource DownloadFilterChipStyle}">
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsFilterAllSelected}" Value="True">
-                                    <Setter Property="Background" Value="#292929" />
+                                    <Setter Property="Background" Value="{StaticResource CardBgHoverBrush}" />
                                     <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-                                    <Setter Property="Foreground" Value="#FFFFFF" />
+                                    <Setter Property="Foreground" Value="{StaticResource PureWhiteBrush}" />
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -322,9 +322,9 @@
                         <Style TargetType="Button" BasedOn="{StaticResource DownloadFilterChipStyle}">
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsFilterActiveSelected}" Value="True">
-                                    <Setter Property="Background" Value="#252525" />
+                                    <Setter Property="Background" Value="{StaticResource SurfaceLowerBrush}" />
                                     <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-                                    <Setter Property="Foreground" Value="#FFFFFF" />
+                                    <Setter Property="Foreground" Value="{StaticResource PureWhiteBrush}" />
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -342,9 +342,9 @@
                         <Style TargetType="Button" BasedOn="{StaticResource DownloadFilterChipStyle}">
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsFilterQueuedSelected}" Value="True">
-                                    <Setter Property="Background" Value="#252525" />
+                                    <Setter Property="Background" Value="{StaticResource SurfaceLowerBrush}" />
                                     <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-                                    <Setter Property="Foreground" Value="#FFFFFF" />
+                                    <Setter Property="Foreground" Value="{StaticResource PureWhiteBrush}" />
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -362,9 +362,9 @@
                         <Style TargetType="Button" BasedOn="{StaticResource DownloadFilterChipStyle}">
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsFilterPausedSelected}" Value="True">
-                                    <Setter Property="Background" Value="#292929" />
+                                    <Setter Property="Background" Value="{StaticResource CardBgHoverBrush}" />
                                     <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-                                    <Setter Property="Foreground" Value="#FFFFFF" />
+                                    <Setter Property="Foreground" Value="{StaticResource PureWhiteBrush}" />
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -383,8 +383,8 @@
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsFilterCompletedSelected}" Value="True">
                                     <Setter Property="Background" Value="#132A24" />
-                                    <Setter Property="BorderBrush" Value="#10B981" />
-                                    <Setter Property="Foreground" Value="#FFFFFF" />
+                                    <Setter Property="BorderBrush" Value="{StaticResource SuccessBrush}" />
+                                    <Setter Property="Foreground" Value="{StaticResource PureWhiteBrush}" />
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -404,7 +404,7 @@
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsFilterErrorSelected}" Value="True">
                                     <Setter Property="Background" Value="#2D1519" />
-                                    <Setter Property="BorderBrush" Value="#EF4444" />
+                                    <Setter Property="BorderBrush" Value="{StaticResource DangerBrush}" />
                                     <Setter Property="Foreground" Value="#FCA5A5" />
                                 </DataTrigger>
                             </Style.Triggers>
@@ -531,7 +531,7 @@
                                                 <Grid>
                                                     <Viewbox Width="20" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.35">
                                                         <Path Data="M6,9 H18 A4,4 0 0 1 22,13 V16 A3,3 0 0 1 19,19 H17 L15,16 H9 L7,19 H5 A3,3 0 0 1 2,16 V13 A4,4 0 0 1 6,9 Z"
-                                                              Fill="Transparent" Stroke="#94A3B8" StrokeThickness="1.6" />
+                                                              Fill="Transparent" Stroke="{StaticResource SlateTextBrush}" StrokeThickness="1.6" />
                                                     </Viewbox>
                                                     <Image Source="{Binding CoverUrl, Converter={StaticResource StringToImage}, ConverterParameter=Card}"
                                                            Stretch="Uniform" />
@@ -543,12 +543,12 @@
                                                 <TextBlock Text="{Binding Name}"
                                                            FontSize="18"
                                                            FontWeight="SemiBold"
-                                                           Foreground="#FFFFFF"
+                                                           Foreground="{StaticResource PureWhiteBrush}"
                                                            TextTrimming="CharacterEllipsis"
                                                            ToolTip="{Binding Name}" />
 
                                                 <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                                                    <Border Background="#252525"
+                                                    <Border Background="{StaticResource SurfaceLowerBrush}"
                                                             BorderBrush="{StaticResource BorderBrush}"
                                                             BorderThickness="0"
                                                             CornerRadius="5"
@@ -572,7 +572,7 @@
                                                 <StackPanel Orientation="Horizontal"
                                                             Margin="0,4,0,0"
                                                             Visibility="{Binding IsDownloadStalled, Converter={StaticResource BoolToVis}}">
-                                                    <Ellipse Width="6" Height="6" Fill="#F59E0B" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                                    <Ellipse Width="6" Height="6" Fill="{StaticResource WarningBrush}" VerticalAlignment="Center" Margin="0,0,6,0" />
                                                     <TextBlock Text="{DynamicResource DownloadStallWarning}"
                                                                FontSize="11"
                                                                Foreground="#FBBF24"
@@ -595,13 +595,13 @@
                                                                 <Setter Property="BorderBrush" Value="#6366F1" />
                                                             </DataTrigger>
                                                             <DataTrigger Binding="{Binding DownloadVisualState}" Value="Waiting">
-                                                                <Setter Property="BorderBrush" Value="#F59E0B" />
+                                                                <Setter Property="BorderBrush" Value="{StaticResource WarningBrush}" />
                                                             </DataTrigger>
                                                             <DataTrigger Binding="{Binding DownloadVisualState}" Value="Queued">
                                                                 <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
                                                             </DataTrigger>
                                                             <DataTrigger Binding="{Binding DownloadVisualState}" Value="Paused">
-                                                                <Setter Property="BorderBrush" Value="#64748B" />
+                                                                <Setter Property="BorderBrush" Value="{StaticResource SlateMutedBrush}" />
                                                             </DataTrigger>
                                                             <DataTrigger Binding="{Binding DownloadVisualState}" Value="Verifying">
                                                                 <Setter Property="BorderBrush" Value="#EC4899" />
@@ -613,10 +613,10 @@
                                                                 <Setter Property="BorderBrush" Value="#14B8A6" />
                                                             </DataTrigger>
                                                             <DataTrigger Binding="{Binding DownloadVisualState}" Value="Completed">
-                                                                <Setter Property="BorderBrush" Value="#10B981" />
+                                                                <Setter Property="BorderBrush" Value="{StaticResource SuccessBrush}" />
                                                             </DataTrigger>
                                                             <DataTrigger Binding="{Binding DownloadVisualState}" Value="Error">
-                                                                <Setter Property="BorderBrush" Value="#EF4444" />
+                                                                <Setter Property="BorderBrush" Value="{StaticResource DangerBrush}" />
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
@@ -631,13 +631,13 @@
                                                                         <Setter Property="Fill" Value="#6366F1" />
                                                                     </DataTrigger>
                                                                     <DataTrigger Binding="{Binding DownloadVisualState}" Value="Waiting">
-                                                                        <Setter Property="Fill" Value="#F59E0B" />
+                                                                        <Setter Property="Fill" Value="{StaticResource WarningBrush}" />
                                                                     </DataTrigger>
                                                                     <DataTrigger Binding="{Binding DownloadVisualState}" Value="Queued">
                                                                         <Setter Property="Fill" Value="{DynamicResource AccentBrush}" />
                                                                     </DataTrigger>
                                                                     <DataTrigger Binding="{Binding DownloadVisualState}" Value="Paused">
-                                                                        <Setter Property="Fill" Value="#94A3B8" />
+                                                                        <Setter Property="Fill" Value="{StaticResource SlateTextBrush}" />
                                                                     </DataTrigger>
                                                                     <DataTrigger Binding="{Binding DownloadVisualState}" Value="Verifying">
                                                                         <Setter Property="Fill" Value="#EC4899" />
@@ -649,10 +649,10 @@
                                                                         <Setter Property="Fill" Value="#14B8A6" />
                                                                     </DataTrigger>
                                                                     <DataTrigger Binding="{Binding DownloadVisualState}" Value="Completed">
-                                                                        <Setter Property="Fill" Value="#10B981" />
+                                                                        <Setter Property="Fill" Value="{StaticResource SuccessBrush}" />
                                                                     </DataTrigger>
                                                                     <DataTrigger Binding="{Binding DownloadVisualState}" Value="Error">
-                                                                        <Setter Property="Fill" Value="#EF4444" />
+                                                                        <Setter Property="Fill" Value="{StaticResource DangerBrush}" />
                                                                     </DataTrigger>
                                                                 </Style.Triggers>
                                                             </Style>
@@ -703,7 +703,7 @@
                                                     <ColumnDefinition Width="Auto" />
                                                     <ColumnDefinition Width="*" />
                                                 </Grid.ColumnDefinitions>
-                                                <Ellipse Grid.Column="0" Width="7" Height="7" Fill="#EF4444"
+                                                <Ellipse Grid.Column="0" Width="7" Height="7" Fill="{StaticResource DangerBrush}"
                                                          VerticalAlignment="Center" Margin="0,0,9,0" />
                                                 <TextBlock Grid.Column="1"
                                                            Text="{Binding DownloadErrorText}"
@@ -808,7 +808,7 @@
                                                                 <Viewbox Width="13" Height="13" Margin="0,0,6,0" VerticalAlignment="Center">
                                                                     <Path Data="M2,5 A2,2 0 0 1 4,3 H8 L10,5 H18 A2,2 0 0 1 20,7 V17 A2,2 0 0 1 18,19 H4 A2,2 0 0 1 2,17 Z"
                                                                           Fill="Transparent"
-                                                                          Stroke="#94A3B8"
+                                                                          Stroke="{StaticResource SlateTextBrush}"
                                                                           StrokeThickness="1.6" />
                                                                 </Viewbox>
                                                                 <TextBlock Text="{DynamicResource DownloadFolder}"
@@ -827,8 +827,8 @@
                                                         </Border>
                                                         <ControlTemplate.Triggers>
                                                             <Trigger Property="IsMouseOver" Value="True">
-                        <Setter TargetName="FolderChip" Property="Background" Value="#292929" />
-                                                                <Setter TargetName="FolderText" Property="Foreground" Value="#FFFFFF" />
+                        <Setter TargetName="FolderChip" Property="Background" Value="{StaticResource CardBgHoverBrush}" />
+                                                                <Setter TargetName="FolderText" Property="Foreground" Value="{StaticResource PureWhiteBrush}" />
                                                             </Trigger>
                                                         </ControlTemplate.Triggers>
                                                     </ControlTemplate>
@@ -989,7 +989,7 @@
                             HorizontalAlignment="Center" Margin="0,0,0,16">
                         <Viewbox Width="26" Height="26" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <Path Data="M12,3 L12,15 M7,10 L12,15 L17,10 M4,18 V20 H20 V18"
-                                  Fill="Transparent" Stroke="#94A3B8" StrokeThickness="1.8"
+                                  Fill="Transparent" Stroke="{StaticResource SlateTextBrush}" StrokeThickness="1.8"
                                   StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
                         </Viewbox>
                     </Border>

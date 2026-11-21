@@ -109,7 +109,7 @@
                               ScrollChanged="CatalogScrollViewer_ScrollChanged">
             <StackPanel>
                 <!-- Featured game -->
-                <Border x:Name="FeaturedHero" Height="294" Margin="0,0,0,0" ClipToBounds="True" Background="#151515">
+                <Border x:Name="FeaturedHero" Height="294" Margin="0,0,0,0" ClipToBounds="True" Background="{StaticResource SurfaceDeepBrush}">
                     <Grid x:Name="HeroRoot">
                         <!-- Designed backdrop behind the artwork so the hero is never an empty black block
                              while art loads or when a game has neither a banner nor a cover. -->
@@ -185,7 +185,7 @@
                                        Foreground="{StaticResource TextSecondaryBrush}"
                                        HorizontalAlignment="Left" Margin="0,0,0,12" />
                             <TextBlock x:Name="FeaturedTitleText" Text="{DynamicResource FeaturedFallbackTitle}"
-                                       FontSize="32" FontWeight="SemiBold" Foreground="White" TextTrimming="CharacterEllipsis" />
+                                       FontSize="32" FontWeight="SemiBold" Foreground="{StaticResource PureWhiteBrush}" TextTrimming="CharacterEllipsis" />
                             <TextBlock x:Name="FeaturedDescriptionText"
                                        Text="{DynamicResource FeaturedFallbackSubtitle}"
                                        FontSize="13" Foreground="#D1D5DB" TextTrimming="CharacterEllipsis" MaxWidth="700"
@@ -275,8 +275,8 @@
                                 <Style TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding SelectedDiscoveryTab}" Value="Trending">
-                                            <Setter Property="Background" Value="#414141" />
-                                            <Setter Property="Foreground" Value="White" />
+                                            <Setter Property="Background" Value="{StaticResource ControlSelectedBrush}" />
+                                            <Setter Property="Foreground" Value="{StaticResource PureWhiteBrush}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -295,8 +295,8 @@
                                 <Style TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding SelectedDiscoveryTab}" Value="TopDownloads">
-                                            <Setter Property="Background" Value="#414141" />
-                                            <Setter Property="Foreground" Value="White" />
+                                            <Setter Property="Background" Value="{StaticResource ControlSelectedBrush}" />
+                                            <Setter Property="Foreground" Value="{StaticResource PureWhiteBrush}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -315,8 +315,8 @@
                                 <Style TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding SelectedDiscoveryTab}" Value="Alphabetical">
-                                            <Setter Property="Background" Value="#414141" />
-                                            <Setter Property="Foreground" Value="White" />
+                                            <Setter Property="Background" Value="{StaticResource ControlSelectedBrush}" />
+                                            <Setter Property="Foreground" Value="{StaticResource PureWhiteBrush}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -361,12 +361,12 @@
                            Foreground="{StaticResource TextPrimaryBrush}" Margin="21,0,15,14" />
 
                 <Border Visibility="{Binding IsSearchingOnline, Converter={StaticResource BoolToVis}}"
-                        Background="#202020" CornerRadius="8" Padding="18,12" Margin="24,0,24,16"
+                        Background="{StaticResource CardBgBrush}" CornerRadius="8" Padding="18,12" Margin="24,0,24,16"
                         BorderBrush="{DynamicResource AccentBrush}" BorderThickness="0">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <ProgressBar IsIndeterminate="True" Width="80" Height="4" Margin="0,0,14,0"
-                                     Foreground="{DynamicResource AccentBrush}" Background="#303030" BorderThickness="0" />
-                        <TextBlock Text="{DynamicResource SearchUpdating}" FontSize="13" Foreground="White" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                     Foreground="{DynamicResource AccentBrush}" Background="{StaticResource SurfaceRaisedBrush}" BorderThickness="0" />
+                        <TextBlock Text="{DynamicResource SearchUpdating}" FontSize="13" Foreground="{StaticResource PureWhiteBrush}" FontWeight="SemiBold" VerticalAlignment="Center" />
                     </StackPanel>
                 </Border>
 
@@ -395,7 +395,7 @@
             <Border Background="#D9000000" />
             <Border Width="930" Height="390" Padding="24"
                     HorizontalAlignment="Center" VerticalAlignment="Center"
-                    Background="#202020" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0" CornerRadius="18">
+                    Background="{StaticResource CardBgBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0" CornerRadius="18">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -404,7 +404,7 @@
                     </Grid.RowDefinitions>
                     <Grid Margin="0,0,0,18">
                         <StackPanel>
-                            <TextBlock Text="{DynamicResource SurpriseCaseTitle}" Foreground="White"
+                            <TextBlock Text="{DynamicResource SurpriseCaseTitle}" Foreground="{StaticResource PureWhiteBrush}"
                                        FontSize="21" FontWeight="SemiBold" />
                             <TextBlock Text="{DynamicResource SurpriseCaseDescription}" Foreground="#AEB7C4"
                                        FontSize="12" Margin="0,5,0,0" />
@@ -448,7 +448,7 @@
                                                     <StackPanel VerticalAlignment="Bottom" Margin="12,8,12,13">
                                                         <TextBlock Text="Nexora Drop" Foreground="{DynamicResource AccentBrush}"
                                                                    FontSize="9" FontWeight="SemiBold" Margin="0,0,0,5" />
-                                                        <TextBlock Text="{Binding Name}" Foreground="White" FontSize="13"
+                                                        <TextBlock Text="{Binding Name}" Foreground="{StaticResource PureWhiteBrush}" FontSize="13"
                                                                    FontWeight="SemiBold" TextWrapping="Wrap" MaxHeight="38"
                                                                    TextTrimming="CharacterEllipsis" />
                                                     </StackPanel>

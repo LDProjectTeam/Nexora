@@ -62,7 +62,7 @@
 
         <!-- ── Cards ───────────────────────────────────────────────────────── -->
         <Style x:Key="PanelCardStyle" TargetType="Border">
-            <Setter Property="Background" Value="#202020" />
+            <Setter Property="Background" Value="{StaticResource CardBgBrush}" />
             <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="CornerRadius" Value="10" />
@@ -121,8 +121,8 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#292929" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource CardBgHoverBrush}" />
+                                <Setter Property="Foreground" Value="{StaticResource PureWhiteBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -134,7 +134,7 @@
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Background" Value="#7F1D1D" />
-                    <Setter Property="Foreground" Value="#FFFFFF" />
+                    <Setter Property="Foreground" Value="{StaticResource PureWhiteBrush}" />
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -156,8 +156,8 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#292929" />
-                                <Setter Property="Foreground" Value="#F4F4F4" />
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource CardBgHoverBrush}" />
+                                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="Bd" Property="Opacity" Value="0.35" />
@@ -190,8 +190,8 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#292929" />
-                                <Setter Property="Foreground" Value="#F4F4F4" />
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource CardBgHoverBrush}" />
+                                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -202,7 +202,7 @@
         <Style x:Key="StatValueStyle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="18" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="#F4F4F4" />
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
     </Window.Resources>
@@ -358,7 +358,7 @@
                                             <Ellipse Width="6" Height="6" VerticalAlignment="Center"
                                                      Fill="{Binding State, Converter={StaticResource StateToColor}}" />
                                             <TextBlock Text="{Binding StatusText}" Margin="6,0,0,0" FontSize="11"
-                                                       FontWeight="SemiBold" Foreground="#D0D0D0" />
+                                                       FontWeight="SemiBold" Foreground="{StaticResource TextDimBrush}" />
                                         </StackPanel>
                                     </Border>
                                     <Border Background="{StaticResource CardBgBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0"
@@ -374,7 +374,7 @@
                                 <TextBlock Text="{Binding Name}"
                                            FontSize="36"
                                            FontWeight="Bold"
-                                           Foreground="#FFFFFF"
+                                           Foreground="{StaticResource PureWhiteBrush}"
                                            TextWrapping="Wrap"
                                            MaxHeight="100"
                                            TextTrimming="CharacterEllipsis">
@@ -387,7 +387,7 @@
                                            Margin="0,8,0,0"
                                            FontSize="13"
                                            LineHeight="19"
-                                           Foreground="#D0D0D0"
+                                           Foreground="{StaticResource TextDimBrush}"
                                            TextWrapping="Wrap"
                                            MaxHeight="58"
                                            TextTrimming="CharacterEllipsis"
@@ -574,7 +574,7 @@
                                        Margin="0,12,0,0"
                                        FontSize="13.5"
                                        LineHeight="22"
-                                       Foreground="#D0D0D0"
+                                       Foreground="{StaticResource TextDimBrush}"
                                        TextWrapping="Wrap"
                                        Visibility="{Binding HasFullDescription, Converter={StaticResource BoolToVis}}" />
 
@@ -640,7 +640,7 @@
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <Border Style="{StaticResource ChipBorderStyle}">
-                                                <TextBlock Text="{Binding}" FontSize="11.5" Foreground="#D0D0D0" />
+                                                <TextBlock Text="{Binding}" FontSize="11.5" Foreground="{StaticResource TextDimBrush}" />
                                             </Border>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
@@ -667,7 +667,7 @@
                                 <StackPanel Orientation="Horizontal">
                                     <Border Width="28" Height="28" CornerRadius="8" Background="#241E14">
                                         <TextBlock Text="&#xE946;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                                   Foreground="#F59E0B" HorizontalAlignment="Center"
+                                                   Foreground="{StaticResource WarningBrush}" HorizontalAlignment="Center"
                                                    VerticalAlignment="Center" />
                                     </Border>
                                     <TextBlock Text="{Binding SteamUnavailableTitle}" Margin="10,0,0,0"
@@ -767,7 +767,7 @@
                                 Visibility="{Binding ShowLookupWarning, Converter={StaticResource BoolToVis}}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE7BA;" FontFamily="Segoe MDL2 Assets" FontSize="14"
-                                           Foreground="#F59E0B" VerticalAlignment="Top" Margin="0,1,0,0" />
+                                           Foreground="{StaticResource WarningBrush}" VerticalAlignment="Top" Margin="0,1,0,0" />
                                 <TextBlock Text="{Binding LookupStatusText}" Margin="10,0,0,0" FontSize="12"
                                            LineHeight="18" Foreground="#D6B27A" TextWrapping="Wrap" />
                             </StackPanel>
@@ -871,7 +871,7 @@
                                         <TextBlock Style="{StaticResource SpecLabelStyle}"
                                                    Text="{DynamicResource GameDetailsSeedersPeersLabel}" />
                                         <TextBlock Grid.Column="1" Style="{StaticResource SpecValueStyle}"
-                                                   Foreground="#10B981" Text="{Binding SeedersPeersDisplay}" />
+                                                   Foreground="{StaticResource SuccessBrush}" Text="{Binding SeedersPeersDisplay}" />
                                     </Grid>
                                 </StackPanel>
                             </Border>
@@ -887,7 +887,7 @@
                                         <TextBlock Style="{StaticResource CapsLabelStyle}"
                                                    Text="{DynamicResource DetailOriginalName}" />
                                         <TextBlock Text="{Binding ReleaseTitleDisplay}" Margin="0,6,0,0"
-                                                   FontSize="12.5" LineHeight="18" Foreground="#D0D0D0"
+                                                   FontSize="12.5" LineHeight="18" Foreground="{StaticResource TextDimBrush}"
                                                    TextWrapping="Wrap" />
                                     </StackPanel>
 
