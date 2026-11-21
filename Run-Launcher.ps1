@@ -1,166 +1,131 @@
 ﻿# ==============================================================================
-# Nexora Universal Launcher with Live Background CMD Logs
-# Автоматически находит и запускает последнюю версию фиксов
+# Nexora Launcher — запуск актуальной сборки с живыми логами в консоли.
+#
+# Порядок выбора:
+#   1. publish\Nexora.exe
+#   2. publish-portable\Nexora.exe
+#   3. самая свежая сборка в src\Nexora.App\bin\Release|Debug (dev-режим)
+#
+# Явный путь можно передать параметром: .\Run-Launcher.ps1 -ExePath <путь>
 # ==============================================================================
+[CmdletBinding()]
+param(
+    [string]$ExePath
+)
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 [Console]::InputEncoding  = [System.Text.Encoding]::UTF8
+$ErrorActionPreference = 'Stop'
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (-not $scriptDir) { $scriptDir = (Get-Location).Path }
 
-Write-Host "============================================================" -ForegroundColor Cyan
-Write-Host "              Nexora Universal Launcher                  " -ForegroundColor Yellow
-Write-Host "============================================================" -ForegroundColor Cyan
-Write-Host "[*] Поиск последней версии фиксов..." -ForegroundColor Gray
-
-# 1. Поиск кандидатов в publish-portable* и publish*
-$publishCandidates = Get-ChildItem -Path $scriptDir -Filter "Nexora.exe" -Recurse -ErrorAction SilentlyContinue |
-    Where-Object { 
-        $d = $_.DirectoryName
-        $d -match "\\publish-portable" -or $d -match "\\publish($|\\)"
-    } |
-    Sort-Object LastWriteTime -Descending
-
-# 2. Если в publish ничего нет, поиск в bin\Release / bin\Debug
-if (-not $publishCandidates -or $publishCandidates.Count -eq 0) {
-    $publishCandidates = Get-ChildItem -Path $scriptDir -Filter "Nexora.exe" -Recurse -ErrorAction SilentlyContinue |
-        Sort-Object LastWriteTime -Descending
+function Write-Banner {
+    Write-Host "============================================================" -ForegroundColor Cyan
+    Write-Host "              Nexora Universal Launcher                     " -ForegroundColor Yellow
+    Write-Host "============================================================" -ForegroundColor Cyan
 }
 
-if (-not $publishCandidates -or $publishCandidates.Count -eq 0) {
-    Write-Host "`n[ERROR] Исполняемый файл Nexora.exe не найден!" -ForegroundColor Red
-    Write-Host "Сначала скомпилируйте или опубликуйте проект (dotnet publish)." -ForegroundColor Yellow
-    Write-Host ""
-    Write-Host "Нажмите любую клавишу для выхода..." -ForegroundColor DarkGray
+function Wait-ForKey {
     try {
         if ([Environment]::UserInteractive -and -not [Console]::IsInputRedirected) {
+            Write-Host ""
+            Write-Host "Нажмите любую клавишу для закрытия окна..." -ForegroundColor DarkGray
             $null = [Console]::ReadKey($true)
         }
-    } catch { }
+    }
+    catch { }
+}
+
+Write-Banner
+
+$candidates = [System.Collections.Generic.List[System.IO.FileInfo]]::new()
+
+if ($ExePath) {
+    if (-not (Test-Path -LiteralPath $ExePath -PathType Leaf)) {
+        Write-Host "[ERROR] Файл не найден: $ExePath" -ForegroundColor Red
+        Wait-ForKey
+        exit 1
+    }
+    $candidates.Add((Get-Item -LiteralPath $ExePath))
+}
+else {
+    foreach ($relative in @('publish\Nexora.exe', 'publish-portable\Nexora.exe')) {
+        $path = Join-Path $scriptDir $relative
+        if (Test-Path -LiteralPath $path -PathType Leaf) {
+            $candidates.Add((Get-Item -LiteralPath $path))
+        }
+    }
+
+    # Dev fallback: the newest build produced by `dotnet build`.
+    if ($candidates.Count -eq 0) {
+        Get-ChildItem -Path $scriptDir -Filter 'Nexora.exe' -Recurse -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match '\\bin\\(Release|Debug)\\' } |
+            ForEach-Object { $candidates.Add($_) }
+    }
+}
+
+$exe = $candidates | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+if (-not $exe) {
+    Write-Host "[ERROR] Nexora.exe не найден." -ForegroundColor Red
+    Write-Host "Сначала опубликуйте проект: .\installer\Build-Installer.ps1 или dotnet publish." -ForegroundColor Yellow
+    Wait-ForKey
     exit 1
 }
 
-$latestExe = $publishCandidates[0]
-$workingDir = $latestExe.DirectoryName
-$folderName = $latestExe.Directory.Name
-$buildTime = $latestExe.LastWriteTime.ToString("dd.MM.yyyy HH:mm:ss")
-
-try {
-    $host.UI.RawUI.WindowTitle = "Nexora Launcher - [$folderName]"
-} catch { }
-
-Write-Host "[OK] Найдена последняя версия: " -NoNewline
-Write-Host "$folderName" -ForegroundColor Green
-Write-Host "     Папка:       $workingDir" -ForegroundColor Gray
-Write-Host "     Дата сборки: $buildTime" -ForegroundColor Gray
+$workingDir = $exe.DirectoryName
+Write-Host "[OK] Сборка:  " -NoNewline
+Write-Host $exe.Directory.Name -ForegroundColor Green
+Write-Host "     Папка:   $workingDir" -ForegroundColor Gray
+Write-Host "     Изменён: $($exe.LastWriteTime.ToString('dd.MM.yyyy HH:mm:ss'))" -ForegroundColor Gray
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host ""
 
-# Подготовка к чтению lifecycle.log
-$logPath = Join-Path $workingDir "lifecycle.log"
-$initialOffset = 0
-if (Test-Path $logPath) {
-    $initialOffset = (Get-Item $logPath).Length
-}
-
-# Настройка запуска процесса с перехватом stdout / stderr
-$psi = New-Object System.Diagnostics.ProcessStartInfo
-$psi.FileName = $latestExe.FullName
+$psi = [System.Diagnostics.ProcessStartInfo]::new()
+$psi.FileName = $exe.FullName
 $psi.WorkingDirectory = $workingDir
 $psi.UseShellExecute = $false
 $psi.RedirectStandardOutput = $true
 $psi.RedirectStandardError = $true
+foreach ($arg in $args) { $psi.ArgumentList.Add($arg) }
 
-# Передача переданных аргументов (если есть)
-foreach ($arg in $args) {
-    $psi.ArgumentList.Add($arg)
-}
-
-$proc = New-Object System.Diagnostics.Process
+$proc = [System.Diagnostics.Process]::new()
 $proc.StartInfo = $psi
 
 $outEvent = Register-ObjectEvent -InputObject $proc -EventName OutputDataReceived -Action {
     if (-not [string]::IsNullOrEmpty($EventArgs.Data)) {
-        $timestamp = (Get-Date).ToString("HH:mm:ss")
-        Write-Host "[$timestamp] [STDOUT] $($EventArgs.Data)" -ForegroundColor DarkGray
+        $stamp = (Get-Date).ToString('HH:mm:ss')
+        Write-Host "[$stamp] [OUT] $($EventArgs.Data)" -ForegroundColor DarkGray
     }
 }
 $errEvent = Register-ObjectEvent -InputObject $proc -EventName ErrorDataReceived -Action {
     if (-not [string]::IsNullOrEmpty($EventArgs.Data)) {
-        $timestamp = (Get-Date).ToString("HH:mm:ss")
-        Write-Host "[$timestamp] [STDERR] $($EventArgs.Data)" -ForegroundColor Red
+        $stamp = (Get-Date).ToString('HH:mm:ss')
+        Write-Host "[$stamp] [ERR] $($EventArgs.Data)" -ForegroundColor Red
     }
 }
 
 $exitCode = 0
-
 try {
     $proc.Start() | Out-Null
     $proc.BeginOutputReadLine()
     $proc.BeginErrorReadLine()
 
     Write-Host "[LAUNCHER] Nexora запущен (PID: $($proc.Id))" -ForegroundColor Green
-    Write-Host "[LAUNCHER] Консоль CMD активна на фоне. Логи приложения в реальном времени:" -ForegroundColor Cyan
+    Write-Host "[LAUNCHER] Логи приложения идут ниже. Закройте лаунчер, чтобы выйти." -ForegroundColor Cyan
     Write-Host "------------------------------------------------------------" -ForegroundColor DarkGray
 
-    $fileStream = $null
-    $streamReader = $null
-    $opened = $false
-
     while (-not $proc.HasExited) {
-        if (-not $opened -and (Test-Path $logPath)) {
-            try {
-                $fileStream = [System.IO.File]::Open($logPath, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
-                $fileStream.Seek($initialOffset, [System.IO.SeekOrigin]::Begin) | Out-Null
-                $streamReader = New-Object System.IO.StreamReader($fileStream, [System.Text.Encoding]::UTF8)
-                $opened = $true
-            } catch {
-                # Файл может быть кратковременно занят другим процессом
-            }
-        }
-
-        if ($opened -and $streamReader) {
-            while (-not $streamReader.EndOfStream) {
-                $line = $streamReader.ReadLine()
-                if ($line) {
-                    $timestamp = (Get-Date).ToString("HH:mm:ss")
-                    if ($line -match "\[Error\]|\[AppDomain Error\]|\[Dispatcher Error\]|Exception") {
-                        Write-Host "[$timestamp] $line" -ForegroundColor Red
-                    } elseif ($line -match "\[Loaded\]|\[ProcessExit\]|\[Closed\]") {
-                        Write-Host "[$timestamp] $line" -ForegroundColor Green
-                    } else {
-                        Write-Host "[$timestamp] $line" -ForegroundColor Cyan
-                    }
-                }
-            }
-        }
-
-        Start-Sleep -Milliseconds 150
-    }
-
-    # Дочитываем оставшиеся логи после завершения процесса
-    Start-Sleep -Milliseconds 250
-    if ($opened -and $streamReader) {
-        while (-not $streamReader.EndOfStream) {
-            $line = $streamReader.ReadLine()
-            if ($line) {
-                $timestamp = (Get-Date).ToString("HH:mm:ss")
-                if ($line -match "\[Error\]|\[AppDomain Error\]|\[Dispatcher Error\]|Exception") {
-                    Write-Host "[$timestamp] $line" -ForegroundColor Red
-                } else {
-                    Write-Host "[$timestamp] $line" -ForegroundColor Green
-                }
-            }
-        }
+        Start-Sleep -Milliseconds 200
     }
 
     $exitCode = $proc.ExitCode
     Write-Host "------------------------------------------------------------" -ForegroundColor DarkGray
     if ($exitCode -eq 0) {
-        Write-Host "[LAUNCHER] Приложение завершило работу успешно (код: 0)." -ForegroundColor Green
-    } else {
-        Write-Host "[LAUNCHER] Приложение завершило работу с кодом ошибки: $exitCode" -ForegroundColor Red
+        Write-Host "[LAUNCHER] Приложение завершилось успешно." -ForegroundColor Green
+    }
+    else {
+        Write-Host "[LAUNCHER] Приложение завершилось с кодом: $exitCode" -ForegroundColor Red
     }
 }
 catch {
@@ -168,25 +133,12 @@ catch {
     $exitCode = 1
 }
 finally {
-    if ($streamReader) { $streamReader.Dispose() }
-    if ($fileStream) { $fileStream.Dispose() }
-
     Unregister-Event -SourceIdentifier $outEvent.Name -ErrorAction SilentlyContinue
     Unregister-Event -SourceIdentifier $errEvent.Name -ErrorAction SilentlyContinue
-
-    if ($proc -and -not $proc.HasExited) {
-        Write-Host "`n[LAUNCHER] Завершение процесса Nexora..." -ForegroundColor Yellow
-        try { $proc.Kill() } catch { }
-    }
     if ($proc) { $proc.Dispose() }
 }
 
 Write-Host ""
-Write-Host "Нажмите любую клавишу для закрытия окна..." -ForegroundColor DarkGray
-try {
-    if ([Environment]::UserInteractive -and -not [Console]::IsInputRedirected) {
-        $null = [Console]::ReadKey($true)
-    }
-} catch { }
-
+Write-Host "Полный лог: $env:APPDATA\Nexora\logs" -ForegroundColor DarkGray
+Wait-ForKey
 exit $exitCode
