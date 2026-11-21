@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Nexora.Core.Helpers;
 using Nexora.Core.Models;
@@ -17,6 +18,29 @@ public class ArtworkStorageTests
         var directory = Path.Combine(Path.GetTempPath(), "NexoraArtworkTests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
         return directory;
+    }
+
+    /// <summary>
+    /// Windows can still hold a handle on a freshly written image (antivirus, indexer)
+    /// for a moment, which makes a plain recursive delete flaky.
+    /// </summary>
+    private static void DeleteTempDirectory(string directory)
+    {
+        for (var attempt = 0; attempt < 10; attempt++)
+        {
+            try
+            {
+                if (Directory.Exists(directory))
+                    Directory.Delete(directory, recursive: true);
+                return;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                if (attempt == 9)
+                    return; // best effort in tests
+                Thread.Sleep(50 * (attempt + 1));
+            }
+        }
     }
 
     private static Task<string> CreateSourceImageAsync(string path, int width, int height)
@@ -61,7 +85,7 @@ public class ArtworkStorageTests
         }
         finally
         {
-            Directory.Delete(directory, recursive: true);
+            DeleteTempDirectory(directory);
         }
     }
 
@@ -86,7 +110,7 @@ public class ArtworkStorageTests
         }
         finally
         {
-            Directory.Delete(directory, recursive: true);
+            DeleteTempDirectory(directory);
         }
     }
 
@@ -123,7 +147,7 @@ public class ArtworkStorageTests
         }
         finally
         {
-            Directory.Delete(directory, recursive: true);
+            DeleteTempDirectory(directory);
         }
     }
 
@@ -156,7 +180,7 @@ public class ArtworkStorageTests
         }
         finally
         {
-            Directory.Delete(directory, recursive: true);
+            DeleteTempDirectory(directory);
         }
     }
 
@@ -190,7 +214,7 @@ public class ArtworkStorageTests
             Assert.True(Directory.GetFiles(directory, "*.json").Length < 4);        }
         finally
         {
-            Directory.Delete(directory, recursive: true);
+            DeleteTempDirectory(directory);
         }
     }
 }
