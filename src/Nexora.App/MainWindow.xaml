@@ -156,7 +156,7 @@
                                     Background="{StaticResource SuccessBrush}"
                                     CornerRadius="7"
                                     IsHitTestVisible="False"
-                                    ToolTip="Есть завершённые загрузки"
+                                    ToolTip="{DynamicResource SidebarCompletedDownloadsHint}"
                                     Visibility="Hidden"
                                     Opacity="0"
                                     RenderTransformOrigin="0.5,0.5">

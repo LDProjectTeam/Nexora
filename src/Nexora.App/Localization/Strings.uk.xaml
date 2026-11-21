@@ -464,4 +464,13 @@
     <sys:String x:Key="ErrorLogLocationFormat">Подробиці записано в лог: {0}</sys:String>
     <sys:String x:Key="StartupFailedFormat">Не вдалося запустити лаунчер: {0}</sys:String>
     <sys:String x:Key="LoadFailedFormat">Не вдалося завантажити дані лаунчера: {0}</sys:String>
+    <sys:String x:Key="A11yPreviousFeaturedGame">Попередня рекомендована гра</sys:String>
+    <sys:String x:Key="A11yNextFeaturedGame">Наступна рекомендована гра</sys:String>
+    <sys:String x:Key="SidebarCompletedDownloadsHint">Є завершені завантаження</sys:String>
+    <sys:String x:Key="LaunchAnotherGameRunning">Не можна запустити гру, поки працює інша. Це обмеження можна вимкнути в налаштуваннях.</sys:String>
+    <sys:String x:Key="LaunchSetupFailedFormat">Не вдалося відкрити інсталятор гри: {0}</sys:String>
+    <sys:String x:Key="StatusQueued">У черзі</sys:String>
+    <sys:String x:Key="TorrentErrorInvalidSource">Джерело торренту не містить дійсного посилання або magnet-посилання.</sys:String>
+    <sys:String x:Key="InstallerNoProcess">Не вдалося запустити інсталятор. Можливо, запит на підвищення прав (UAC) було відхилено. Спробуйте запустити лаунчер від імені адміністратора.</sys:String>
+    <sys:String x:Key="InstallerCrashedVcRedist">Інсталятор репаку завершився з помилкою 0xE06D7363. Встановіть Visual C++ Redistributable 2013/2015/2019 (x86 та x64) і повторіть спробу.</sys:String>
 </ResourceDictionary>

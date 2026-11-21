@@ -184,10 +184,10 @@
                                        FontSize="12" FontWeight="Medium"
                                        Foreground="{StaticResource TextSecondaryBrush}"
                                        HorizontalAlignment="Left" Margin="0,0,0,12" />
-                            <TextBlock x:Name="FeaturedTitleText" Text="Каталог"
+                            <TextBlock x:Name="FeaturedTitleText" Text="{DynamicResource FeaturedFallbackTitle}"
                                        FontSize="32" FontWeight="SemiBold" Foreground="White" TextTrimming="CharacterEllipsis" />
                             <TextBlock x:Name="FeaturedDescriptionText"
-                                       Text="Ваша игровая библиотека и новые открытия — в одном месте."
+                                       Text="{DynamicResource FeaturedFallbackSubtitle}"
                                        FontSize="13" Foreground="#D1D5DB" TextTrimming="CharacterEllipsis" MaxWidth="700"
                                        HorizontalAlignment="Left" Margin="0,5,0,16" />
                             <StackPanel Orientation="Horizontal">
@@ -212,7 +212,7 @@
                                 Style="{StaticResource FeaturedCarouselButton}"
                                 Command="{Binding PreviousFeaturedGameCommand}"
                                 Visibility="{Binding HasFeaturedCarousel, Converter={StaticResource BoolToVis}}"
-                                AutomationProperties.Name="Предыдущая рекомендуемая игра">
+                                AutomationProperties.Name="{DynamicResource A11yPreviousFeaturedGame}">
                             <Path Data="M14,4 L6,12 L14,20" Width="12" Height="18" Stretch="Fill"
                                   Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                   StrokeThickness="2" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
@@ -221,7 +221,7 @@
                                 Style="{StaticResource FeaturedCarouselButton}"
                                 Command="{Binding NextFeaturedGameCommand}"
                                 Visibility="{Binding HasFeaturedCarousel, Converter={StaticResource BoolToVis}}"
-                                AutomationProperties.Name="Следующая рекомендуемая игра">
+                                AutomationProperties.Name="{DynamicResource A11yNextFeaturedGame}">
                             <Path Data="M6,4 L14,12 L6,20" Width="12" Height="18" Stretch="Fill"
                                   Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                   StrokeThickness="2" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
@@ -270,11 +270,11 @@
                     </Grid.ColumnDefinitions>
                     <WrapPanel HorizontalAlignment="Left" Margin="6,0,0,0" VerticalAlignment="Center">
                         <Button Height="38" Padding="14,0" Margin="0,0,8,0"
-                                Command="{Binding SetDiscoveryTabCommand}" CommandParameter="В тренде">
+                                Command="{Binding SetDiscoveryTabCommand}" CommandParameter="Trending">
                             <Button.Style>
                                 <Style TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding SelectedDiscoveryTab}" Value="В тренде">
+                                        <DataTrigger Binding="{Binding SelectedDiscoveryTab}" Value="Trending">
                                             <Setter Property="Background" Value="#414141" />
                                             <Setter Property="Foreground" Value="White" />
                                         </DataTrigger>
@@ -290,11 +290,11 @@
                             </StackPanel>
                         </Button>
                         <Button Height="38" Padding="14,0" Margin="0,0,8,0"
-                                Command="{Binding SetDiscoveryTabCommand}" CommandParameter="Топ загрузок">
+                                Command="{Binding SetDiscoveryTabCommand}" CommandParameter="TopDownloads">
                             <Button.Style>
                                 <Style TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding SelectedDiscoveryTab}" Value="Топ загрузок">
+                                        <DataTrigger Binding="{Binding SelectedDiscoveryTab}" Value="TopDownloads">
                                             <Setter Property="Background" Value="#414141" />
                                             <Setter Property="Foreground" Value="White" />
                                         </DataTrigger>
@@ -310,11 +310,11 @@
                             </StackPanel>
                         </Button>
                         <Button Height="38" Padding="14,0" Margin="0,0,8,0"
-                                Command="{Binding SetDiscoveryTabCommand}" CommandParameter="По алфавиту">
+                                Command="{Binding SetDiscoveryTabCommand}" CommandParameter="Alphabetical">
                             <Button.Style>
                                 <Style TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding SelectedDiscoveryTab}" Value="По алфавиту">
+                                        <DataTrigger Binding="{Binding SelectedDiscoveryTab}" Value="Alphabetical">
                                             <Setter Property="Background" Value="#414141" />
                                             <Setter Property="Foreground" Value="White" />
                                         </DataTrigger>

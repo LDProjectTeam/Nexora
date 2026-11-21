@@ -47,6 +47,15 @@ namespace Nexora.App.ViewModels
         private GameCardViewModel? _activeTorrentDownload;
         private const int InitialCatalogCardCount = 36;
         private const int CatalogCardBatchSize = 24;
+
+        // Language-neutral state keys. The visible labels come from resources, so the
+        // current UI language never decides which tab/sort is active.
+        private const string TrendingTab = "Trending";
+        private const string TopDownloadsTab = "TopDownloads";
+        private const string AlphabeticalTab = "Alphabetical";
+        private const string SortByName = "Name";
+        private const string SortBySize = "Size";
+        private const string SortByStatus = "Status";
         private int _displayedCatalogCardCount;
         private readonly HashSet<string> _portableVersionLookups = new(StringComparer.Ordinal);
         private readonly SemaphoreSlim _portableVersionLookupGate = new(2, 2);
@@ -106,7 +115,7 @@ namespace Nexora.App.ViewModels
             RefreshCatalogCommand = new AsyncRelayCommand(LoadGamesAsync);
             ImportShortcutCommand = new AsyncRelayCommand(ImportShortcutFromPickerAsync);
             ExecuteOnlineSearchCommand = new AsyncRelayCommand(() => ExecuteOnlineSearchAsync(SearchQuery));
-            SetDiscoveryTabCommand = new RelayCommand(parameter => SetDiscoveryTab(parameter?.ToString() ?? "В тренде"));
+            SetDiscoveryTabCommand = new RelayCommand(parameter => SetDiscoveryTab(parameter?.ToString() ?? TrendingTab));
             LoadMoreCatalogGamesCommand = new AsyncRelayCommand(LoadMoreCatalogGamesAsync, CanLoadMoreCatalogGames);
             SurpriseMeCommand = new RelayCommand(ShowSurpriseGame);
             PreviousFeaturedGameCommand = new RelayCommand(_ => ChangeFeaturedGame(-1, true), _ => _featuredGames.Count > 1);
@@ -130,7 +139,7 @@ namespace Nexora.App.ViewModels
 
             _catalogView = new ListCollectionView(AllGameCards);
             _catalogView.Filter = FilterCatalog;
-            SetDiscoveryTab("В тренде");
+            SetDiscoveryTab(TrendingTab);
 
             _libraryView = new ListCollectionView(AllGameCards);
             _libraryView.Filter = FilterLibrary;
@@ -366,15 +375,15 @@ namespace Nexora.App.ViewModels
                     return LocalizationManager.GetString("SearchResultsFormat", SearchQuery);
                 return SelectedDiscoveryTab switch
                 {
-                    "Топ загрузок" => LocalizationManager.GetString("SectionTopDownloads"),
-                    "По алфавиту" => LocalizationManager.GetString("SectionAlphabetical"),
+                    TopDownloadsTab => LocalizationManager.GetString("SectionTopDownloads"),
+                    AlphabeticalTab => LocalizationManager.GetString("SectionAlphabetical"),
                     _ => LocalizationManager.GetString("SectionTrending")
                 };
             }
         }
 
 
-        private string _selectedDiscoveryTab = "В тренде";
+        private string _selectedDiscoveryTab = TrendingTab;
         public string SelectedDiscoveryTab
         {
             get => _selectedDiscoveryTab;
@@ -392,17 +401,17 @@ namespace Nexora.App.ViewModels
             SelectedDiscoveryTab = tab;
             _catalogView.SortDescriptions.Clear();
 
-            if (tab == "Топ загрузок")
+            if (tab == TopDownloadsTab)
             {
                 _catalogView.SortDescriptions.Add(new SortDescription(nameof(GameCardViewModel.ActiveDownloadsScore), ListSortDirection.Descending));
                 _catalogView.SortDescriptions.Add(new SortDescription(nameof(GameCardViewModel.PopularityScore), ListSortDirection.Descending));
                 _catalogView.SortDescriptions.Add(new SortDescription(nameof(GameCardViewModel.ReleaseDateSortKey), ListSortDirection.Descending));
             }
-            else if (tab == "По алфавиту")
+            else if (tab == AlphabeticalTab)
             {
                 _catalogView.SortDescriptions.Add(new SortDescription(nameof(GameCardViewModel.Name), ListSortDirection.Ascending));
             }
-            else if (tab == "В тренде")
+            else if (tab == TrendingTab)
             {
                 _catalogView.SortDescriptions.Add(new SortDescription(nameof(GameCardViewModel.ActiveDownloadsScore), ListSortDirection.Descending));
                 _catalogView.SortDescriptions.Add(new SortDescription(nameof(GameCardViewModel.PopularityScore), ListSortDirection.Descending));
@@ -411,8 +420,8 @@ namespace Nexora.App.ViewModels
 
             var browseOrder = tab switch
             {
-                "Топ загрузок" => GameBrowseOrder.MostDownloaded,
-                "По алфавиту" => GameBrowseOrder.Alphabetical,
+                TopDownloadsTab => GameBrowseOrder.MostDownloaded,
+                AlphabeticalTab => GameBrowseOrder.Alphabetical,
                 _ => (GameBrowseOrder?)null
             };
             if (_activeBrowseOrder != browseOrder)
@@ -864,7 +873,7 @@ namespace Nexora.App.ViewModels
                 (char)Random.Shared.Next('A', 'Z' + 1)
             });
 
-        private string _librarySortBy = "Название";
+        private string _librarySortBy = SortByName;
         public string LibrarySortBy
         {
             get => _librarySortBy;
@@ -876,13 +885,6 @@ namespace Nexora.App.ViewModels
                 }
             }
         }
-
-        public List<string> SortOptions { get; } = new()
-        {
-            "Название",
-            "Размер",
-            "Статус"
-        };
 
         private Task ImportShortcutFromPickerAsync()
         {
@@ -1366,7 +1368,7 @@ namespace Nexora.App.ViewModels
         {
             var candidateRelease = candidate.ReleaseCandidate!;
             var currentRelease = current.ReleaseCandidate!;
-            if (SelectedDiscoveryTab == "Топ загрузок")
+            if (SelectedDiscoveryTab == TopDownloadsTab)
             {
                 if (candidateRelease.Leechers != currentRelease.Leechers)
                     return candidateRelease.Leechers > currentRelease.Leechers;
@@ -1481,7 +1483,7 @@ namespace Nexora.App.ViewModels
             }
 
             if (string.IsNullOrWhiteSpace(SearchQuery)
-                && SelectedDiscoveryTab == "Топ загрузок"
+                && SelectedDiscoveryTab == TopDownloadsTab
                 && card.ReleaseCandidate == null
                 && _rutorTitleKeys.Contains(GetTitleKey(card.Name)))
             {
@@ -1489,7 +1491,7 @@ namespace Nexora.App.ViewModels
             }
 
             if (string.IsNullOrWhiteSpace(SearchQuery)
-                && SelectedDiscoveryTab == "В тренде"
+                && SelectedDiscoveryTab == TrendingTab
                 && (card.ReleaseCandidate is not GameReleaseCandidate trendRelease
                     || !string.Equals(trendRelease.SourceId, "rutor", StringComparison.OrdinalIgnoreCase)
                     || trendRelease.PublishDate is not DateTime trendDate
@@ -1503,8 +1505,8 @@ namespace Nexora.App.ViewModels
             {
                 var titleKey = GetTitleKey(card.Name);
                 if (string.IsNullOrWhiteSpace(SearchQuery)
-                    && SelectedDiscoveryTab != "В тренде"
-                    && SelectedDiscoveryTab != "Топ загрузок"
+                    && SelectedDiscoveryTab != TrendingTab
+                    && SelectedDiscoveryTab != TopDownloadsTab
                     && _builtInTitleKeys.Contains(titleKey))
                 {
                     return false;
@@ -1803,13 +1805,13 @@ namespace Nexora.App.ViewModels
             _libraryView.SortDescriptions.Clear();
             switch (LibrarySortBy)
             {
-                case "Размер":
+                case SortBySize:
                     _libraryView.SortDescriptions.Add(new SortDescription("SizeDisplay", ListSortDirection.Descending));
                     break;
-                case "Статус":
+                case SortByStatus:
                     _libraryView.SortDescriptions.Add(new SortDescription("State", ListSortDirection.Ascending));
                     break;
-                case "Название":
+                case SortByName:
                 default:
                     _libraryView.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
                     break;

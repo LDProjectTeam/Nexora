@@ -87,9 +87,9 @@
                         <ComboBox Width="150" Height="38" SelectedValuePath="Tag"
                                   SelectedValue="{Binding LibrarySortBy}"
                                   Style="{StaticResource ModernComboBox}">
-                            <ComboBoxItem Tag="Название" Content="{DynamicResource SettingsSortName}" />
-                            <ComboBoxItem Tag="Размер" Content="{DynamicResource SettingsSortSize}" />
-                            <ComboBoxItem Tag="Статус" Content="{DynamicResource SettingsSortStatus}" />
+                            <ComboBoxItem Tag="Name" Content="{DynamicResource SettingsSortName}" />
+                            <ComboBoxItem Tag="Size" Content="{DynamicResource SettingsSortSize}" />
+                            <ComboBoxItem Tag="Status" Content="{DynamicResource SettingsSortStatus}" />
                         </ComboBox>
                     </StackPanel>
                 </Grid>

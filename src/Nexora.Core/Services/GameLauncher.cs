@@ -42,7 +42,7 @@ namespace Nexora.Core.Services
                 if (IsRunning(definition.Id))
                 {
                     _logger.LogWarning("Game {GameId} is already running.", definition.Id);
-                    return OperationResult.Fail("Эта игра уже запущена.");
+                    return OperationResult.Fail(Localizer.T("LaunchAlreadyRunning", "Эта игра уже запущена."));
                 }
 
                 if (_settingsService?.Settings.AllowMultipleGames != true
@@ -50,7 +50,8 @@ namespace Nexora.Core.Services
                         && !string.Equals(status.GameId, definition.Id, StringComparison.OrdinalIgnoreCase)))
                 {
                     _logger.LogWarning("Blocked launch of {GameId}: another game is already running.", definition.Id);
-                    return OperationResult.Fail("Нельзя запустить игру, пока работает другая. Это ограничение можно отключить в настройках.");
+                    return OperationResult.Fail(Localizer.T("LaunchAnotherGameRunning",
+                        "Нельзя запустить игру, пока работает другая. Это ограничение можно отключить в настройках."));
                 }
 
                 return LaunchProcess(definition, installation);
@@ -91,12 +92,14 @@ namespace Nexora.Core.Services
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Could not open installer {SetupPath}", setupPath);
-                        return OperationResult.Fail($"Не удалось открыть установщик игры: {ex.Message}", ex);
+                        return OperationResult.Fail(
+                            string.Format(Localizer.T("LaunchSetupFailedFormat", "Не удалось открыть установщик игры: {0}"), ex.Message),
+                            ex);
                     }
                 }
 
                 _logger.LogError("No game executable found in {InstallPath}", installation.InstallPath);
-                return OperationResult.Fail("Не удалось определить exe-файл игры.");
+                return OperationResult.Fail(Localizer.T("LaunchExecutableNotFound", "Не удалось определить exe-файл игры."));
             }
 
             try
@@ -138,7 +141,9 @@ namespace Nexora.Core.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to launch {GameId}", definition.Id);
-                return OperationResult.Fail($"Не удалось запустить игру: {ex.Message}", ex);
+                return OperationResult.Fail(
+                    string.Format(Localizer.T("LaunchFailedFormat", "Не удалось запустить игру: {0}"), ex.Message),
+                    ex);
             }
         }
 

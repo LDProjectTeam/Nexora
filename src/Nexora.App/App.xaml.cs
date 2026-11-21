@@ -18,6 +18,19 @@ namespace Nexora.App
 {
     public partial class App : Application
     {
+        static App()
+        {
+            // App.xaml is parsed before OnStartup runs. A malformed resource dictionary
+            // (for example a duplicate x:Key) used to kill the process with no trace at
+            // all. Subscribe early so at least the log file records the exception.
+            AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+            {
+                AppLog.Fatal("Startup", "Unhandled exception (possibly while loading App.xaml).",
+                    args.ExceptionObject as Exception);
+                AppLog.Flush();
+            };
+        }
+
         private IServiceProvider? _serviceProvider;
         private MainWindow? _mainWindow;
         private Mutex? _singleInstanceMutex;
@@ -137,12 +150,6 @@ namespace Nexora.App
         /// </summary>
         private void InstallGlobalExceptionHandlers()
         {
-            AppDomain.CurrentDomain.UnhandledException += (_, args) =>
-            {
-                AppLog.Fatal("AppDomain", "Unhandled exception.", args.ExceptionObject as Exception);
-                AppLog.Flush();
-            };
-
             AppDomain.CurrentDomain.ProcessExit += (_, _) => AppLog.Flush();
 
             TaskScheduler.UnobservedTaskException += (_, args) =>
