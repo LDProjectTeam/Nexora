@@ -42,8 +42,10 @@ jobs:
           # section at the latest published release asset when one exists.
           $manifestPath = Join-Path $site 'releases.json'
           $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
-          try {
-            $release = gh api "repos/$env:GITHUB_REPOSITORY/releases/latest" | ConvertFrom-Json
+          $manifest.current.installer = "https://github.com/$env:GITHUB_REPOSITORY/releases/latest"
+          $releaseJson = gh api "repos/$env:GITHUB_REPOSITORY/releases/latest" 2>$null
+          if ($LASTEXITCODE -eq 0 -and $releaseJson) {
+            $release = $releaseJson | ConvertFrom-Json
             $asset = $release.assets | Where-Object { $_.name -like 'Nexora-Setup-*-win-x64.exe' } | Select-Object -First 1
             if ($asset) {
               $manifest.current.installer = $asset.browser_download_url
@@ -51,11 +53,7 @@ jobs:
               $manifest.current.sizeBytes = $asset.size
               $manifest.current.fileModifiedUtc = $release.published_at
               $manifest.current.releaseDate = $release.published_at
-            } else {
-              $manifest.current.installer = "https://github.com/$env:GITHUB_REPOSITORY/releases/latest"
             }
-          } catch {
-            $manifest.current.installer = "https://github.com/$env:GITHUB_REPOSITORY/releases/latest"
           }
           $manifest | ConvertTo-Json -Depth 6 | Set-Content $manifestPath -Encoding utf8
 

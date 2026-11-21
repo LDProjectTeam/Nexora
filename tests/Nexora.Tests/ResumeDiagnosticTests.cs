@@ -50,7 +50,18 @@ namespace Nexora.Tests
 
         private static string? FindRqbitExe()
         {
-            var candidates = new[] { @"d:\launcher\tools\bin\rqbit.exe" };
+            var candidates = new List<string>
+            {
+                Path.Combine(AppContext.BaseDirectory, "rqbit.exe"),
+                Path.GetFullPath(Path.Combine(
+                    AppContext.BaseDirectory, "..", "..", "..", "..", "tools", "bin", "rqbit.exe"))
+            };
+
+            for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir != null; dir = dir.Parent)
+            {
+                candidates.Add(Path.Combine(dir.FullName, "tools", "bin", "rqbit.exe"));
+            }
+
             return candidates.FirstOrDefault(File.Exists);
         }
 
