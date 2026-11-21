@@ -627,7 +627,7 @@
                                                 CanContentScroll="{TemplateBinding CanContentScroll}" />
                         <ScrollBar x:Name="PART_VerticalScrollBar"
                                    Grid.Column="1" Grid.Row="0"
-                                   Margin="0,0,4,0"
+                                   Margin="0,8,8,8"
                                    shell:WindowChrome.IsHitTestVisibleInChrome="True"
                                    Value="{TemplateBinding VerticalOffset}"
                                    Maximum="{TemplateBinding ScrollableHeight}"

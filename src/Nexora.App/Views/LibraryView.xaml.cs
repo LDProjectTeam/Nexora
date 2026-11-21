@@ -13,6 +13,11 @@ namespace Nexora.App.Views
 {
     public partial class LibraryView : UserControl
     {
+        public static readonly DependencyProperty LibraryCardWidthProperty = DependencyProperty.Register(
+            nameof(LibraryCardWidth), typeof(double), typeof(LibraryView), new PropertyMetadata(230d));
+
+        public double LibraryCardWidth => (double)GetValue(LibraryCardWidthProperty);
+
         private readonly DispatcherTimer _visibleArtworkTimer;
         private MainViewModel? _viewModel;
         private DateTime _lastArtworkScrollUtc;
@@ -24,14 +29,44 @@ namespace Nexora.App.Views
             _visibleArtworkTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
             _visibleArtworkTimer.Tick += (_, _) => UpdateVisibleArtwork();
             DataContextChanged += LibraryView_DataContextChanged;
-            Loaded += (_, _) => ScheduleVisibleArtworkUpdate();
+            Loaded += (_, _) =>
+            {
+                UpdateLibraryCardWidth();
+                ScheduleVisibleArtworkUpdate();
+            };
             Unloaded += (_, _) => _visibleArtworkTimer.Stop();
             IsVisibleChanged += (_, e) =>
             {
                 if (e.NewValue is true)
+                {
+                    UpdateLibraryCardWidth();
                     ScheduleVisibleArtworkUpdate();
+                }
             };
-            SizeChanged += (_, _) => ScheduleVisibleArtworkUpdate();
+            SizeChanged += (_, _) =>
+            {
+                UpdateLibraryCardWidth();
+                ScheduleVisibleArtworkUpdate();
+            };
+        }
+
+        /// <summary>
+        /// Stretches the cards to fill whole columns instead of leaving a ragged
+        /// empty strip after the last card when the window is resized.
+        /// </summary>
+        private void UpdateLibraryCardWidth()
+        {
+            const double cardGap = 6;      // 3 px on each side of a card
+            const double minCardWidth = 218;
+            const double maxCardWidth = 250;
+
+            var available = ActualWidth - 72; // page padding + scrollbar
+            if (available <= 0)
+                return;
+
+            var columns = Math.Max(2, (int)Math.Floor((available + cardGap) / (minCardWidth + cardGap)));
+            var cardWidth = Math.Clamp((available - columns * cardGap) / columns, minCardWidth, maxCardWidth);
+            SetValue(LibraryCardWidthProperty, cardWidth);
         }
 
         private void LibraryView_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -122,14 +157,19 @@ namespace Nexora.App.Views
         private void Library_PreviewDragOver(object sender, DragEventArgs e)
         {
             var paths = e.Data.GetData(DataFormats.FileDrop) as string[];
-            e.Effects = paths?.Any(path => string.Equals(Path.GetExtension(path), ".lnk", StringComparison.OrdinalIgnoreCase)) == true
-                ? DragDropEffects.Copy
-                : DragDropEffects.None;
+            var canDrop = paths?.Any(path => string.Equals(Path.GetExtension(path), ".lnk", StringComparison.OrdinalIgnoreCase)) == true;
+            e.Effects = canDrop ? DragDropEffects.Copy : DragDropEffects.None;
+            LibraryDropOverlay.Visibility = canDrop ? Visibility.Visible : Visibility.Collapsed;
             e.Handled = true;
         }
 
+        private void Library_PreviewDragLeave(object sender, DragEventArgs e)
+            => LibraryDropOverlay.Visibility = Visibility.Collapsed;
+
         private async void Library_PreviewDrop(object sender, DragEventArgs e)
         {
+            LibraryDropOverlay.Visibility = Visibility.Collapsed;
+
             if (DataContext is not MainViewModel viewModel || e.Data.GetData(DataFormats.FileDrop) is not string[] paths)
                 return;
 

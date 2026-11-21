@@ -28,7 +28,7 @@
                                                     CanContentScroll="{TemplateBinding CanContentScroll}" />
                             <ScrollBar x:Name="PART_VerticalScrollBar"
                                        Grid.Column="1" Grid.Row="0"
-                                       Margin="0,40,8,12"
+                                       Margin="0,8,8,12"
                                        shell:WindowChrome.IsHitTestVisibleInChrome="True"
                                        Value="{TemplateBinding VerticalOffset}"
                                        Maximum="{TemplateBinding ScrollableHeight}"
@@ -203,7 +203,7 @@
     <ScrollViewer Style="{StaticResource SettingsScrollViewerStyle}"
                   VerticalScrollBarVisibility="Auto"
                   HorizontalScrollBarVisibility="Disabled">
-        <StackPanel Margin="32,52,32,36" MaxWidth="1040" HorizontalAlignment="Stretch">
+        <StackPanel Margin="32,24,32,28" MaxWidth="1040" HorizontalAlignment="Stretch">
 
             <!-- Page Header -->
             <Grid Margin="0,0,0,22">

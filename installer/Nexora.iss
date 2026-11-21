@@ -1,6 +1,6 @@
 #define AppName "Nexora"
 #ifndef AppVersion
-  #define AppVersion "1.0.67"
+  #define AppVersion "1.0.68"
 #endif
 #define AppExeName "Nexora.exe"
 #define FwRuleTCP "Nexora - BitTorrent TCP 4240-4249"

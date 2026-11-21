@@ -56,6 +56,10 @@ namespace Nexora.App.ViewModels
         private const string SortByName = "Name";
         private const string SortBySize = "Size";
         private const string SortByStatus = "Status";
+        private const string LibraryFilterAll = "All";
+        private const string LibraryFilterInstalled = "Installed";
+        private const string LibraryFilterDownloads = "Downloads";
+        private const string LibraryFilterUpdates = "Updates";
         private int _displayedCatalogCardCount;
         private readonly HashSet<string> _portableVersionLookups = new(StringComparer.Ordinal);
         private readonly SemaphoreSlim _portableVersionLookupGate = new(2, 2);
@@ -103,6 +107,7 @@ namespace Nexora.App.ViewModels
             LocalizationManager.LanguageChanged += (_, _) =>
             {
                 OnPropertyChanged(nameof(SectionTitle));
+                OnPropertyChanged(nameof(CurrentPageTitle));
                 OnPropertyChanged(nameof(TimeGreeting));
                 foreach (var gameCard in AllGameCards)
                     gameCard.NotifyLocalizationChanged();
@@ -114,6 +119,13 @@ namespace Nexora.App.ViewModels
             NavigateSettingsCommand = new RelayCommand(() => CurrentView = "Settings");
             RefreshCatalogCommand = new AsyncRelayCommand(LoadGamesAsync);
             ImportShortcutCommand = new AsyncRelayCommand(ImportShortcutFromPickerAsync);
+            SetLibraryFilterCommand = new RelayCommand(parameter => LibraryFilter = parameter?.ToString() ?? LibraryFilterAll);
+            ClearLibrarySearchCommand = new RelayCommand(() => LibrarySearchQuery = string.Empty);
+            ClearLibraryFiltersCommand = new RelayCommand(() =>
+            {
+                LibrarySearchQuery = string.Empty;
+                LibraryFilter = LibraryFilterAll;
+            });
             ExecuteOnlineSearchCommand = new AsyncRelayCommand(() => ExecuteOnlineSearchAsync(SearchQuery));
             SetDiscoveryTabCommand = new RelayCommand(parameter => SetDiscoveryTab(parameter?.ToString() ?? TrendingTab));
             LoadMoreCatalogGamesCommand = new AsyncRelayCommand(LoadMoreCatalogGamesAsync, CanLoadMoreCatalogGames);
@@ -146,6 +158,19 @@ namespace Nexora.App.ViewModels
             _libraryView.IsLiveFiltering = true;
             _libraryView.LiveFilteringProperties.Add(nameof(GameCardViewModel.IsInstalled));
             _libraryView.LiveFilteringProperties.Add(nameof(GameCardViewModel.IsDownloading));
+            _libraryView.LiveFilteringProperties.Add(nameof(GameCardViewModel.IsPaused));
+            _libraryView.LiveFilteringProperties.Add(nameof(GameCardViewModel.State));
+
+            // The sidebar keeps the full library visible: the page filters only
+            // change the main grid, while search stays shared between both.
+            _sidebarLibraryView = new ListCollectionView(AllGameCards);
+            _sidebarLibraryView.Filter = FilterSidebarLibrary;
+            _sidebarLibraryView.IsLiveFiltering = true;
+            _sidebarLibraryView.LiveFilteringProperties.Add(nameof(GameCardViewModel.IsInstalled));
+            _sidebarLibraryView.LiveFilteringProperties.Add(nameof(GameCardViewModel.IsDownloading));
+            _sidebarLibraryView.LiveFilteringProperties.Add(nameof(GameCardViewModel.IsPaused));
+            _sidebarLibraryView.SortDescriptions.Add(new SortDescription(
+                nameof(GameCardViewModel.Name), ListSortDirection.Ascending));
 
             _downloadsView = new ListCollectionView(AllGameCards);
             _downloadsView.Filter = FilterDownloads;
@@ -171,6 +196,9 @@ namespace Nexora.App.ViewModels
         public RelayCommand NavigateSettingsCommand { get; }
         public AsyncRelayCommand RefreshCatalogCommand { get; }
         public AsyncRelayCommand ImportShortcutCommand { get; }
+        public RelayCommand SetLibraryFilterCommand { get; }
+        public RelayCommand ClearLibrarySearchCommand { get; }
+        public RelayCommand ClearLibraryFiltersCommand { get; }
         public AsyncRelayCommand ExecuteOnlineSearchCommand { get; }
         public RelayCommand SetDiscoveryTabCommand { get; }
         public AsyncRelayCommand LoadMoreCatalogGamesCommand { get; }
@@ -238,6 +266,9 @@ namespace Nexora.App.ViewModels
         private readonly ListCollectionView _libraryView;
         public ICollectionView LibraryGames => _libraryView;
 
+        private readonly ListCollectionView _sidebarLibraryView;
+        public ICollectionView SidebarLibraryGames => _sidebarLibraryView;
+
         private readonly ListCollectionView _downloadsView;
         public ICollectionView DownloadGames => _downloadsView;
         public bool HasActiveTorrentDownload => _activeTorrentDownload != null;
@@ -300,6 +331,7 @@ namespace Nexora.App.ViewModels
                     OnPropertyChanged(nameof(IsLibraryActive));
                     OnPropertyChanged(nameof(IsDownloadsActive));
                     OnPropertyChanged(nameof(IsSettingsActive));
+                    OnPropertyChanged(nameof(CurrentPageTitle));
                     UpdateFeaturedTimerState();
 
                     if (value == "Settings")
@@ -320,6 +352,15 @@ namespace Nexora.App.ViewModels
         public bool IsLibraryActive => CurrentView == "Library";
         public bool IsDownloadsActive => CurrentView == "Downloads";
         public bool IsSettingsActive => CurrentView == "Settings";
+
+        /// <summary>Persistent page label used by the window title strip.</summary>
+        public string CurrentPageTitle => CurrentView switch
+        {
+            "Library" => LocalizationManager.GetString("NavLibrary"),
+            "Downloads" => LocalizationManager.GetString("NavDownloads"),
+            "Settings" => LocalizationManager.GetString("NavSettings"),
+            _ => LocalizationManager.GetString("NavHome")
+        };
 
         private CancellationTokenSource? _searchDebounceCts;
         private bool _isSearchingOnline;
@@ -362,8 +403,65 @@ namespace Nexora.App.ViewModels
                 if (SetProperty(ref _librarySearchQuery, value))
                 {
                     _libraryView.Refresh();
+                    _sidebarLibraryView.Refresh();
+                    OnPropertyChanged(nameof(HasLibrarySearchQuery));
+                    OnPropertyChanged(nameof(IsLibraryFilterEmpty));
                 }
             }
+        }
+
+        private string _libraryFilter = LibraryFilterAll;
+        public string LibraryFilter
+        {
+            get => _libraryFilter;
+            set
+            {
+                if (SetProperty(ref _libraryFilter, value))
+                {
+                    OnPropertyChanged(nameof(IsLibraryFilterAll));
+                    OnPropertyChanged(nameof(IsLibraryFilterInstalled));
+                    OnPropertyChanged(nameof(IsLibraryFilterDownloads));
+                    OnPropertyChanged(nameof(IsLibraryFilterUpdates));
+                    _libraryView.Refresh();
+                    OnPropertyChanged(nameof(IsLibraryFilterEmpty));
+                }
+            }
+        }
+
+        public bool IsLibraryFilterAll => LibraryFilter == LibraryFilterAll;
+        public bool IsLibraryFilterInstalled => LibraryFilter == LibraryFilterInstalled;
+        public bool IsLibraryFilterDownloads => LibraryFilter == LibraryFilterDownloads;
+        public bool IsLibraryFilterUpdates => LibraryFilter == LibraryFilterUpdates;
+        public bool HasLibrarySearchQuery => !string.IsNullOrWhiteSpace(LibrarySearchQuery);
+
+        public int LibraryTotalCount => AllGameCards.Count(card => card.IsInstalled || card.IsDownloading || card.IsPaused);
+        public int LibraryInstalledCount => AllGameCards.Count(card => card.IsInstalled);
+        public int LibraryDownloadCount => AllGameCards.Count(card => card.IsDownloading || card.IsPaused);
+        public int LibraryUpdateCount => AllGameCards.Count(card => card.State == InstallState.UpdateAvailable);
+        public bool HasLibraryGames => LibraryTotalCount > 0;
+        public bool IsLibraryEmpty => !HasLibraryGames;
+        public bool IsLibraryFilterEmpty => HasLibraryGames && _libraryView.IsEmpty;
+        public bool HasLibraryUpdates => LibraryUpdateCount > 0;
+
+        public long LibrarySizeBytes => AllGameCards
+            .Where(card => card.IsInstalled)
+            .Sum(card => card.LibrarySizeBytes);
+        public string LibrarySizeText => PathHelper.FormatBytes(LibrarySizeBytes);
+        public bool HasLibrarySize => LibrarySizeBytes > 0;
+
+        private void NotifyLibrarySummaryChanged()
+        {
+            OnPropertyChanged(nameof(LibraryTotalCount));
+            OnPropertyChanged(nameof(LibraryInstalledCount));
+            OnPropertyChanged(nameof(LibraryDownloadCount));
+            OnPropertyChanged(nameof(LibraryUpdateCount));
+            OnPropertyChanged(nameof(HasLibraryGames));
+            OnPropertyChanged(nameof(IsLibraryEmpty));
+            OnPropertyChanged(nameof(IsLibraryFilterEmpty));
+            OnPropertyChanged(nameof(HasLibraryUpdates));
+            OnPropertyChanged(nameof(LibrarySizeBytes));
+            OnPropertyChanged(nameof(LibrarySizeText));
+            OnPropertyChanged(nameof(HasLibrarySize));
         }
 
 
@@ -1479,24 +1577,38 @@ namespace Nexora.App.ViewModels
             return true;
         }
 
-        private bool FilterLibrary(object obj)
+        private bool FilterSidebarLibrary(object obj)
         {
             if (obj is not GameCardViewModel card) return false;
-            if (!card.IsInstalled && !card.IsDownloading) return false;
+            if (!card.IsInstalled && !card.IsDownloading && !card.IsPaused) return false;
+            return MatchesLibrarySearch(card);
+        }
 
-            if (!string.IsNullOrWhiteSpace(LibrarySearchQuery))
+        private bool FilterLibrary(object obj)
+        {
+            if (!FilterSidebarLibrary(obj)) return false;
+            var card = (GameCardViewModel)obj;
+
+            return LibraryFilter switch
             {
-                var q = LibrarySearchQuery.Trim();
-                var match = GameSearchQueryMatcher.MatchesTitleCharacters(q, card.Name)
-                    || (card.ReleaseCandidate != null && (
-                        (!string.IsNullOrEmpty(card.ReleaseCandidate.AltTitle) && GameSearchQueryMatcher.MatchesTitleCharacters(q, card.ReleaseCandidate.AltTitle))
-                        || (!string.IsNullOrEmpty(card.ReleaseCandidate.RawTitle) && GameSearchQueryMatcher.MatchesTitleCharacters(q, card.ReleaseCandidate.RawTitle))
-                    ));
-                if (!match)
-                    return false;
-            }
+                LibraryFilterInstalled => card.IsInstalled,
+                LibraryFilterDownloads => card.IsDownloading || card.IsPaused,
+                LibraryFilterUpdates => card.State == InstallState.UpdateAvailable,
+                _ => true
+            };
+        }
 
-            return true;
+        private bool MatchesLibrarySearch(GameCardViewModel card)
+        {
+            if (string.IsNullOrWhiteSpace(LibrarySearchQuery))
+                return true;
+
+            var q = LibrarySearchQuery.Trim();
+            return GameSearchQueryMatcher.MatchesTitleCharacters(q, card.Name)
+                || (card.ReleaseCandidate != null && (
+                    (!string.IsNullOrEmpty(card.ReleaseCandidate.AltTitle) && GameSearchQueryMatcher.MatchesTitleCharacters(q, card.ReleaseCandidate.AltTitle))
+                    || (!string.IsNullOrEmpty(card.ReleaseCandidate.RawTitle) && GameSearchQueryMatcher.MatchesTitleCharacters(q, card.ReleaseCandidate.RawTitle))
+                ));
         }
 
         private string _downloadsSearchQuery = string.Empty;
@@ -1750,13 +1862,16 @@ namespace Nexora.App.ViewModels
             PauseAllDownloadsCommand.RaiseCanExecuteChanged();
             ResumeAllDownloadsCommand.RaiseCanExecuteChanged();
             ClearCompletedDownloadsCommand.RaiseCanExecuteChanged();
+            NotifyLibrarySummaryChanged();
         }
 
         private void RefreshViews()
         {
             RefreshCatalogView();
             _libraryView.Refresh();
+            _sidebarLibraryView.Refresh();
             ApplyLibrarySorting();
+            NotifyLibrarySummaryChanged();
         }
 
         private void ApplyLibrarySorting()
@@ -1765,14 +1880,14 @@ namespace Nexora.App.ViewModels
             switch (LibrarySortBy)
             {
                 case SortBySize:
-                    _libraryView.SortDescriptions.Add(new SortDescription("SizeDisplay", ListSortDirection.Descending));
+                    _libraryView.SortDescriptions.Add(new SortDescription(nameof(GameCardViewModel.LibrarySizeBytes), ListSortDirection.Descending));
                     break;
                 case SortByStatus:
-                    _libraryView.SortDescriptions.Add(new SortDescription("State", ListSortDirection.Ascending));
+                    _libraryView.SortDescriptions.Add(new SortDescription(nameof(GameCardViewModel.State), ListSortDirection.Ascending));
                     break;
                 case SortByName:
                 default:
-                    _libraryView.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
+                    _libraryView.SortDescriptions.Add(new SortDescription(nameof(GameCardViewModel.Name), ListSortDirection.Ascending));
                     break;
             }
         }
@@ -1797,6 +1912,7 @@ namespace Nexora.App.ViewModels
                 var card = AllGameCards.FirstOrDefault(c => string.Equals(c.Id, installation.GameId, StringComparison.OrdinalIgnoreCase));
                 card?.UpdateInstallation(installation);
                 _libraryView.Refresh();
+                _sidebarLibraryView.Refresh();
                 _downloadsView.Refresh();
                 RefreshActiveTorrentDownload();
             }

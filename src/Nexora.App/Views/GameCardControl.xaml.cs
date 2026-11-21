@@ -57,6 +57,12 @@ namespace Nexora.App.Views
                     return;
                 }
 
+                if (current is LibraryView library)
+                {
+                    Width = library.LibraryCardWidth;
+                    return;
+                }
+
                 current = VisualTreeHelper.GetParent(current);
             }
 

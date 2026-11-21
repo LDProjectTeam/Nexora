@@ -389,6 +389,10 @@ namespace Nexora.App.ViewModels
             (DateTime.TryParse(_definition.ReleaseDate, out var releaseDate) ? releaseDate : DateTime.MinValue);
         public string SizeDisplay => PathHelper.FormatBytes(_definition.SizeBytes);
         public string DownloadSizeDisplay => PathHelper.FormatBytes(_definition.DownloadSizeBytes);
+        /// <summary>Installed size for the library summary; a measured size wins over the catalog estimate.</summary>
+        public long LibrarySizeBytes => _installation is { InstalledSizeBytes: > 0 } installation
+            ? installation.InstalledSizeBytes
+            : _definition.SizeBytes;
         public string TotalDownloadSizeDisplay => PathHelper.FormatBytes(EffectiveTotalBytes);
         public string DownloadedBytesDisplay => PathHelper.FormatBytes(EffectiveDownloadedBytes);
         public long CurrentDownloadSpeedBps => (State == InstallState.Downloading && !IsQueued && _progress != null)

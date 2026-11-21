@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
              xmlns:views="clr-namespace:Nexora.App.Views"
              xmlns:vm="clr-namespace:Nexora.App.ViewModels"
              mc:Ignorable="d"
@@ -55,57 +54,7 @@
     </UserControl.Resources>
 
     <Grid Background="{StaticResource BgDarkBrush}">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="58" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
-        <!-- Hydra-inspired top bar with Nexora navigation and search. -->
-        <Grid Grid.Row="0" Margin="24,0,128,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="{DynamicResource HomeTitle}"
-                       VerticalAlignment="Center"
-                       FontSize="16"
-                       FontWeight="SemiBold"
-                       Foreground="{StaticResource TextPrimaryBrush}" />
-            <Grid Grid.Column="1" Width="270" VerticalAlignment="Center">
-                <TextBox x:Name="HomeSearchBox"
-                         Height="38"
-                         Style="{StaticResource ModernTextBox}"
-                         shell:WindowChrome.IsHitTestVisibleInChrome="True"
-                         Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
-                         Padding="38,0,12,0"
-                         VerticalContentAlignment="Center"
-                         FontSize="13">
-                    <TextBox.InputBindings>
-                        <KeyBinding Key="Return" Command="{Binding ExecuteOnlineSearchCommand}" />
-                    </TextBox.InputBindings>
-                </TextBox>
-                <Viewbox Width="15" Height="15" Margin="12,0,0,0"
-                         HorizontalAlignment="Left" VerticalAlignment="Center" IsHitTestVisible="False">
-                    <Path Data="M8,1 A7,7 0 1 0 8,15 A7,7 0 1 0 8,1 M13,13 L19,19" Fill="Transparent"
-                          Stroke="{StaticResource TextSecondaryBrush}" StrokeThickness="1.8" />
-                </Viewbox>
-                <TextBlock Text="{DynamicResource HomeSearchPlaceholder}" FontSize="13" Margin="38,0,0,0"
-                           HorizontalAlignment="Left" VerticalAlignment="Center"
-                           IsHitTestVisible="False" Foreground="{StaticResource TextSecondaryBrush}">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding SearchQuery}" Value=""><Setter Property="Visibility" Value="Visible" /></DataTrigger>
-                                <DataTrigger Binding="{Binding IsKeyboardFocused, ElementName=HomeSearchBox}" Value="True"><Setter Property="Visibility" Value="Collapsed" /></DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-            </Grid>
-        </Grid>
-
-        <ScrollViewer x:Name="CatalogScrollViewer" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+        <ScrollViewer x:Name="CatalogScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
                               ScrollChanged="CatalogScrollViewer_ScrollChanged">
             <StackPanel>
                 <!-- Featured game -->

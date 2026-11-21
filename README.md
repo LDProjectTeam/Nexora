@@ -1,134 +1,180 @@
-# Nexora — игровой лаунчер для Windows (.NET 8 + WPF)
+<div align="center">
 
-Полнофункциональный, модульный и легко расширяемый игровой лаунчер для Windows со встроенным **BitTorrent-движком на базе rqbit (Rust, отдельный сайдкар)**, поддержкой HTTP(S) докачки с контролем длины и idle-timeout, проверкой целостности файлов по **SHA-256**, атомарной установкой, безопасным удалением и обновлениями.
+<img src="website/assets/logo.png" width="88" alt="Nexora">
+
+# 🎮 Nexora
+
+**Игровой лаунчер для Windows: каталог, загрузки и библиотека в одном окне**
+
+[![Version](https://img.shields.io/badge/version-1.0.68-3ddc97?style=for-the-badge)](https://github.com/LDProjectTeam/Nexora/releases/latest)
+[![Platform](https://img.shields.io/badge/platform-Windows-0078D6?style=for-the-badge&logo=windows)](https://github.com/LDProjectTeam/Nexora/releases/latest)
+[![.NET](https://img.shields.io/badge/.NET-8-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
+[![License](https://img.shields.io/badge/license-Proprietary-darkred?style=for-the-badge)](LICENSE)
+[![CI](https://github.com/LDProjectTeam/Nexora/actions/workflows/ci.yml/badge.svg)](https://github.com/LDProjectTeam/Nexora/actions/workflows/ci.yml)
+
+[![Главный экран](website/assets/screens/home.png)](website/assets/screens/home.png)
+[![Библиотека](website/assets/screens/library.png)](website/assets/screens/library.png)
+[![Карточка игры](website/assets/screens/details.png)](website/assets/screens/details.png)
+
+</div>
+
+**RU** [Русский](#русский) | **EN** [English](#english)
 
 ---
 
-## 🚀 Быстрый запуск
+## Русский
 
-Дважды кликните по файлу:
-```
-d:\launcher\Run-Launcher.bat
-```
-Либо напрямую запустите скомпилированный бинарник:
-```
-d:\launcher\publish\Nexora.exe
-```
+**Лаунчер для Windows, который ведёт игру от поиска в каталоге до кнопки «Играть»**
 
----
+> Nexora ищет игры в подключённых источниках, качает их через BitTorrent или HTTP с докачкой, проверяет файлы по SHA-256 и собирает установленное в одну библиотеку.
 
-## 📦 Сборка установщика
+[**⬇️ Скачать**](https://github.com/LDProjectTeam/Nexora/releases/latest) · [**🌐 Сайт**](https://ldprojectteam.github.io/Nexora/) · [**🐛 Сообщить о баге**](https://github.com/LDProjectTeam/Nexora/issues)
 
-Установщик Windows собирается через Inno Setup 6:
+### ✨ Возможности
+
+| Функция | Описание |
+| --- | --- |
+| 🎮 **Каталог игр** | Поиск, подборки «В тренде / Топ загрузок / По алфавиту / Сюрприз», фильтры и обложки из Steam |
+| 🔎 **Свои источники** | Встроенный каталог Rutor и подключение JSON-каталогов по ссылке |
+| 🧲 **BitTorrent** | Движок rqbit на Rust: magnet-ссылки, `.torrent`, fast resume, лимиты скорости |
+| ⬇️ **HTTP / HTTPS** | Докачка через `Range`, временная папка `staging`, idle-timeout |
+| 🛡️ **Проверка SHA-256** | Хеши финальных файлов сверяются после распаковки; при несовпадении установка отменяется |
+| 🧩 **Атомарная установка** | Обновление не повреждает рабочую копию, если загрузка оборвалась |
+| 📚 **Библиотека** | Статусы установки и обновлений, запуск игры, проверка файлов, папка и удаление |
+| 🔄 **Версии и обновления** | Выбор подходящего релиза игры и обновление установленной копии |
+| 🎨 **Интерфейс** | Тёмная тема, цветовые акценты, языки RU / EN / UK, кэш обложек в WebP |
+
+### 🚀 Установка
+
+1. Открой [**Releases**](https://github.com/LDProjectTeam/Nexora/releases/latest)
+2. Скачай `Nexora-Setup-1.0.68-win-x64.exe`
+3. Запусти установщик и выбери папку библиотеки при первом старте
+
+Установка идёт в профиль пользователя, права администратора не нужны. `.NET` ставить отдельно не требуется: сборка self-contained.
+
+> Установщик не подписан цифровым сертификатом, поэтому Windows SmartScreen может показать предупреждение об издателе.
+
+### 🔧 Сборка из исходников
+
+Нужны .NET 8 SDK, PowerShell и [Inno Setup 6](https://jrsoftware.org/isinfo.php).
 
 ```powershell
+dotnet restore Nexora.sln
+dotnet build Nexora.sln -c Release
+dotnet test tests/Nexora.Tests/Nexora.Tests.csproj -c Release
+
+# запуск собранного лаунчера
+.\Run-Launcher.bat
+
+# установщик в artifacts\installer
 .\installer\Build-Installer.ps1
+
+# статический сайт в website\dist
+.\website\Build-Website.ps1
 ```
 
-Результат появится в `artifacts\installer`. Установка выполняется в профиль
-пользователя без прав администратора; библиотека игр по умолчанию создаётся в
-`%USERPROFILE%\Games\Nexora` и не удаляется при деинсталляции.
+### 🛠 Архитектура
 
-При установке Windows один раз запросит UAC — только для добавления правил
-брандмауэра (TCP/UDP 4240–4249). Если отклонить запрос, лаунчер продолжит работать
-через исходящие подключения и UPnP, но входящие пиры могут быть недоступны.
+```
+Nexora/
+├── src/
+│   ├── Nexora.Core/          # каталог, загрузчики, установка, проверка файлов
+│   └── Nexora.App/           # WPF-интерфейс, view models, темы, локализация
+├── sidecar/                  # вспомогательные сервисы
+├── tools/bin/                # rqbit.exe и служебные утилиты
+├── installer/                # Inno Setup 6 и сборка установщика
+├── website/                  # статический сайт и скриншоты
+├── docs/                     # добавление игр и оптимизация
+└── tests/Nexora.Tests/       # xUnit-тесты
+```
+
+### 📚 Документация
+
+- [Как добавить игру в каталог](docs/ADDING_GAMES.md)
+- [Оптимизация кэша и обложек](docs/OPTIMIZATION.md)
+- [Сборка и публикация сайта](website/README.md)
 
 ---
 
-## 🎮 Реализованный функционал
+## English
 
-### 1. Главный экран (Каталог игр)
-- Темный современный UI (`Dark Mode`) с неоновыми акцентами, карточками игр и плавной версткой.
-- Карточки с обложками, описанием, размером, версией и динамическим статусом:
-  - *«Не установлена»* (большая кнопка «Установить»)
-  - *«Загрузка...»* (прогресс-бар, скорость КБ/МБ/с, оставшееся время, процент, кнопка «Пауза»)
-  - *«На паузе»* (кнопка «Продолжить»)
-  - *«Установлена»* (кнопка «Играть», проверка файлов, удаление, открытие папки)
-  - *«Есть обновление»* (кнопка «Обновить»)
-  - *«В игре»* (индикация активного процесса)
-- Поиск по названию и описанию игр в реальном времени.
-- Фильтры по категориям (Все, Action, Cyberpunk, Инди, Shooter и др.).
+**A Windows launcher that takes a game from catalog search to the Play button**
 
-### 2. Загрузка и установка
-- **Встроенный BitTorrent-движок** на базе `rqbit` (Rust, отдельный процесс `Nexora.TorrentEngine.exe`):
-  - Поддержка `magnet:`-ссылок и `.torrent`-файлов по URL.
-  - Сохранение `fast resume` данных при паузе или закрытии лаунчера.
-  - Ограничение скорости скачивания и отдачи, автоматическое восстановление после зависаний.
-- **HTTP / HTTPS загрузчик**:
-  - Поддержка возобновления докачки через заголовок `Range`.
-  - Безопасное скачивание во временную папку (`staging`).
-  - Атомарное перемещение в финальную директорию после проверки.
-- **Поддержка локальных/сетевых источников** (`local`, `file://`, SMB шары) для тестирования и распространения.
+> Nexora finds games in connected sources, downloads them over BitTorrent or HTTP with resume, verifies files by SHA-256, and keeps everything installed in one library.
 
-### 3. Проверка файлов и безопасность
-- Хеширование файлов по алгоритму **SHA-256** на лету.
-- Кнопка **«Проверить целостность файлов»** на карточке установленной игры.
-- Атомарная замена файлов: если обновление оборвется, рабочая копия не повреждается.
+[**⬇️ Download**](https://github.com/LDProjectTeam/Nexora/releases/latest) · [**🌐 Website**](https://ldprojectteam.github.io/Nexora/) · [**🐛 Report a Bug**](https://github.com/LDProjectTeam/Nexora/issues)
 
-### 4. Запуск и отслеживание игры
-- Запуск сконфигурированного `executable` с параметрами `launchArguments`.
-- Отслеживание жизненного цикла процесса: лаунчер показывает статус *«В игре»*, а при завершении игры возвращается в обычное состояние.
+### ✨ Features
 
-### 5. Раздел «Моя библиотека»
-- Показывает только установленные и загружаемые игры.
-- Сортировка: *По названию*, *По размеру*, *По статусу*.
-- Поиск внутри библиотеки.
+| Feature | Description |
+| --- | --- |
+| 🎮 **Game catalog** | Search, featured/top/alphabetical/surprise picks, filters, and Steam artwork |
+| 🔎 **Custom sources** | Built-in Rutor catalog plus JSON catalogs loaded from a URL |
+| 🧲 **BitTorrent** | The rqbit Rust engine: magnet links, `.torrent` files, fast resume, speed limits |
+| ⬇️ **HTTP / HTTPS** | `Range` resume, a staging folder, and idle-timeout handling |
+| 🛡️ **SHA-256 verification** | Final file hashes are checked after unpacking; a mismatch cancels the install |
+| 🧩 **Atomic install** | An interrupted update never damages a working copy |
+| 📚 **Library** | Install and update statuses, launch, file checks, folder access, and removal |
+| 🔄 **Versions and updates** | Pick the right game release and update an installed copy |
+| 🎨 **Interface** | Dark theme, accent colors, RU / EN / UK, WebP artwork cache |
 
-### 6. Настройки
-- Выбор папки установки игр по умолчанию.
-- Ограничение скорости скачивания и отдачи (МБ/с).
-- Очистка временных файлов и кэша торрентов одной кнопкой.
-- **Кастомные источники каталога**: возможность подключить прямую ссылку на Google Диск / CDN / GitHub с каталогом `games.json`.
-- Логи приложения: `%APPDATA%\Nexora\logs` (10 последних дней, пишутся и ошибки Core-сервисов).
+### 🚀 Installation
 
-### 7. Хранение обложек и кэша
-- Обложки и баннеры сохраняются в **WebP** с уменьшением до нужного UI размера
-  (640 px для карточек, 1600 px для hero) — кэш меньше в ~5–6 раз.
-- Кэш автоматически чистится при запуске: старые JPEG мигрируют в WebP,
-  «осиротевшие» файлы удаляются, общий размер ограничен 200 МБ.
-- Кнопка «Очистить кэш» в настройках очищает и обложки, и метаданные Steam.
-- Подробности и дальнейшие точки оптимизации: [docs/OPTIMIZATION.md](docs/OPTIMIZATION.md).
+1. Open [**Releases**](https://github.com/LDProjectTeam/Nexora/releases/latest)
+2. Download `Nexora-Setup-1.0.68-win-x64.exe`
+3. Run the installer and choose a library folder on first launch
 
----
+The app installs into your user profile and does not need administrator rights. .NET is included in the self-contained build.
 
-## 🛠 Архитектура проекта
+> The installer is not digitally signed, so Windows SmartScreen may show a publisher warning.
 
-```
-Nexora\
-├── Run-Launcher.bat                  # Запуск в 1 клик
-├── publish\                          # Готовые бинарники (.exe и библиотеки)
-│   └── Nexora.exe
-├── data\
-│   ├── games.json                    # Каталог игр (по умолчанию пустой шаблон)
-│   └── test_game\                    # Локальные тестовые архивы (v1.0 и v1.1)
-├── docs\
-│   └── ADDING_GAMES.md               # Руководство по добавлению новых игр
-├── src\
-│   ├── Nexora.Core\               # Чистая бизнес-логика (.NET 8)
-│   │   ├── Models\                   # GameDefinition, GameInstallation, AppSettings, DownloadPhases...
-│   │   ├── Interfaces\               # IGameManager, IDownloadManager, IInstaller...
-│   │   ├── Services\                 # RqbitDownloader, HttpDownloader, Installer, FileVerifier...
-│   │   └── Helpers\                  # HashHelper, PathHelper, SizeFormatter...
-│   └── Nexora.App\                # UI слой (WPF .NET 8)
-│       ├── Views\                    # MainWindow, HomeView, LibraryView, SettingsView...
-│       ├── ViewModels\               # MainViewModel, GameCardViewModel, SettingsViewModel...
-│       ├── Services\                 # AppLog, ErrorReporter, LocalizationManager...
-│       ├── Themes\                   # DarkTheme.xaml (стили, кисти, анимации)
-│       └── Converters\               # ValueConverters
-└── tests\
-    └── Nexora.Tests\              # xUnit тесты (135 тестов, полный прогон зелёный)
+### 🔧 Building from Source
+
+You need the .NET 8 SDK, PowerShell, and [Inno Setup 6](https://jrsoftware.org/isinfo.php).
+
+```powershell
+dotnet restore Nexora.sln
+dotnet build Nexora.sln -c Release
+dotnet test tests/Nexora.Tests/Nexora.Tests.csproj -c Release
+
+# run the built launcher
+.\Run-Launcher.bat
+
+# installer in artifacts\installer
+.\installer\Build-Installer.ps1
+
+# static site in website\dist
+.\website\Build-Website.ps1
 ```
 
 ---
 
-## ➕ Как добавить новые игры?
+## 🛠️ Tech Stack
 
-Подробно описано в файле [docs/ADDING_GAMES.md](docs/ADDING_GAMES.md).
-Вам достаточно добавить новый JSON-объект в [data/games.json](data/games.json) с полями:
-- `id`, `name`, `description`, `version`, `sizeBytes`
-- `downloadSources`: список торрент magnet-ссылок или HTTP URL
-- `executable`: имя запускаемого файла игры
-- `checksums`: хеши SHA-256 **финальных файлов игры** (проверяются после распаковки; при несовпадении установка отменяется).
+```
+UI:        .NET 8 · WPF · XAML · MVVM
+Core:      C# · async I/O · SHA-256
+Torrent:   rqbit (Rust) · separate sidecar process
+Archives:  SharpCompress · SkiaSharp · HtmlAgilityPack
+Installer: Inno Setup 6
+CI:        GitHub Actions · xUnit
+Website:   HTML · CSS · JavaScript
+```
 
-> По умолчанию `data/games.json` пустой: лаунчер ищет игры через подключённые источники (Rutor) и пользовательские каталоги.
-> Встроенный каталог — это шаблон/точка расширения, а не обязательный список игр.
+---
+
+## 📜 License / Лицензия
+
+Copyright (c) 2026 **Nexora**. All rights reserved.
+
+This project is proprietary. Copying, modifying, or distributing the code without written permission from the author is prohibited. See [LICENSE](LICENSE) for details.
+
+Данный проект является проприетарным. Копирование, изменение или распространение кода без письменного разрешения автора запрещено. Подробности — в [LICENSE](LICENSE).
+
+---
+
+<div align="center">
+
+Сделано для игроков · Made for players
+
+</div>
