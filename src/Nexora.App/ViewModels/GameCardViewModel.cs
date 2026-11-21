@@ -460,9 +460,14 @@ namespace Nexora.App.ViewModels
             ? Path.GetFileName(_progress.CurrentFile)
             : SourceProtocolDisplay;
 
+        private string? CurrentPhaseKey
+            => _progress?.PhaseKey ?? DownloadPhases.FromLegacyText(_progress?.Phase);
+
         /// <summary>
         /// Canonical visual state key for the Downloads page:
         /// Queued | Preparing | Waiting | Downloading | Paused | Verifying | Installing | Finalizing | Completed | Error
+        /// Uses <see cref="DownloadPhases"/> keys, so translating the UI never changes
+        /// which state a download is shown in.
         /// </summary>
         public string DownloadVisualState
         {
@@ -476,28 +481,56 @@ namespace Nexora.App.ViewModels
                     return "Paused";
                 if (IsQueued)
                     return "Queued";
-                if (State == InstallState.Verifying)
+
+                var phaseKey = CurrentPhaseKey;
+                var fraction = _progress?.Fraction ?? 0;
+                var hasTotal = _progress?.TotalBytes > 0;
+                var legacyPhase = _progress?.Phase ?? string.Empty;
+
+                if (State == InstallState.Verifying
+                    || phaseKey is DownloadPhases.CheckingIntegrity or DownloadPhases.Verifying
+                    || (phaseKey == null && IsPhaseCheckingIntegrity(legacyPhase)))
+                {
                     return "Verifying";
+                }
+
                 if (State == InstallState.Installing || State == InstallState.Updating)
                 {
-                    var p = _progress?.Phase ?? string.Empty;
-                    if (p is "Moving files" or "Extraction complete" || (_progress?.Fraction >= 0.99 && p == "Installing"))
+                    if (phaseKey is DownloadPhases.MovingFiles or DownloadPhases.Finalizing or DownloadPhases.Complete
+                        || (hasTotal && fraction >= 0.99 && phaseKey == DownloadPhases.Installing)
+                        || (phaseKey == null && fraction >= 0.99
+                            && string.Equals(legacyPhase, "Installing", StringComparison.OrdinalIgnoreCase)))
+                    {
                         return "Finalizing";
+                    }
+
                     return "Installing";
                 }
+
                 if (State == InstallState.Downloading)
                 {
-                    var phase = _progress?.Phase ?? string.Empty;
-                    if (string.Equals(phase, "Complete", StringComparison.OrdinalIgnoreCase) || (_progress?.Fraction >= 1.0 && _progress.TotalBytes > 0))
+                    if (phaseKey == DownloadPhases.Complete || (hasTotal && fraction >= 1.0))
                         return "Finalizing";
-                    if (IsPhaseCheckingIntegrity(phase))
-                        return "Verifying";
-                    if (IsPhasePreparing(phase))
+                    if (phaseKey is DownloadPhases.Starting or DownloadPhases.FetchingMetadata
+                        or DownloadPhases.CheckingDiskSpace or DownloadPhases.Queued)
+                    {
                         return "Preparing";
-                    if (IsPhaseWaitingPeers(phase))
+                    }
+                    if (phaseKey == DownloadPhases.SearchingPeers)
                         return "Waiting";
+
+                    // Fallback for sources that only provide a display string.
+                    if (phaseKey == null)
+                    {
+                        if (IsPhaseWaitingPeers(legacyPhase))
+                            return "Waiting";
+                        if (IsPhasePreparing(legacyPhase))
+                            return "Preparing";
+                    }
+
                     return "Downloading";
                 }
+
                 return State == InstallState.Installed ? "Completed" : "Paused";
             }
         }
@@ -571,7 +604,7 @@ namespace Nexora.App.ViewModels
                     "Queued" => LocalizationManager.GetString("DownloadSubQueued", "Ожидание свободного слота в очереди…"),
                     "Preparing" => LocalizeRawPhase(_progress?.Phase, LocalizationManager.GetString("DownloadSubPreparing", "Подготовка файлов и проверка хранилища…")),
                     "Waiting" => LocalizeRawPhase(_progress?.Phase, LocalizationManager.GetString("TorrentPhaseSearchingPeers", "Поиск пиров через DHT и трекеры…")),
-                    "Downloading" => string.Equals(_progress?.Phase, "Copying files", StringComparison.OrdinalIgnoreCase)
+                    "Downloading" => CurrentPhaseKey == DownloadPhases.CopyingFiles
                         ? LocalizationManager.GetString("DownloadPhaseCopyingFiles", "Копирование файлов…")
                         : $"{SourceProtocolDisplay} • {VersionTypeDisplay}",
                     "Verifying" => !string.IsNullOrWhiteSpace(_progress?.CurrentFile) && !string.Equals(_progress.CurrentFile, Id, StringComparison.OrdinalIgnoreCase)

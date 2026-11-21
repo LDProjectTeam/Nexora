@@ -69,7 +69,8 @@ namespace Nexora.Core.Services
                         progress?.Report(new DownloadProgress
                         {
                             GameId = gameId, Fraction = 1.0, BytesDownloaded = remoteLength,
-                            TotalBytes = remoteLength, Phase = "Downloading"
+                            TotalBytes = remoteLength, Phase = "Downloading",
+                            PhaseKey = DownloadPhases.Downloading
                         });
                         return OperationResult.Ok();
                     }
@@ -185,7 +186,8 @@ namespace Nexora.Core.Services
                         TotalBytes = totalBytes,
                         SpeedBytesPerSec = speedBps,
                         SecondsRemaining = secsRemaining,
-                        Phase = Localizer.T("TorrentPhaseDownloading", "Загрузка…")
+                        Phase = Localizer.T("TorrentPhaseDownloading", "Загрузка…"),
+                        PhaseKey = DownloadPhases.Downloading
                     });
 
                     lastReportBytes = downloaded;

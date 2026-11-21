@@ -130,7 +130,8 @@ namespace Nexora.Core.Services
                     sourceProgress.Report(new DownloadProgress
                     {
                         GameId = game.Id,
-                        Phase = "Downloading"
+                        Phase = "Downloading",
+                        PhaseKey = DownloadPhases.Downloading
                     });
 
                     try
@@ -396,6 +397,7 @@ namespace Nexora.Core.Services
                                 TotalBytes = totalBytes,
                                 SpeedBytesPerSec = (long)((copiedBytes - lastReportedBytes) / elapsedSeconds),
                                 Phase = "Copying files",
+                                PhaseKey = DownloadPhases.CopyingFiles,
                                 CurrentFile = fileName
                             });
                             lastReportedBytes = copiedBytes;

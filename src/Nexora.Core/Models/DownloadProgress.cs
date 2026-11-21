@@ -34,6 +34,12 @@ namespace Nexora.Core.Models
         /// <summary>Human-readable phase (e.g. "Downloading", "Verifying", "Extracting").</summary>
         public string Phase { get; set; } = "Downloading";
 
+        /// <summary>
+        /// Language-independent phase identifier (see <see cref="DownloadPhases"/>).
+        /// UI state must use this instead of matching <see cref="Phase"/> text.
+        /// </summary>
+        public string? PhaseKey { get; set; }
+
         /// <summary>Whether this progress snapshot belongs to a torrent source.</summary>
         public bool? IsTorrent { get; set; }
 

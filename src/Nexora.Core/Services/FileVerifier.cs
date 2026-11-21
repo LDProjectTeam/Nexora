@@ -90,6 +90,7 @@ namespace Nexora.Core.Services
                     GameId = definition.Id,
                     Fraction = (double)done / total,
                     Phase = "Verifying",
+                    PhaseKey = DownloadPhases.Verifying,
                     CurrentFile = relativePath
                 });
             }

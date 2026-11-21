@@ -863,7 +863,8 @@ namespace Nexora.Core.Services
                 {
                     GameId = gameId,
                     IsTorrent = true,
-                    Phase = Localizer.T("TorrentPhaseStarting", "Запуск торрент-клиента…")
+                    Phase = Localizer.T("TorrentPhaseStarting", "Запуск торрент-клиента…"),
+                    PhaseKey = DownloadPhases.Starting
                 });
 
                 Directory.CreateDirectory(destinationFolder);
@@ -894,7 +895,8 @@ namespace Nexora.Core.Services
                 {
                     GameId = gameId,
                     IsTorrent = true,
-                    Phase = Localizer.T("TorrentPhaseFetchingMetadata", "Получение метаданных торрента…")
+                    Phase = Localizer.T("TorrentPhaseFetchingMetadata", "Получение метаданных торрента…"),
+                    PhaseKey = DownloadPhases.FetchingMetadata
                 });
 
                 // A paused torrent is intentionally kept inside the engine. Reusing it
@@ -979,7 +981,8 @@ namespace Nexora.Core.Services
                 {
                     GameId = gameId,
                     IsTorrent = true,
-                    Phase = Localizer.T("TorrentPhaseSearchingPeers", "Поиск пиров через DHT и трекеры…")
+                    Phase = Localizer.T("TorrentPhaseSearchingPeers", "Поиск пиров через DHT и трекеры…"),
+                    PhaseKey = DownloadPhases.SearchingPeers
                 });
 
                 // ── Progress Polling Loop ──────────────────────────────────
@@ -1219,7 +1222,7 @@ namespace Nexora.Core.Services
                         secsRemaining = (long)((totalBytes - progressBytes) / (double)etaSpeed);
                     }
 
-                    var phase = GetPhase(state, livePeers, totalBytes > 0, pauseRequested);
+                    var (phaseText, phaseKey) = GetPhase(state, livePeers, totalBytes > 0, pauseRequested);
 
                     progress?.Report(new DownloadProgress
                     {
@@ -1234,7 +1237,8 @@ namespace Nexora.Core.Services
                         Peers = livePeers,
                         TotalPeers = seenPeers > 0 ? seenPeers : livePeers + connectingPeers,
                         IsStalled = isStalled,
-                        Phase = phase,
+                        Phase = phaseText,
+                        PhaseKey = phaseKey,
                         CurrentFile = gameId
                     });
 
@@ -1283,7 +1287,8 @@ namespace Nexora.Core.Services
                     GameId = gameId,
                     IsTorrent = true,
                     Fraction = 1.0,
-                    Phase = "Complete"
+                    Phase = "Complete",
+                    PhaseKey = DownloadPhases.Complete
                 });
 
                 return OperationResult.Ok();
@@ -1412,24 +1417,27 @@ namespace Nexora.Core.Services
             }
         }
 
-        private static string GetPhase(string state, int peers, bool hasMetadata, bool isPauseRequested = false)
+        private static (string Text, string Key) GetPhase(
+            string state, int peers, bool hasMetadata, bool isPauseRequested = false)
         {
             if (!hasMetadata)
-                return Localizer.T("TorrentPhaseFetchingMetadata", "Получение метаданных торрента…");
+                return (Localizer.T("TorrentPhaseFetchingMetadata", "Получение метаданных торрента…"),
+                    DownloadPhases.FetchingMetadata);
 
             return state switch
             {
-                "initializing" => Localizer.T("TorrentPhaseCheckingIntegrity", "Проверка целостности данных…"),
+                "initializing" => (Localizer.T("TorrentPhaseCheckingIntegrity", "Проверка целостности данных…"),
+                    DownloadPhases.CheckingIntegrity),
                 "paused" => isPauseRequested
-                    ? Localizer.T("TorrentPhasePaused", "Пауза")
-                    : Localizer.T("TorrentPhaseSearchingPeersShort", "Поиск пиров…"),
-                "finished" => "Complete",
+                    ? (Localizer.T("TorrentPhasePaused", "Пауза"), DownloadPhases.Paused)
+                    : (Localizer.T("TorrentPhaseSearchingPeersShort", "Поиск пиров…"), DownloadPhases.SearchingPeers),
+                "finished" => ("Complete", DownloadPhases.Complete),
                 "live" => peers == 0
-                    ? Localizer.T("TorrentPhaseSearchingPeersShort", "Поиск пиров…")
-                    : Localizer.T("TorrentPhaseDownloading", "Загрузка…"),
+                    ? (Localizer.T("TorrentPhaseSearchingPeersShort", "Поиск пиров…"), DownloadPhases.SearchingPeers)
+                    : (Localizer.T("TorrentPhaseDownloading", "Загрузка…"), DownloadPhases.Downloading),
                 _ => peers == 0
-                    ? Localizer.T("TorrentPhaseSearchingPeers", "Поиск пиров через DHT и трекеры…")
-                    : Localizer.T("TorrentPhaseDownloading", "Загрузка…")
+                    ? (Localizer.T("TorrentPhaseSearchingPeers", "Поиск пиров через DHT и трекеры…"), DownloadPhases.SearchingPeers)
+                    : (Localizer.T("TorrentPhaseDownloading", "Загрузка…"), DownloadPhases.Downloading)
             };
         }
 

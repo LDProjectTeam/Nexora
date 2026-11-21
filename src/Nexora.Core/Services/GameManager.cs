@@ -473,7 +473,8 @@ namespace Nexora.Core.Services
                 trackedProgress.Report(new DownloadProgress
                 {
                     GameId = gameId,
-                    Phase = Localizer.T("DownloadPhaseCheckingDiskSpace", "Проверка места на диске…")
+                    Phase = Localizer.T("DownloadPhaseCheckingDiskSpace", "Проверка места на диске…"),
+                    PhaseKey = DownloadPhases.CheckingDiskSpace
                 });
 
                 var spaceCheck = await Task.Run(
@@ -1566,7 +1567,8 @@ namespace Nexora.Core.Services
             progress?.Report(new DownloadProgress
             {
                 GameId = installation.GameId,
-                Phase = Localizer.T("StatusQueued", "В очереди")
+                Phase = Localizer.T("StatusQueued", "В очереди"),
+                PhaseKey = DownloadPhases.Queued
             });
 
             using var reg = ct.Register(() =>

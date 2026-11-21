@@ -1255,6 +1255,7 @@ namespace Nexora.Core.Services
             {
                 GameId = gameId,
                 Phase = phase,
+                PhaseKey = DownloadPhases.FromLegacyText(phase),
                 Fraction = Math.Clamp(fraction, 0, 1),
                 CurrentFile = currentFile ?? string.Empty
             });
