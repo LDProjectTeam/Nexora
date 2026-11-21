@@ -18,9 +18,6 @@ namespace Nexora.App
 {
     public partial class MainWindow : Window
     {
-        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
-        private static extern bool SetProcessWorkingSetSize(IntPtr proc, IntPtr min, IntPtr max);
-
         private readonly MainViewModel _viewModel;
         private readonly ISettingsService _settingsService;
         private readonly IGameLauncher _gameLauncher;
@@ -30,6 +27,7 @@ namespace Nexora.App
         private bool _minimizedByGameLaunch;
         private bool _isShuttingDown;
         private WindowsTaskbarProgress? _taskbarProgress;
+        private long _lastActivationTicks;
 
         public MainWindow(
             MainViewModel viewModel,
@@ -57,7 +55,9 @@ namespace Nexora.App
 
             SourceInitialized += (_, _) =>
             {
-                _taskbarProgress = new WindowsTaskbarProgress(new WindowInteropHelper(this).Handle);
+                var handle = new WindowInteropHelper(this).Handle;
+                _taskbarProgress = new WindowsTaskbarProgress(handle);
+                System.Windows.Interop.HwndSource.FromHwnd(handle)?.AddHook(WndProc);
                 UpdateTaskbarProgress();
             };
 
@@ -92,11 +92,6 @@ namespace Nexora.App
                     : "M5,5 H19 V19 H5 Z");
                 RootWindow.BorderThickness = WindowState == WindowState.Maximized
                     ? new Thickness(6) : new Thickness(0);
-
-                if (WindowState == WindowState.Minimized)
-                {
-                    OptimizeMemoryAndPerformance(isMinimized: true);
-                }
             };
 
             Closing += async (s, e) =>
@@ -234,9 +229,10 @@ namespace Nexora.App
 
         private void MinimizeToTray()
         {
+            // No forced GC / working-set trim here: it caused a visible stall on restore
+            // and the OS already trims pages of a background process under pressure.
             TrayIcon.Visibility = Visibility.Visible;
             Hide();
-            OptimizeMemoryAndPerformance(isMinimized: true);
         }
 
         private void ShowFromTray()
@@ -247,26 +243,27 @@ namespace Nexora.App
             if (WindowState == WindowState.Minimized)
                 WindowState = WindowState.Normal;
             Activate();
-            OptimizeMemoryAndPerformance(isMinimized: false);
         }
 
-        private void OptimizeMemoryAndPerformance(bool isMinimized)
+        /// <summary>Обрабатывает запрос от второго экземпляра лаунчера: показать окно.</summary>
+        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
-            if (isMinimized)
+            if (msg == SingleInstanceSignal.ActivateMessage)
             {
-                try
-                {
-                    GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true, true);
-                    GC.WaitForPendingFinalizers();
-                    GC.Collect();
-                    using var currentProcess = System.Diagnostics.Process.GetCurrentProcess();
-                    SetProcessWorkingSetSize(currentProcess.Handle, (IntPtr)(-1), (IntPtr)(-1));
-                }
-                catch (Exception ex)
-                {
-                    AppLog.Warn("MainWindow", "Could not trim the working set after minimizing.", ex);
-                }
+                handled = true;
+
+                // The second instance broadcasts several times to cover a slow startup;
+                // handle only the first request in a short window.
+                var now = Environment.TickCount64;
+                if (now - Interlocked.Read(ref _lastActivationTicks) < 2000)
+                    return IntPtr.Zero;
+
+                Interlocked.Exchange(ref _lastActivationTicks, now);
+                AppLog.Info("SingleInstance", "Activation requested by another launcher instance.");
+                Dispatcher.BeginInvoke(new Action(ShowFromTray));
             }
+
+            return IntPtr.Zero;
         }
 
         private const string TrayGameItemTag = "NexoraTrayGame";

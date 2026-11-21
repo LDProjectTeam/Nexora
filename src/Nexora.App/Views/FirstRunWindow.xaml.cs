@@ -10,7 +10,7 @@ namespace Nexora.App.Views
 {
     /// <summary>
     /// Диалог первого запуска: предлагает выбрать папку для библиотеки игр.
-    /// По умолчанию показывает PathHelper.DefaultLibraryPath (Library рядом с exe).
+    /// По умолчанию показывает PathHelper.DefaultLibraryPath (%USERPROFILE%\Games\Nexora).
     /// </summary>
     public partial class FirstRunWindow : Window
     {

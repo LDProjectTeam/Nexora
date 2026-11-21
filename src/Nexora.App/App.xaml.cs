@@ -63,7 +63,8 @@ namespace Nexora.App
 
                 if (!ownsMutex)
                 {
-                    AppLog.Info("Startup", "Another launcher instance is already running; exiting.");
+                    AppLog.Info("Startup", "Another launcher instance is running; asking it to show its window.");
+                    SingleInstanceSignal.RequestActivation();
                     Shutdown();
                     return;
                 }

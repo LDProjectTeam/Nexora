@@ -123,6 +123,21 @@ public class PathHelperTests
     }
 
     [Fact]
+    public void DefaultLibraryPath_LivesOutsideTheApplicationFolder()
+    {
+        var profile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (string.IsNullOrWhiteSpace(profile))
+            return;
+
+        var library = Path.GetFullPath(PathHelper.DefaultLibraryPath);
+        Assert.StartsWith(Path.GetFullPath(profile), library, StringComparison.OrdinalIgnoreCase);
+        Assert.StartsWith(
+            Path.Combine(Path.GetFullPath(profile), "Games"),
+            library,
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void FindFileWalkingUp_ResolvesRelativeFilesAndRejectsAbsoluteMisses()
     {
         var root = Path.Combine(Path.GetTempPath(), "Nexora-WalkTest-" + Guid.NewGuid().ToString("N"));

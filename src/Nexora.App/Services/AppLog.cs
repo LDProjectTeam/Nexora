@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Nexora.Core.Helpers;
 
 namespace Nexora.App.Services
@@ -16,6 +17,10 @@ namespace Nexora.App.Services
     internal static class AppLog
     {
         private static readonly object Gate = new();
+        // Two launcher processes can share the same daily file (the second instance logs
+        // before exiting). Without a cross-process lock each process keeps its own file
+        // position and later writes overwrite the other process's lines.
+        private static readonly Mutex FileGate = new(initiallyOwned: false, @"Local\Nexora.AppLog");
         private static StreamWriter? _writer;
         private static DateTime _writerDay;
         private static string? _currentFile;
@@ -61,19 +66,40 @@ namespace Nexora.App.Services
             {
                 lock (Gate)
                 {
-                    if (!EnsureWriter() || _writer == null)
-                        return;
+                    var lockTaken = false;
+                    try
+                    {
+                        try { lockTaken = FileGate.WaitOne(TimeSpan.FromSeconds(1)); }
+                        catch (AbandonedMutexException) { lockTaken = true; }
 
-                    _writer.Write(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"));
-                    _writer.Write(" [");
-                    _writer.Write(level);
-                    _writer.Write("] ");
-                    _writer.Write(source);
-                    _writer.Write(": ");
-                    _writer.WriteLine((message ?? string.Empty).Replace('\r', ' ').Replace('\n', ' '));
+                        if (!EnsureWriter() || _writer == null)
+                            return;
 
-                    if (exception != null)
-                        _writer.WriteLine(exception.ToString());
+                        // Another process may have appended since our last write.
+                        _writer.Flush();
+                        _writer.BaseStream.Seek(0, SeekOrigin.End);
+
+                        _writer.Write(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"));
+                        _writer.Write(" [");
+                        _writer.Write(level);
+                        _writer.Write("] ");
+                        _writer.Write(source);
+                        _writer.Write(": ");
+                        _writer.WriteLine((message ?? string.Empty).Replace('\r', ' ').Replace('\n', ' '));
+
+                        if (exception != null)
+                            _writer.WriteLine(exception.ToString());
+
+                        _writer.Flush();
+                    }
+                    finally
+                    {
+                        if (lockTaken)
+                        {
+                            try { FileGate.ReleaseMutex(); }
+                            catch (ApplicationException) { /* not owned after an abandoned wait */ }
+                        }
+                    }
                 }
             }
             catch

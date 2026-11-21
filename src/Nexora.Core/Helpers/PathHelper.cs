@@ -81,7 +81,22 @@ namespace Nexora.Core.Helpers
         public static string LegacyTempDir => Path.Combine(AppDataDir, "staging");
         public static string ArtworkCacheDir => Path.Combine(AppDataDir, "artwork");
         public static string SteamMetadataCacheDir => Path.Combine(AppDataDir, "steam-metadata");
-        public static string DefaultLibraryPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Library");
+        /// <summary>
+        /// Default games library for first run. Kept outside the application folder so
+        /// updates/uninstall never touch game files; existing settings still win.
+        /// </summary>
+        public static string DefaultLibraryPath
+        {
+            get
+            {
+                var profile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                if (!string.IsNullOrWhiteSpace(profile))
+                    return Path.Combine(profile, "Games", "Nexora");
+
+                // Service accounts without a profile: fall back to the application folder.
+                return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Library");
+            }
+        }
 
         /// <summary>Uses a named Library folder when the user selects a drive root.</summary>
         public static string GetLibraryRoot(string selectedPath)

@@ -53,21 +53,23 @@ Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExeName}"; WorkingDir: 
 Name: "{autodesktop}\{#AppName}";  Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Run]
-; Firewall rules need admin. We run PowerShell elevated via ShellExecute "runas".
-; The -WindowStyle Hidden keeps it invisible; errors are suppressed so install never fails.
+; Firewall rules require administrator rights, while the app itself installs per-user
+; (PrivilegesRequired=lowest). Only this helper is elevated, via the shell "runas"
+; verb. If UAC is declined the launcher still works using outgoing peers/UPnP.
 Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command ""netsh advfirewall firewall delete rule name='{#LegacyFwRuleTCP}' | Out-Null; netsh advfirewall firewall delete rule name='{#LegacyFwRuleUDP}' | Out-Null; netsh advfirewall firewall delete rule name='{#FwRuleTCP}' | Out-Null; netsh advfirewall firewall add rule name='{#FwRuleTCP}' dir=in action=allow protocol=TCP localport=4240-4249 profile=any | Out-Null; netsh advfirewall firewall delete rule name='{#FwRuleUDP}' | Out-Null; netsh advfirewall firewall add rule name='{#FwRuleUDP}' dir=in action=allow protocol=UDP localport=4240-4249 profile=any | Out-Null"""; \
-  Flags: runhidden runascurrentuser; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command ""$ErrorActionPreference = 'SilentlyContinue'; Remove-NetFirewallRule -DisplayName '{#LegacyFwRuleTCP}' | Out-Null; Remove-NetFirewallRule -DisplayName '{#LegacyFwRuleUDP}' | Out-Null; Remove-NetFirewallRule -DisplayName '{#FwRuleTCP}' | Out-Null; Remove-NetFirewallRule -DisplayName '{#FwRuleUDP}' | Out-Null; New-NetFirewallRule -DisplayName '{#FwRuleTCP}' -Direction Inbound -Action Allow -Protocol TCP -LocalPort '4240-4249' -Profile Any | Out-Null; New-NetFirewallRule -DisplayName '{#FwRuleUDP}' -Direction Inbound -Action Allow -Protocol UDP -LocalPort '4240-4249' -Profile Any | Out-Null"""; \
+  Flags: runhidden shellexec waituntilterminated skipifsilent; Verb: runas; \
   StatusMsg: "Configuring firewall…"
 
 ; Launch app after install
 Filename: "{app}\{#AppExeName}"; Description: "Launch {#AppName}"; WorkingDir: "{app}"; Flags: postinstall nowait skipifsilent
 
 [UninstallRun]
-; Remove firewall rules on uninstall (best-effort, ignore errors)
+; Removing firewall rules also needs elevation; best effort (declining UAC leaves
+; harmless named rules behind).
 Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command ""netsh advfirewall firewall delete rule name='{#FwRuleTCP}' | Out-Null; netsh advfirewall firewall delete rule name='{#FwRuleUDP}' | Out-Null; netsh advfirewall firewall delete rule name='{#LegacyFwRuleTCP}' | Out-Null; netsh advfirewall firewall delete rule name='{#LegacyFwRuleUDP}' | Out-Null"""; \
-  Flags: runhidden runascurrentuser; RunOnceId: "FwCleanup"
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command ""$ErrorActionPreference = 'SilentlyContinue'; Remove-NetFirewallRule -DisplayName '{#FwRuleTCP}' | Out-Null; Remove-NetFirewallRule -DisplayName '{#FwRuleUDP}' | Out-Null; Remove-NetFirewallRule -DisplayName '{#LegacyFwRuleTCP}' | Out-Null; Remove-NetFirewallRule -DisplayName '{#LegacyFwRuleUDP}' | Out-Null"""; \
+  Flags: runhidden shellexec waituntilterminated; Verb: runas; RunOnceId: "FwCleanup"
 
 [Code]
 function PrepareToInstall(var NeedsRestart: Boolean): String;
