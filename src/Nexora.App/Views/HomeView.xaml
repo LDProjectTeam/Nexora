@@ -373,7 +373,7 @@
                 <ItemsControl ItemsSource="{Binding DisplayedCatalogGames}" Margin="15,0,0,24">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <WrapPanel HorizontalAlignment="Center" />
+                            <WrapPanel HorizontalAlignment="Left" />
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
