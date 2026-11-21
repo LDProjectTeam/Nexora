@@ -140,7 +140,10 @@ namespace Nexora.App
                 {
                     await _viewModel.ShutdownAsync();
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    AppLog.Error("MainWindow", "Saving download state on exit failed.", ex);
+                }
 
                 Close();
             };
@@ -173,7 +176,15 @@ namespace Nexora.App
                         }
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    ErrorReporter.Report(
+                        "MainWindow.Loaded",
+                        string.Format(
+                            LocalizationManager.GetString("LoadFailedFormat", "Could not load the launcher data: {0}"),
+                            ex.Message),
+                        ex);
+                }
             };
         }
 
@@ -251,7 +262,10 @@ namespace Nexora.App
                     using var currentProcess = System.Diagnostics.Process.GetCurrentProcess();
                     SetProcessWorkingSetSize(currentProcess.Handle, (IntPtr)(-1), (IntPtr)(-1));
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    AppLog.Warn("MainWindow", "Could not trim the working set after minimizing.", ex);
+                }
             }
         }
 

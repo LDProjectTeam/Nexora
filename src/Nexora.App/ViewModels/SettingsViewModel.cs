@@ -517,8 +517,9 @@ namespace Nexora.App.ViewModels
                     "SettingsCacheSizeFormat",
                     PathHelper.FormatBytes(bytes));
             }
-            catch
+            catch (Exception ex)
             {
+                AppLog.Debug("SettingsViewModel", $"Could not calculate the cache size: {ex.Message}");
                 CacheSizeSummary = LocalizationManager.GetString("SettingsCacheSizeFormat", "0 B");
             }
         }

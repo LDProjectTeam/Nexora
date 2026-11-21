@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using Nexora.App.Services;
 using Nexora.App.ViewModels;
+using Nexora.Core.Helpers;
 using Nexora.Core.Interfaces;
 using Nexora.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,88 +31,142 @@ namespace Nexora.App
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            // Only one launcher may drive the torrent engine at a time. A previous
-            // instance usually needs just a moment to release the mutex during shutdown.
-            _singleInstanceMutex = new Mutex(false, @"Local\Nexora.Launcher.SingleInstance");
-            var ownsMutex = false;
+            InstallGlobalExceptionHandlers();
+
             try
             {
-                ownsMutex = _singleInstanceMutex.WaitOne(TimeSpan.FromSeconds(3));
-            }
-            catch (AbandonedMutexException)
-            {
-                ownsMutex = true;
-            }
-
-            if (!ownsMutex)
-            {
-                Shutdown();
-                return;
-            }
-
-            // Register legacy code pages (including Windows-1251) before
-            // any services or application code may try to use them.
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-
-            DispatcherUnhandledException += (s, ev) =>
-            {
-                ev.Handled = true; // Don't crash the application on unhandled dispatcher exceptions
-            };
-
-            base.OnStartup(e);
-
-            ShutdownMode = ShutdownMode.OnExplicitShutdown; // Only shutdown when explicitly told!
-
-            var services = new ServiceCollection();
-            ConfigureServices(services);
-            _serviceProvider = services.BuildServiceProvider();
-            Services = _serviceProvider;
-
-            var settingsService = _serviceProvider.GetRequiredService<ISettingsService>();
-            settingsService.Load();
-
-            var savedLang = settingsService.Settings.IsLanguageManuallySelected &&
-                (settingsService.Settings.Language is "ru" or "uk" or "en")
-                ? settingsService.Settings.Language
-                : (!string.IsNullOrWhiteSpace(settingsService.Settings.Language) && (settingsService.Settings.Language is "ru" or "uk" or "en"))
-                    ? settingsService.Settings.Language
-                    : LocalizationManager.GetSystemLanguage();
-            LocalizationManager.SetLanguage(savedLang);
-
-            // Core services produce user-facing text (torrent phases, errors, etc.).
-            Nexora.Core.Services.Localizer.SetResolver(key => LocalizationManager.GetString(key));
-
-            // Apply the saved accent color before the window renders.
-            AccentOption.Apply(settingsService.Settings.AccentColor);
-
-            _mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
-            MainWindow = _mainWindow;
-            _mainWindow.Show();
-
-            // Shrink the artwork cache in the background: converts artwork cached by
-            // older versions into WebP, removes leftovers and enforces the size cap.
-            _ = Task.Run(async () =>
-            {
+                // Only one launcher may drive the torrent engine at a time. A previous
+                // instance usually needs just a moment to release the mutex during shutdown.
+                _singleInstanceMutex = new Mutex(false, @"Local\Nexora.Launcher.SingleInstance");
+                var ownsMutex = false;
                 try
                 {
-                    await ArtworkCacheMaintenance.RunAsync().ConfigureAwait(false);
+                    ownsMutex = _singleInstanceMutex.WaitOne(TimeSpan.FromSeconds(3));
+                }
+                catch (AbandonedMutexException)
+                {
+                    ownsMutex = true;
+                }
+
+                if (!ownsMutex)
+                {
+                    AppLog.Info("Startup", "Another launcher instance is already running; exiting.");
+                    Shutdown();
+                    return;
+                }
+
+                // Register legacy code pages (including Windows-1251) before
+                // any services or application code may try to use them.
+                Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
+                base.OnStartup(e);
+
+                ShutdownMode = ShutdownMode.OnExplicitShutdown; // Only shutdown when explicitly told!
+
+                var services = new ServiceCollection();
+                ConfigureServices(services);
+                _serviceProvider = services.BuildServiceProvider();
+                Services = _serviceProvider;
+
+                AppLog.Info("Startup",
+                    $"Nexora {typeof(App).Assembly.GetName().Version} starting. " +
+                    $"Data: {PathHelper.AppDataDir}; OS: {Environment.OSVersion.VersionString}");
+
+                var settingsService = _serviceProvider.GetRequiredService<ISettingsService>();
+                settingsService.Load();
+
+                var savedLang = settingsService.Settings.IsLanguageManuallySelected &&
+                    (settingsService.Settings.Language is "ru" or "uk" or "en")
+                    ? settingsService.Settings.Language
+                    : (!string.IsNullOrWhiteSpace(settingsService.Settings.Language) && (settingsService.Settings.Language is "ru" or "uk" or "en"))
+                        ? settingsService.Settings.Language
+                        : LocalizationManager.GetSystemLanguage();
+                LocalizationManager.SetLanguage(savedLang);
+
+                // Core services produce user-facing text (torrent phases, errors, etc.).
+                Nexora.Core.Services.Localizer.SetResolver(key => LocalizationManager.GetString(key));
+
+                // Apply the saved accent color before the window renders.
+                AccentOption.Apply(settingsService.Settings.AccentColor);
+
+                _mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
+                MainWindow = _mainWindow;
+                _mainWindow.Show();
+
+                // Shrink the artwork cache in the background: converts artwork cached by
+                // older versions into WebP, removes leftovers and enforces the size cap.
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await ArtworkCacheMaintenance.RunAsync().ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        AppLog.Warn("ArtworkCache", "Cache maintenance failed.", ex);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                AppLog.Fatal("Startup", "The launcher failed to start.", ex);
+                AppLog.Flush();
+
+                try
+                {
+                    MessageBox.Show(
+                        string.Format(
+                            LocalizationManager.GetString("StartupFailedFormat", "Could not start the launcher: {0}"),
+                            ex.Message),
+                        LocalizationManager.GetString("CommonError", "Error"),
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
                 }
                 catch
                 {
-                    // Cache maintenance is best effort and must never affect startup.
+                    // Nothing left to show the message with.
                 }
-            });
+
+                Shutdown(1);
+            }
+        }
+
+        /// <summary>
+        /// Подписывается на все глобальные источники необработанных исключений.
+        /// Без этого ошибка в фоновой задаче или UI-потоке исчезала бесследно.
+        /// </summary>
+        private void InstallGlobalExceptionHandlers()
+        {
+            AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+            {
+                AppLog.Fatal("AppDomain", "Unhandled exception.", args.ExceptionObject as Exception);
+                AppLog.Flush();
+            };
+
+            AppDomain.CurrentDomain.ProcessExit += (_, _) => AppLog.Flush();
+
+            TaskScheduler.UnobservedTaskException += (_, args) =>
+            {
+                AppLog.Error("TaskScheduler", "Unobserved task exception.", args.Exception);
+                args.SetObserved();
+            };
+
+            DispatcherUnhandledException += (_, args) =>
+            {
+                ErrorReporter.Report("Dispatcher", args.Exception);
+                args.Handled = true; // keep the launcher alive, but the failure is logged and shown
+            };
         }
 
         private static void ConfigureServices(IServiceCollection services)
         {
-            // Logging. Debug output is only useful in a debugger or when the launcher
-            // is started from the console script; a normal windowed start should not
-            // pay for formatting debug/trace messages.
+            // Logging. The file sink is always enabled so field failures leave a trace;
+            // console output is only useful in a debugger or when started from a script.
             var debugLogging = Debugger.IsAttached;
             services.AddLogging(builder =>
             {
                 builder.SetMinimumLevel(debugLogging ? LogLevel.Debug : LogLevel.Information);
+                builder.AddProvider(new FileLoggerProvider());
                 if (debugLogging || Console.IsOutputRedirected)
                     builder.AddConsole();
             });
@@ -165,15 +220,23 @@ namespace Nexora.App
 
         protected override void OnExit(ExitEventArgs e)
         {
-            if (_serviceProvider is IDisposable disposable)
+            AppLog.Info("Shutdown", $"Exiting with code {e.ApplicationExitCode}.");
+
+            try
             {
-                disposable.Dispose();
+                if (_serviceProvider is IDisposable disposable)
+                    disposable.Dispose();
+            }
+            catch (Exception ex)
+            {
+                AppLog.Error("Shutdown", "Disposing services failed.", ex);
             }
 
             try { _singleInstanceMutex?.ReleaseMutex(); } catch { }
             _singleInstanceMutex?.Dispose();
             _singleInstanceMutex = null;
 
+            AppLog.Flush();
             base.OnExit(e);
         }
     }

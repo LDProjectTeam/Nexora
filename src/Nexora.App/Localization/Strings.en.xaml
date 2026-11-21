@@ -458,4 +458,8 @@
     <sys:String x:Key="GameDetailsFileHealth">File health</sys:String>
     <sys:String x:Key="GameDetailsFileHealthHint">Integrity check compares game files against hashes and reports corruption.</sys:String>
     <sys:String x:Key="GameDetailsEnglishFallback">A localized description is unavailable; showing the original English Steam text.</sys:String>
+    <sys:String x:Key="UnexpectedErrorFormat">The operation failed: {0}</sys:String>
+    <sys:String x:Key="ErrorLogLocationFormat">Details were written to the log: {0}</sys:String>
+    <sys:String x:Key="StartupFailedFormat">Could not start the launcher: {0}</sys:String>
+    <sys:String x:Key="LoadFailedFormat">Could not load the launcher data: {0}</sys:String>
 </ResourceDictionary>

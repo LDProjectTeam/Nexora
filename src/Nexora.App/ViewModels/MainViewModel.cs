@@ -713,8 +713,9 @@ namespace Nexora.App.ViewModels
                     RefreshCatalogView(resetDisplayed: false);
                 });
             }
-            catch
+            catch (Exception ex)
             {
+                AppLog.Debug("MainViewModel.PortableLookup", $"Could not resolve a portable version: {ex.Message}");
             }
             finally
             {
@@ -1205,7 +1206,10 @@ namespace Nexora.App.ViewModels
                             });
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        AppLog.Warn("MainViewModel.LatestReleases", "Background refresh of the latest releases failed.", ex);
+                    }
                 });
             }
             finally
@@ -1318,7 +1322,10 @@ namespace Nexora.App.ViewModels
                 });
             }
             catch (OperationCanceledException) { }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLog.Warn("MainViewModel.OnlineSearch", "Online search failed.", ex);
+            }
             finally
             {
                 if (!cancellationToken.IsCancellationRequested)

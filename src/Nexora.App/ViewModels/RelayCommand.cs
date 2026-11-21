@@ -2,6 +2,7 @@ using System;
 using System.Windows.Input;
 using System.Windows.Threading;
 using System.Threading.Tasks;
+using Nexora.App.Services;
 
 namespace Nexora.App.ViewModels
 {
@@ -73,6 +74,17 @@ namespace Nexora.App.ViewModels
             try
             {
                 await _execute(parameter);
+            }
+            catch (OperationCanceledException)
+            {
+                // Pausing a download or closing a window cancels in-flight work;
+                // this is expected and must not be reported as a failure.
+            }
+            catch (Exception ex)
+            {
+                // Previously this exception vanished (fire-and-forget task) and the
+                // UI just looked unresponsive. Log it and tell the user.
+                ErrorReporter.Report("Command", ex);
             }
             finally
             {

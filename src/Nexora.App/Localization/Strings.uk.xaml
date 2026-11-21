@@ -458,4 +458,8 @@
     <sys:String x:Key="GameDetailsFileHealth">Стан файлів</sys:String>
     <sys:String x:Key="GameDetailsFileHealthHint">Перевірка цілісності звіряє файли гри з хешами та повідомляє про пошкодження.</sys:String>
     <sys:String x:Key="GameDetailsEnglishFallback">Переклад опису недоступний; показано оригінальний англійський текст Steam.</sys:String>
+    <sys:String x:Key="UnexpectedErrorFormat">Операція завершилася з помилкою: {0}</sys:String>
+    <sys:String x:Key="ErrorLogLocationFormat">Подробиці записано в лог: {0}</sys:String>
+    <sys:String x:Key="StartupFailedFormat">Не вдалося запустити лаунчер: {0}</sys:String>
+    <sys:String x:Key="LoadFailedFormat">Не вдалося завантажити дані лаунчера: {0}</sys:String>
 </ResourceDictionary>
