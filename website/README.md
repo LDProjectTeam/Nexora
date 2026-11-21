@@ -38,7 +38,7 @@ powershell -ExecutionPolicy Bypass -File .\website\Build-Website.ps1
 
 ## GitHub Pages
 
-В репозитории есть workflow `.github/workflows/pages.yml`. Он публикует папку `website` как есть и подменяет ссылку установщика на страницу последнего GitHub Release, потому что бинарник не хранится в репозитории.
+В репозитории есть workflow `.github/workflows/pages.yml`. Он публикует папку `website` как есть и подменяет ссылку установщика на страницу последнего GitHub Release, потому что бинарник не хранится в репозитории. Workflow запускается по пушу в `main`, вручную и после публикации нового релиза.
 
 1. Создай релиз и приложи к нему `Nexora-Setup-<версия>-win-x64.exe`.
 2. В GitHub открой **Settings → Pages** и выбери **Source: GitHub Actions**.
