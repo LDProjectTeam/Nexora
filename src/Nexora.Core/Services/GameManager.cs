@@ -158,23 +158,7 @@ namespace Nexora.Core.Services
             var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             _activeCts[gameId] = cts;
 
-            var installation = _installations.GetOrAdd(gameId, id => new GameInstallation
-            {
-                GameId = id,
-                InstallPath = Path.Combine(targetPath, definition.InstallSubfolder),
-            });
-
-            installation.InstallPath = Path.Combine(targetPath, definition.InstallSubfolder);
-            installation.DisplayName = definition.Name;
-            installation.TargetLibraryPath = targetPath;
-            installation.WasDownloadingWhenClosed = false;
-            installation.LastErrorMessage = null;
-            installation.CompletedInSession = false;
-            EnsureQueueOrder(installation);
-
-            // A fresh attempt downloads again; a resume keeps the completed-download marker.
-            if (!isResume)
-                installation.DownloadCompleted = false;
+            var installation = PrepareInstallation(gameId, definition, targetPath, release: null, isResume);
 
             var trackedProgress = new ProgressRelay(installation, progress, this);
 
@@ -241,40 +225,15 @@ namespace Nexora.Core.Services
 
                 // --- Install phase ---
                 var installSpace = _diskSpaceService.CalculateRequirement(definition, targetPath);
-
-                // Staging files on the same drive will be deleted during installation —
-                // count them as effectively free space when deciding whether to proceed.
-                long stagingSizeBytes = await Task.Run(() =>
+                var spaceError = await EnsureInstallSpaceAsync(installSpace, stagingPath, targetPath, cts.Token)
+                    .ConfigureAwait(false);
+                if (spaceError != null)
                 {
-                    try
-                    {
-                        return Directory.Exists(stagingPath)
-                            ? Directory.EnumerateFiles(stagingPath, "*", SearchOption.AllDirectories)
-                                .Sum(f => { try { return new FileInfo(f).Length; } catch { return 0L; } })
-                            : 0L;
-                    }
-                    catch { return 0L; }
-                }, cts.Token).ConfigureAwait(false);
-
-                var stagingDrive = Path.GetPathRoot(Path.GetFullPath(stagingPath));
-                var installDrive = Path.GetPathRoot(Path.GetFullPath(targetPath));
-                long effectiveAvailableBytes = installSpace.AvailableFreeSpaceBytes;
-                if (string.Equals(stagingDrive, installDrive, StringComparison.OrdinalIgnoreCase))
-                    effectiveAvailableBytes += stagingSizeBytes;
-
-                if (effectiveAvailableBytes < installSpace.RequiredFreeSpaceBytes)
-                {
-                    long missingBytes = installSpace.RequiredFreeSpaceBytes - effectiveAvailableBytes;
-                    var spaceMsg = string.Format(
-                        Localizer.T("InstallInsufficientSpaceFormat",
-                            "Недостаточно места на диске! Не хватает: {0}. Освободите место на {1} и попробуйте снова."),
-                        PathHelper.FormatBytes(missingBytes),
-                        installSpace.DriveRoot);
-                    _logger.LogWarning("Insufficient disk space to install {GameId}: {Summary}", gameId, spaceMsg);
+                    _logger.LogWarning("Insufficient disk space to install {GameId}: {Summary}", gameId, spaceError);
                     SetState(installation, InstallState.Paused);
                     await SaveLibraryAsync().ConfigureAwait(false);
                     _activeCts.TryRemove(gameId, out _);
-                    return OperationResult.Fail(spaceMsg);
+                    return OperationResult.Fail(spaceError);
                 }
 
                 // Stop seeding BEFORE running the installer so the torrent engine releases
@@ -319,17 +278,7 @@ namespace Nexora.Core.Services
                     _logger.LogWarning("Could not remove staging for installed game {GameId}: {Path}", gameId, stagingPath);
 
                 // --- Mark installed ---
-                installation.InstalledVersion = definition.Version;
-                installation.InstalledAt = DateTime.UtcNow;
-                installation.InstalledSizeBytes = await Task.Run(() => GetDirectorySize(installation.InstallPath), cts.Token).ConfigureAwait(false);
-                installation.PendingRelease = null;
-                installation.WasDownloadingWhenClosed = false;
-                installation.IsQueued = false;
-                installation.LastErrorMessage = null;
-                installation.CompletedInSession = true;
-                ClearDownloadProgress(installation);
-                SetState(installation, InstallState.Installed);
-                await SaveLibraryAsync();
+                await MarkInstalledAsync(installation, definition, cts.Token).ConfigureAwait(false);
 
                 _activeCts.TryRemove(gameId, out _);
                 return OperationResult.Ok();
@@ -436,33 +385,17 @@ namespace Nexora.Core.Services
             _activeCts[gameId] = cts;
             _pausedReleases[gameId] = (release, targetPath);
 
-            var installation = _installations.GetOrAdd(gameId, id => new GameInstallation
-            {
-                GameId = id,
-                InstallPath = Path.Combine(targetPath, definition.InstallSubfolder),
-            });
+            var existingInstallation = GetInstallation(gameId);
+            // A resume re-enters with State=Paused or with partial bytes downloaded.
+            // Distinguishing it lets a disk-space check only require space for the remaining payload.
+            var wasResuming = existingInstallation.State == InstallState.Paused
+                || existingInstallation.DownloadedBytes > 0;
 
-            installation.InstallPath = Path.Combine(targetPath, definition.InstallSubfolder);
-            installation.DisplayName = release.CleanTitle;
-            installation.PendingRelease = release;
-            installation.TargetLibraryPath = targetPath;
-            installation.WasDownloadingWhenClosed = false;
-            installation.LastErrorMessage = null;
-            installation.CompletedInSession = false;
-            EnsureQueueOrder(installation);
-
+            var installation = PrepareInstallation(gameId, definition, targetPath, release, wasResuming);
             var trackedProgress = new ProgressRelay(installation, progress, this);
 
-            // A resume re-enters with State=Paused or with partial bytes downloaded.
-            // Distinguishing it lets a disk-space check only require space for the remaining download payload.
-            var wasResuming = installation.State == InstallState.Paused || installation.DownloadedBytes > 0;
             var isTorrentRelease = !string.IsNullOrEmpty(release.MagnetLink)
                 || !string.IsNullOrEmpty(release.TorrentFileUrl);
-
-            // A fresh attempt starts a real download phase again; a resume keeps the
-            // "payload already on disk" marker so Continue can jump straight to install.
-            if (!wasResuming)
-                installation.DownloadCompleted = false;
 
             try
             {
@@ -566,17 +499,8 @@ namespace Nexora.Core.Services
                     && release.DownloadSizeBytes > 0
                     && release.VersionType != GameVersionType.Portable)
                 {
-                    long stagingActualBytes = await Task.Run(() =>
-                    {
-                        try
-                        {
-                            return Directory.Exists(downloadPath)
-                                ? Directory.EnumerateFiles(downloadPath, "*", SearchOption.AllDirectories)
-                                    .Sum(f => { try { return new FileInfo(f).Length; } catch { return 0L; } })
-                                : 0L;
-                        }
-                        catch { return 0L; }
-                    }, cts.Token).ConfigureAwait(false);
+                    var stagingActualBytes = await Task.Run(() => GetDirectorySize(downloadPath), cts.Token)
+                        .ConfigureAwait(false);
 
                     // Allow 1% tolerance for metadata/overhead files in the staging folder.
                     var threshold = (long)(release.DownloadSizeBytes * 0.99);
@@ -663,43 +587,15 @@ namespace Nexora.Core.Services
                     var installSpace = await Task.Run(
                         () => _diskSpaceService.CalculateRequirement(release, targetPath), cts.Token)
                         .ConfigureAwait(false);
-
-                    // The staging folder that was just downloaded lives on the same drive as the
-                    // install target and will be deleted during installation. Count its current
-                    // size as "virtually free" so that a valid install is not blocked by temp files.
-                    long stagingSize = await Task.Run(() =>
+                    var spaceError = await EnsureInstallSpaceAsync(installSpace, downloadPath, targetPath, cts.Token)
+                        .ConfigureAwait(false);
+                    if (spaceError != null)
                     {
-                        try
-                        {
-                            return Directory.Exists(downloadPath)
-                                ? Directory.EnumerateFiles(downloadPath, "*", SearchOption.AllDirectories)
-                                    .Sum(f => { try { return new FileInfo(f).Length; } catch { return 0L; } })
-                                : 0L;
-                        }
-                        catch { return 0L; }
-                    }, cts.Token).ConfigureAwait(false);
-
-                    // Only credit the staging size when staging and install target share the same drive.
-                    var stagingDriveRoot = Path.GetPathRoot(Path.GetFullPath(downloadPath));
-                    var installDriveRoot = Path.GetPathRoot(Path.GetFullPath(targetPath));
-                    long effectiveAvailable = installSpace.AvailableFreeSpaceBytes;
-                    if (string.Equals(stagingDriveRoot, installDriveRoot, StringComparison.OrdinalIgnoreCase))
-                        effectiveAvailable += stagingSize;
-
-                    bool hasEnoughInstallSpace = effectiveAvailable >= installSpace.RequiredFreeSpaceBytes;
-                    if (!hasEnoughInstallSpace)
-                    {
-                        long missing = installSpace.RequiredFreeSpaceBytes - effectiveAvailable;
-                        var msg = string.Format(
-                            Localizer.T("InstallInsufficientSpaceFormat",
-                                "Недостаточно места на диске! Не хватает: {0}. Освободите место на {1} и попробуйте снова."),
-                            PathHelper.FormatBytes(missing),
-                            installSpace.DriveRoot);
                         _logger.LogWarning("Insufficient disk space to extract/install {Title}: {Summary}",
-                            release.CleanTitle, msg);
+                            release.CleanTitle, spaceError);
                         SetState(installation, InstallState.Paused);
                         await SaveLibraryAsync().ConfigureAwait(false);
-                        return OperationResult.Fail(msg);
+                        return OperationResult.Fail(spaceError);
                     }
 
                     // Stop seeding BEFORE running the installer so the torrent engine releases
@@ -731,17 +627,7 @@ namespace Nexora.Core.Services
                             gameId, downloadPath);
                 }
 
-                installation.InstalledVersion = definition.Version;
-                installation.InstalledAt = DateTime.UtcNow;
-                installation.InstalledSizeBytes = await Task.Run(() => GetDirectorySize(installation.InstallPath), cts.Token).ConfigureAwait(false);
-                installation.PendingRelease = null;
-                installation.WasDownloadingWhenClosed = false;
-                installation.IsQueued = false;
-                installation.LastErrorMessage = null;
-                installation.CompletedInSession = true;
-                ClearDownloadProgress(installation);
-                SetState(installation, InstallState.Installed);
-                await SaveLibraryAsync();
+                await MarkInstalledAsync(installation, definition, cts.Token).ConfigureAwait(false);
 
                 _activeCts.TryRemove(gameId, out _);
                 _pausedReleases.TryRemove(gameId, out _);
@@ -2029,6 +1915,85 @@ namespace Nexora.Core.Services
             return Path.GetDirectoryName(installation.InstallPath);
         }
 
+        /// <summary>
+        /// Common state setup for both catalog installs and scraped releases.
+        /// A fresh attempt clears the "download completed" marker; a resume keeps it.
+        /// </summary>
+        private GameInstallation PrepareInstallation(
+            string gameId,
+            GameDefinition definition,
+            string targetPath,
+            GameReleaseCandidate? release,
+            bool isResume)
+        {
+            var installation = _installations.GetOrAdd(gameId, id => new GameInstallation { GameId = id });
+
+            installation.InstallPath = Path.Combine(targetPath, definition.InstallSubfolder);
+            installation.DisplayName = definition.Name;
+            installation.PendingRelease = release;
+            installation.TargetLibraryPath = targetPath;
+            installation.WasDownloadingWhenClosed = false;
+            installation.LastErrorMessage = null;
+            installation.CompletedInSession = false;
+            EnsureQueueOrder(installation);
+
+            if (!isResume)
+                installation.DownloadCompleted = false;
+
+            return installation;
+        }
+
+        /// <summary>
+        /// Verifies that the install target can hold the unpacked game. Staging files on
+        /// the same drive are about to be deleted, so their size is credited as free space.
+        /// Returns a user-facing error message, or null when there is enough space.
+        /// </summary>
+        private async Task<string?> EnsureInstallSpaceAsync(
+            DiskSpaceRequirement requirement,
+            string downloadPath,
+            string targetPath,
+            CancellationToken ct)
+        {
+            var stagingBytes = await Task.Run(() => GetDirectorySize(downloadPath), ct).ConfigureAwait(false);
+
+            var downloadDrive = Path.GetPathRoot(Path.GetFullPath(downloadPath));
+            var installDrive = Path.GetPathRoot(Path.GetFullPath(targetPath));
+
+            var effectiveAvailable = requirement.AvailableFreeSpaceBytes;
+            if (string.Equals(downloadDrive, installDrive, StringComparison.OrdinalIgnoreCase))
+                effectiveAvailable += stagingBytes;
+
+            if (effectiveAvailable >= requirement.RequiredFreeSpaceBytes)
+                return null;
+
+            var missing = requirement.RequiredFreeSpaceBytes - effectiveAvailable;
+            return string.Format(
+                Localizer.T("InstallInsufficientSpaceFormat",
+                    "Недостаточно места на диске! Не хватает: {0}. Освободите место на {1} и попробуйте снова."),
+                PathHelper.FormatBytes(missing),
+                requirement.DriveRoot);
+        }
+
+        /// <summary>Marks a finished install as Installed and persists the library.</summary>
+        private async Task MarkInstalledAsync(
+            GameInstallation installation,
+            GameDefinition definition,
+            CancellationToken ct)
+        {
+            installation.InstalledVersion = definition.Version;
+            installation.InstalledAt = DateTime.UtcNow;
+            installation.InstalledSizeBytes = await Task.Run(
+                () => GetDirectorySize(installation.InstallPath), ct).ConfigureAwait(false);
+            installation.PendingRelease = null;
+            installation.WasDownloadingWhenClosed = false;
+            installation.IsQueued = false;
+            installation.LastErrorMessage = null;
+            installation.CompletedInSession = true;
+            ClearDownloadProgress(installation);
+            SetState(installation, InstallState.Installed);
+            await SaveLibraryAsync().ConfigureAwait(false);
+        }
+
         private void SetState(GameInstallation installation, InstallState state, bool force = false)
         {
             // A download that was removed while its operation was still unwinding must
@@ -2043,12 +2008,24 @@ namespace Nexora.Core.Services
         private static long GetDirectorySize(string path)
         {
             if (!Directory.Exists(path)) return 0;
+
             long size = 0;
-            foreach (var file in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
+            try
             {
-                try { size += new FileInfo(file).Length; }
-                catch (FileNotFoundException) { }
+                foreach (var file in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
+                {
+                    try { size += new FileInfo(file).Length; }
+                    catch (FileNotFoundException) { }
+                    catch (DirectoryNotFoundException) { }
+                    catch (IOException) { }
+                    catch (UnauthorizedAccessException) { }
+                }
             }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // A folder that disappears mid-scan must not fail the whole operation.
+            }
+
             return size;
         }
     }
