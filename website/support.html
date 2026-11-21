@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#141415">
+  <meta name="description" content="Ответы на вопросы об установке, игровых загрузках, обновлениях и диагностике Nexora.">
+  <title>Помощь по Nexora</title><link rel="icon" href="nexora.ico"><link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header"><div class="container header-inner">
+    <a class="brand" href="index.html"><img src="nexora.ico" width="32" height="32" alt=""><span>Nexora</span></a>
+    <button class="menu-toggle" type="button" aria-label="Открыть меню" aria-expanded="false" aria-controls="main-nav"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <nav class="main-nav" id="main-nav" aria-label="Основная навигация"><a href="index.html#features">Возможности</a><a href="download.html">Загрузка</a><a href="changelog.html">Сборки</a><a href="support.html" aria-current="page">Помощь</a></nav>
+    <div class="language-control"><select class="sr-only" data-language aria-label="Choose language" tabindex="-1"><option value="ru">RU</option><option value="en">EN</option><option value="ua">UA</option></select><button class="language-trigger" type="button" data-language-trigger aria-label="Choose language" aria-haspopup="menu" aria-expanded="false" aria-controls="language-menu"><svg class="language-globe" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3.5 12h17M12 3c2.1 2.4 3.2 5.4 3.2 9s-1.1 6.6-3.2 9c-2.1-2.4-3.2-5.4-3.2-9S9.9 5.4 12 3Z"/></svg><span data-language-current>RU</span><svg class="language-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></button><div class="language-menu" id="language-menu" role="menu" aria-label="Choose language" hidden><button class="language-option" type="button" role="menuitemradio" aria-checked="false" data-language-option="en"><span>English</span><span class="language-code">EN</span></button><button class="language-option" type="button" role="menuitemradio" aria-checked="false" data-language-option="ru"><span>Русский</span><span class="language-code">RU</span></button><button class="language-option" type="button" role="menuitemradio" aria-checked="false" data-language-option="ua"><span>Українська</span><span class="language-code">UA</span></button></div></div><a class="button button-small button-light" data-download href="download.html">Скачать</a>
+  </div></header>
+  <main>
+    <section class="page-heading container"><p class="eyebrow">Частые вопросы</p><h1>Помощь по Nexora</h1><p>Инструкции сверены с настройками и возможностями лаунчера.</p></section>
+    <section class="support-layout container">
+      <div class="faq-list support-faq">
+        <details open><summary>Как установить Nexora?</summary><p>Скачай установщик со <a href="download.html">страницы загрузки</a>, запусти его и следуй шагам мастера. Установка выполняется в профиль Windows без запроса прав администратора.</p></details>
+        <details><summary>Как начать пользоваться лаунчером?</summary><p>При первом запуске выбери папку игровой библиотеки. Затем найди игру, изучи доступные версии и выбери подходящую. Для установки некоторых архивов или репаков может понадобиться дополнительное свободное место для распаковки.</p></details>
+        <details><summary>Как обновить Nexora?</summary><p>Автоматический канал обновления самого лаунчера не настроен. Скачай новую сборку с сайта и запусти установщик. Профиль Nexora хранится отдельно от каталога установки.</p></details>
+        <details><summary>Как обновить установленную игру?</summary><p>Автопроверка обновлений игр включена по умолчанию и запускается при открытии лаунчера. Её можно выключить в настройках. Обновление доступно, когда каталог содержит данные для этой игры.</p></details>
+        <details><summary>Какие системные требования?</summary><p>Windows 10 build 18362 или новее либо Windows 11, архитектура x64. .NET отдельно устанавливать не нужно: приложение self-contained. Минимальные требования к процессору и памяти исходники не задают.</p></details>
+        <details><summary>Загрузка приостановилась или источник недоступен</summary><p>Проверь интернет-соединение и свободное место в папке библиотеки. Загрузку можно поставить на паузу и продолжить позже. Если сетевой источник временно недоступен, он может не вернуть результаты поиска.</p></details>
+        <details><summary>Где хранятся настройки и логи?</summary><p>Профиль находится в папке %APPDATA%\Nexora. В настройках лаунчера есть действие, которое открывает папку данных и логов.</p></details>
+        <details><summary>Куда отправить отчёт об ошибке?</summary><p>В исходниках проекта нет подтверждённого адреса поддержки, сообщества или публичного трекера ошибок. Не отправляй логи по контактам, найденным вне официальных материалов Nexora.</p></details>
+      </div>
+      <aside class="support-aside">
+        <p class="eyebrow">Диагностика</p><h2>Что приложить к отчёту</h2>
+        <ol><li>Версию Nexora</li><li>Шаги, которые привели к проблеме</li><li>Ожидаемый и фактический результат</li><li>Лог из папки данных</li></ol>
+        <div class="support-path"><span>Папка профиля</span><code>%APPDATA%\Nexora</code><button class="copy-button" data-copy-path type="button">Скопировать путь</button><span class="copy-status" data-copy-status role="status" aria-live="polite"></span></div>
+        <p class="privacy-note">Перед передачей журнала удали из него личные данные.</p>
+      </aside>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="container footer-inner"><a class="brand" href="index.html"><img src="nexora.ico" width="28" height="28" alt=""><span>Nexora</span></a><nav aria-label="Дополнительная навигация"><a href="download.html">Загрузка</a><a href="changelog.html">Сборки</a><a href="support.html">Помощь</a></nav><span>© 2026 Nexora</span></div></footer>
+  <script src="locales.js" defer></script>
+  <script src="script.js" defer></script>
+</body></html>
+
+
+

@@ -1,0 +1,69 @@
+# ─────────────────────────────────────────────────────────────
+#  Nexora — что НЕ должно попадать в репозиторий
+#  Правило: в git лежит только исходный код и маленькие ассеты.
+# ─────────────────────────────────────────────────────────────
+
+# ── .NET build output ────────────────────────────────────────
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.pdb
+*.user
+*.suo
+*.DotSettings.user
+
+# tools/bin — исключение: это не build output, а поставляемые утилиты
+# (rqbit.exe — торрент-движок, innoextract.exe — распаковка репаков).
+!tools/bin/
+!tools/bin/**
+
+# ── Published / installable builds ───────────────────────────
+# Один publish = сотни мегабайт. Пересобирается из исходников.
+artifacts/
+publish/
+publish-portable/
+publish-portable-*/
+publish-test/
+publish-release/
+publish-resume-fix/
+
+# ── Локальный .NET SDK (используется Run-Debug.bat) ──────────
+.dotnet/
+
+# ── Runtime-данные лаунчера (создаются при запуске) ──────────
+logs/
+cache/
+*.log
+stdout.txt
+stderr.txt
+lifecycle.log
+
+# ── Скриншоты и отладочные дампы ─────────────────────────────
+.shots/
+artwork-debug*/
+brain/
+
+# ── Бэкапы установленного профиля и архивы ──────────────────
+backup-installed-*/
+_archive/
+*.bak
+
+# ── Rust / Go сайдкары ───────────────────────────────────────
+tools/torrent-engine/target/
+**/target/
+sidecar/**/obj/
+sidecar/**/bin/
+
+# ── Собранный сайт (в dist лежит 60 МБ установщик) ───────────
+website/dist/
+
+# ── Тестовый .torrent с игрой (262 КБ, не нужен для обычных тестов)
+test_ready.torrent
+
+# ── IDE / OS мусор ───────────────────────────────────────────
+.vs/
+.idea/
+Thumbs.db
+Desktop.ini
+.DS_Store

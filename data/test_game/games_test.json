@@ -1,0 +1,108 @@
+{
+  "catalogVersion": "1.0",
+  "games": [
+    {
+      "id": "cyber-runner-2088",
+      "name": "Cyber Runner 2088",
+      "description": "Тестовая динамичная игра для проверки всех функций GameVault: загрузки, распаковки, проверки SHA256, обновления и запуска.",
+      "developer": "GameVault Studio",
+      "publisher": "GameVault Labs",
+      "version": "1.0.0",
+      "categories": [
+        "Action",
+        "Cyberpunk",
+        "Инди"
+      ],
+      "tags": [
+        "test",
+        "demo",
+        "offline"
+      ],
+      "coverUrl": "",
+      "iconUrl": "",
+      "screenshots": [],
+      "releaseDate": "2026-09-29",
+      "sizeBytes": 168828,
+      "downloadSizeBytes": 160000,
+      "executable": "DemoGame.exe",
+      "launchArguments": [
+        "--vault-launched",
+        "--profile=default"
+      ],
+      "installSubfolder": "CyberRunner2088",
+      "downloadSources": [
+        {
+          "type": "local",
+          "priority": 1,
+          "url": "data/test_game/demo_game_v1.0.zip",
+          "archiveType": "zip"
+        },
+        {
+          "type": "torrent",
+          "priority": 2,
+          "magnetLink": "magnet:?xt=urn:btih:3b24f469b13308180adc61bb4a4f807373a0ac41&dn=CyberRunner2088"
+        }
+      ],
+      "updates": [
+        {
+          "version": "1.1.0",
+          "releaseNotes": "Обновление 1.1.0: новые графические эффекты, оптимизация производительности и файл patch_notes.txt.",
+          "sources": [
+            {
+              "type": "local",
+              "priority": 1,
+              "url": "data/test_game/demo_game_v1.1.zip",
+              "archiveType": "zip"
+            }
+          ]
+        }
+      ],
+      "dependencies": [],
+      "checksums": {
+        "algorithm": "SHA256",
+        "files": {
+          "DemoGame.exe": "BF36B5D0AA8081E4E3DAFDC9A97885A996A0645575133CA0C961B68164B8A715"
+        }
+      }
+    },
+    {
+      "id": "open-arena-sample",
+      "name": "Open Arena (Образец Торрента)",
+      "description": "Пример конфигурации игры с загрузкой через встроенный BitTorrent движок (Magnet / .torrent).",
+      "developer": "Open Source Community",
+      "publisher": "Open Source",
+      "version": "0.8.8",
+      "categories": [
+        "Shooter",
+        "Action",
+        "Multiplayer"
+      ],
+      "tags": [
+        "torrent",
+        "open-source"
+      ],
+      "coverUrl": "",
+      "iconUrl": "",
+      "screenshots": [],
+      "releaseDate": "2024-01-01",
+      "sizeBytes": 524288000,
+      "downloadSizeBytes": 450000000,
+      "executable": "openarena.exe",
+      "launchArguments": [],
+      "installSubfolder": "OpenArena",
+      "downloadSources": [
+        {
+          "type": "torrent",
+          "priority": 1,
+          "magnetLink": "magnet:?xt=urn:btih:8c9f563d7e8b625cf04b73b5c490a6e0c0915609&dn=OpenArena"
+        }
+      ],
+      "updates": [],
+      "dependencies": [],
+      "checksums": {
+        "algorithm": "SHA256",
+        "files": {}
+      }
+    }
+  ]
+}

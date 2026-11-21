@@ -1,0 +1,24 @@
+# Нормализация переносов строк и защита бинарников от текстовых конвертаций.
+# См. https://git-scm.com/docs/gitattributes
+
+* text=auto
+
+# Windows-скрипты должны оставаться в CRLF
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.sln  text eol=crlf
+
+# Бинарные ассеты и утилиты
+*.exe      binary
+*.dll      binary
+*.pdb      binary
+*.ico      binary
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.webp     binary
+*.zip      binary
+*.7z       binary
+*.rar      binary
+*.iso      binary
+*.torrent  binary
