@@ -20,7 +20,7 @@
 
 </div>
 
-**RU** [Русский](#русский) | **EN** [English](#english)
+**RU** [Русский](#русский) | **UA** [Українська](#українська) | **EN** [English](#english)
 
 ---
 
@@ -44,7 +44,7 @@
 | 🧩 **Атомарная установка** | Обновление не повреждает рабочую копию, если загрузка оборвалась |
 | 📚 **Библиотека** | Статусы установки и обновлений, запуск игры, проверка файлов, папка и удаление |
 | 🔄 **Версии и обновления** | Выбор подходящего релиза игры и обновление установленной копии |
-| 🎨 **Интерфейс** | Тёмная тема, цветовые акценты, языки RU / EN / UK, кэш обложек в WebP |
+| 🎨 **Интерфейс** | Тёмная тема, цветовые акценты, языки RU / EN / UA, кэш обложек в WebP |
 
 ### 🚀 Установка
 
@@ -98,6 +98,65 @@ Nexora/
 
 ---
 
+## Українська
+
+**Лаунчер для Windows, який веде гру від пошуку в каталозі до кнопки «Грати»**
+
+> Nexora шукає ігри в підключених джерелах, завантажує їх через BitTorrent або HTTP з докачуванням, перевіряє файли за SHA-256 і збирає встановлене в одну бібліотеку.
+
+[**⬇️ Завантажити**](https://github.com/LDProjectTeam/Nexora/releases/latest) · [**🌐 Сайт**](https://ldprojectteam.github.io/Nexora/) · [**🐛 Повідомити про баг**](https://github.com/LDProjectTeam/Nexora/issues)
+
+### ✨ Можливості
+
+| Функція | Опис |
+| --- | --- |
+| 🎮 **Каталог ігор** | Пошук, добірки «У тренді / Топ завантажень / За абеткою / Сюрприз», фільтри й обкладинки зі Steam |
+| 🔎 **Власні джерела** | Вбудований каталог Rutor і підключення JSON-каталогів за посиланням |
+| 🧲 **BitTorrent** | Рушій rqbit на Rust: magnet-посилання, `.torrent`, fast resume, обмеження швидкості |
+| ⬇️ **HTTP / HTTPS** | Докачування через `Range`, тимчасова папка `staging`, idle-timeout |
+| 🛡️ **Перевірка SHA-256** | Хеші фінальних файлів звіряються після розпакування; у разі розбіжності встановлення скасовується |
+| 🧩 **Атомарне встановлення** | Оновлення не пошкоджує робочу копію, якщо завантаження обірвалося |
+| 📚 **Бібліотека** | Статуси встановлення й оновлень, запуск гри, перевірка файлів, папка та видалення |
+| 🔄 **Версії та оновлення** | Вибір відповідного релізу гри й оновлення встановленої копії |
+| 🎨 **Інтерфейс** | Темна тема, кольорові акценти, мови RU / EN / UA, кеш обкладинок у WebP |
+
+### 🚀 Встановлення
+
+1. Відкрий [**Releases**](https://github.com/LDProjectTeam/Nexora/releases/latest)
+2. Завантаж `Nexora-Setup-1.0.68-win-x64.exe`
+3. Запусти інсталятор і вибери папку бібліотеки під час першого запуску
+
+Встановлення відбувається в профіль користувача, права адміністратора не потрібні. `.NET` встановлювати окремо не потрібно: збірка self-contained.
+
+> Інсталятор не підписано цифровим сертифікатом, тому Windows SmartScreen може показати попередження про видавця.
+
+### 🔧 Збирання з вихідного коду
+
+Потрібні .NET 8 SDK, PowerShell і [Inno Setup 6](https://jrsoftware.org/isinfo.php).
+
+```powershell
+dotnet restore Nexora.sln
+dotnet build Nexora.sln -c Release
+dotnet test tests/Nexora.Tests/Nexora.Tests.csproj -c Release
+
+# запуск зібраного лаунчера
+.\Run-Launcher.bat
+
+# інсталятор у artifacts\installer
+.\installer\Build-Installer.ps1
+
+# статичний сайт у website\dist
+.\website\Build-Website.ps1
+```
+
+### 📚 Документація
+
+- [Як додати гру до каталогу](docs/ADDING_GAMES.md)
+- [Оптимізація кешу й обкладинок](docs/OPTIMIZATION.md)
+- [Збирання та публікація сайту](website/README.md)
+
+---
+
 ## English
 
 **A Windows launcher that takes a game from catalog search to the Play button**
@@ -118,7 +177,7 @@ Nexora/
 | 🧩 **Atomic install** | An interrupted update never damages a working copy |
 | 📚 **Library** | Install and update statuses, launch, file checks, folder access, and removal |
 | 🔄 **Versions and updates** | Pick the right game release and update an installed copy |
-| 🎨 **Interface** | Dark theme, accent colors, RU / EN / UK, WebP artwork cache |
+| 🎨 **Interface** | Dark theme, accent colors, RU / EN / UA, WebP artwork cache |
 
 ### 🚀 Installation
 
