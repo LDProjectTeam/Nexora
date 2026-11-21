@@ -1095,7 +1095,11 @@ namespace Nexora.App.ViewModels
                     _ = LoadMoreCatalogGamesAsync();
                 }
 
-                // Fetch latest games from connected external sites in the background
+                // Show the last successful snapshot immediately so the catalogue is not
+                // almost empty while the trackers are being queried, then refresh it in
+                // the background and append/replace the new releases.
+                AddLatestReleaseCards(_searchAggregator.GetCachedLatestGames());
+
                 _ = Task.Run(async () =>
                 {
                     try
@@ -1103,52 +1107,8 @@ namespace Nexora.App.ViewModels
                         var latestReleases = await _searchAggregator.GetLatestGamesAsync();
                         if (latestReleases.Count > 0)
                         {
-                            System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
-                            {
-                                var builtInTitleKeys = new HashSet<string>(AllGameCards
-                                    .Where(card => card.ReleaseCandidate == null)
-                                    .Select(card => GetTitleKey(card.Name)));
-                                var existingSourceTitleKeys = new HashSet<string>(AllGameCards
-                                    .Where(card => card.ReleaseCandidate != null)
-                                    .Select(card => $"{card.ReleaseCandidate!.SourceId}|{GetTitleKey(card.Name)}"));
-                                var installedTitleKeys = new HashSet<string>(AllGameCards
-                                    .Where(card => card.IsInstalled)
-                                    .Select(card => GetTitleKey(card.Name)));
-                                var existingIds = new HashSet<string>(AllGameCards.Select(c => c.Id));
-                                var cardsToAdd = new List<GameCardViewModel>();
-
-                                foreach (var rel in latestReleases)
-                                {
-                                    var title = !string.IsNullOrWhiteSpace(rel.CleanTitle) ? rel.CleanTitle : rel.RawTitle;
-                                    var titleKey = GetTitleKey(title);
-                                    if (titleKey.Length == 0)
-                                        continue;
-                                    var sourceTitleKey = $"{rel.SourceId}|{titleKey}";
-                                    var isRecentRutorRelease = string.Equals(
-                                            rel.SourceId, "rutor", StringComparison.OrdinalIgnoreCase)
-                                        && rel.PublishDate is DateTime publishDate
-                                        && publishDate.Date >= DateTime.Today.AddDays(-6)
-                                        && publishDate.Date <= DateTime.Today;
-                                    if (existingIds.Contains(rel.Id)
-                                        || installedTitleKeys.Contains(titleKey)
-                                        || (builtInTitleKeys.Contains(titleKey) && !isRecentRutorRelease)
-                                        || existingSourceTitleKeys.Contains(sourceTitleKey))
-                                        continue;
-
-                                    var install = _gameManager.GetInstallation(rel.Id);
-                                    var card = new GameCardViewModel(rel, install, _gameManager, _gameLauncher, _settingsService, _searchAggregator, _artworkService, _notifications);
-                                    cardsToAdd.Add(card);
-                                    existingSourceTitleKeys.Add(sourceTitleKey);
-                                    existingIds.Add(rel.Id);
-                                }
-
-                                AllGameCards.AddRange(cardsToAdd);
-                                RefreshCatalogIndexes();
-                                RefreshCatalogView(resetDisplayed: false);
-                                RefreshFeaturedGames();
-                                SchedulePortableVersionLookups(CatalogGames.Cast<GameCardViewModel>().Take(10));
-
-                            });
+                            System.Windows.Application.Current?.Dispatcher?.Invoke(
+                                () => AddLatestReleaseCards(latestReleases));
                         }
                     }
                     catch (Exception ex)
@@ -1161,6 +1121,62 @@ namespace Nexora.App.ViewModels
             {
                 IsLoading = false;
             }
+        }
+
+        /// <summary>Adds release candidates (cached or freshly fetched) as catalogue cards.</summary>
+        private void AddLatestReleaseCards(IReadOnlyList<GameReleaseCandidate> latestReleases)
+        {
+            if (latestReleases.Count == 0)
+                return;
+
+            var builtInTitleKeys = new HashSet<string>(AllGameCards
+                .Where(card => card.ReleaseCandidate == null)
+                .Select(card => GetTitleKey(card.Name)));
+            var existingSourceTitleKeys = new HashSet<string>(AllGameCards
+                .Where(card => card.ReleaseCandidate != null)
+                .Select(card => $"{card.ReleaseCandidate!.SourceId}|{GetTitleKey(card.Name)}"));
+            var installedTitleKeys = new HashSet<string>(AllGameCards
+                .Where(card => card.IsInstalled)
+                .Select(card => GetTitleKey(card.Name)));
+            var existingIds = new HashSet<string>(AllGameCards.Select(card => card.Id));
+            var cardsToAdd = new List<GameCardViewModel>();
+
+            foreach (var rel in latestReleases)
+            {
+                var title = !string.IsNullOrWhiteSpace(rel.CleanTitle) ? rel.CleanTitle : rel.RawTitle;
+                var titleKey = GetTitleKey(title);
+                if (titleKey.Length == 0)
+                    continue;
+
+                var sourceTitleKey = $"{rel.SourceId}|{titleKey}";
+                var isRecentRutorRelease = string.Equals(
+                        rel.SourceId, "rutor", StringComparison.OrdinalIgnoreCase)
+                    && rel.PublishDate is DateTime publishDate
+                    && publishDate.Date >= DateTime.Today.AddDays(-6)
+                    && publishDate.Date <= DateTime.Today;
+
+                if (existingIds.Contains(rel.Id)
+                    || installedTitleKeys.Contains(titleKey)
+                    || (builtInTitleKeys.Contains(titleKey) && !isRecentRutorRelease)
+                    || existingSourceTitleKeys.Contains(sourceTitleKey))
+                    continue;
+
+                var install = _gameManager.GetInstallation(rel.Id);
+                var card = new GameCardViewModel(rel, install, _gameManager, _gameLauncher,
+                    _settingsService, _searchAggregator, _artworkService, _notifications);
+                cardsToAdd.Add(card);
+                existingSourceTitleKeys.Add(sourceTitleKey);
+                existingIds.Add(rel.Id);
+            }
+
+            if (cardsToAdd.Count == 0)
+                return;
+
+            AllGameCards.AddRange(cardsToAdd);
+            RefreshCatalogIndexes();
+            RefreshCatalogView(resetDisplayed: false);
+            RefreshFeaturedGames();
+            SchedulePortableVersionLookups(CatalogGames.Cast<GameCardViewModel>().Take(10));
         }
 
         private void TriggerDebouncedOnlineSearch(string query)

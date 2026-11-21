@@ -1,9 +1,13 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using Nexora.Core.Helpers;
 using Nexora.Core.Interfaces;
 using Nexora.Core.Models;
 using Microsoft.Extensions.Logging;
@@ -16,6 +20,14 @@ namespace Nexora.Core.Services
         private readonly IVersionSelector _versionSelector;
         private readonly ILogger<GameSearchAggregator> _logger;
         private readonly ConcurrentDictionary<string, string> _knownGameTitles = new(StringComparer.Ordinal);
+
+        private static readonly string LatestCacheFile =
+            Path.Combine(PathHelper.AppDataDir, "cache", "latest-releases.json");
+        private static readonly object LatestCacheLock = new();
+        private static readonly JsonSerializerOptions LatestCacheJson = new()
+        {
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
 
         public IReadOnlyList<IGameSource> Sources => _sources.AsReadOnly();
 
@@ -220,7 +232,62 @@ namespace Nexora.Core.Services
                 .ThenBy(c => c.CleanTitle, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
+            CacheLatestGames(grouped);
             return grouped;
+        }
+
+        public IReadOnlyList<GameReleaseCandidate> GetCachedLatestGames()
+        {
+            try
+            {
+                lock (LatestCacheLock)
+                {
+                    if (!File.Exists(LatestCacheFile))
+                        return Array.Empty<GameReleaseCandidate>();
+
+                    var cached = JsonSerializer.Deserialize<List<GameReleaseCandidate>>(
+                        File.ReadAllText(LatestCacheFile), LatestCacheJson);
+                    if (cached == null || cached.Count == 0)
+                        return Array.Empty<GameReleaseCandidate>();
+
+                    var activeSources = _sources
+                        .Where(source => source.IsEnabled)
+                        .Select(source => source.SourceId)
+                        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                    return cached
+                        .Where(candidate => activeSources.Contains(candidate.SourceId))
+                        .Where(candidate => !GameReleaseMatcher.IsConsoleRelease(candidate))
+                        .Take(60)
+                        .ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not read the cached latest releases; waiting for the network instead.");
+                return Array.Empty<GameReleaseCandidate>();
+            }
+        }
+
+        private void CacheLatestGames(IReadOnlyList<GameReleaseCandidate> releases)
+        {
+            if (releases.Count == 0)
+                return;
+
+            try
+            {
+                lock (LatestCacheLock)
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(LatestCacheFile)!);
+                    var temporary = LatestCacheFile + ".tmp";
+                    File.WriteAllText(temporary, JsonSerializer.Serialize(releases.Take(60).ToList(), LatestCacheJson));
+                    File.Move(temporary, LatestCacheFile, overwrite: true);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not cache the latest releases.");
+            }
         }
 
         private static string GetTitleKey(string title)

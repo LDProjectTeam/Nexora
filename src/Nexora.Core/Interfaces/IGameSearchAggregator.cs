@@ -34,5 +34,11 @@ namespace Nexora.Core.Interfaces
 
         /// <summary>Get latest game releases across all enabled sources concurrently.</summary>
         Task<IReadOnlyList<GameReleaseCandidate>> GetLatestGamesAsync(CancellationToken ct = default);
+
+        /// <summary>
+        /// Last successful "latest releases" snapshot, available immediately at startup
+        /// (and offline). The network refresh replaces it in the background.
+        /// </summary>
+        IReadOnlyList<GameReleaseCandidate> GetCachedLatestGames();
     }
 }
