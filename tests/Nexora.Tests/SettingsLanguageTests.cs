@@ -91,5 +91,28 @@ namespace Nexora.Tests
             Assert.Equal("ru", loadedService.Settings.Language);
             Assert.True(loadedService.Settings.IsLanguageManuallySelected);
         }
+        [Fact]
+        public async Task SaveAsync_WritesAtomically_LeavesNoTempFile_AndKeepsBackup()
+        {
+            var backupPath = _settingsFilePath + ".bak";
+            if (File.Exists(backupPath))
+                File.Delete(backupPath);
+
+            var service = new SettingsService(NullLogger<SettingsService>.Instance);
+            service.Settings.Language = "en";
+            service.Settings.IsLanguageManuallySelected = true;
+            await service.SaveAsync();
+
+            Assert.True(File.Exists(_settingsFilePath));
+            Assert.False(File.Exists(_settingsFilePath + ".tmp"));
+
+            service.Settings.Language = "uk";
+            await service.SaveAsync();
+
+            Assert.True(File.Exists(backupPath), "The previous settings generation should be kept in .bak.");
+
+            using var document = JsonDocument.Parse(await File.ReadAllTextAsync(_settingsFilePath));
+            Assert.Equal("uk", document.RootElement.GetProperty("Language").GetString());
+        }
     }
 }

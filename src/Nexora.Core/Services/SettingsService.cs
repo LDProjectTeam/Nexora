@@ -21,6 +21,9 @@ namespace Nexora.Core.Services
 
         public AppSettings Settings { get; private set; } = new();
 
+        private readonly SemaphoreSlim _saveLock = new(1, 1);
+        private string? _lastSavedJson;
+
         /// <summary>
         /// True если settings.json не существовал при загрузке (первый запуск),
         /// или если DefaultInstallPath не был задан.
@@ -48,12 +51,7 @@ namespace Nexora.Core.Services
 
             try
             {
-                var json = File.ReadAllText(path);
-                Settings = JsonSerializer.Deserialize<AppSettings>(json, _jsonOptions) ?? new AppSettings();
-                if (!Settings.IsLanguageManuallySelected && !string.IsNullOrWhiteSpace(Settings.Language) && (Settings.Language is "ru" or "uk" or "en"))
-                    Settings.IsLanguageManuallySelected = true;
-                IsFirstRun = string.IsNullOrWhiteSpace(Settings.DefaultInstallPath);
-                _logger.LogInformation("Settings loaded from {Path}", path);
+                ApplyLoadedJson(File.ReadAllText(path));
             }
             catch (Exception ex)
             {
@@ -79,12 +77,7 @@ namespace Nexora.Core.Services
 
             try
             {
-                var json = await File.ReadAllTextAsync(path);
-                Settings = JsonSerializer.Deserialize<AppSettings>(json, _jsonOptions) ?? new AppSettings();
-                if (!Settings.IsLanguageManuallySelected && !string.IsNullOrWhiteSpace(Settings.Language) && (Settings.Language is "ru" or "uk" or "en"))
-                    Settings.IsLanguageManuallySelected = true;
-                IsFirstRun = string.IsNullOrWhiteSpace(Settings.DefaultInstallPath);
-                _logger.LogInformation("Settings loaded from {Path}", path);
+                ApplyLoadedJson(await File.ReadAllTextAsync(path).ConfigureAwait(false));
             }
             catch (Exception ex)
             {
@@ -96,32 +89,81 @@ namespace Nexora.Core.Services
 
         public void Save()
         {
-            PathHelper.EnsureDirectory(PathHelper.AppDataDir);
-            try
-            {
-                var json = JsonSerializer.Serialize(Settings, _jsonOptions);
-                File.WriteAllText(PathHelper.SettingsFile, json);
-                _logger.LogDebug("Settings saved.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to save settings.");
-            }
+            var json = JsonSerializer.Serialize(Settings, _jsonOptions);
+
+            // The lock is released by a thread-pool continuation (ConfigureAwait(false)),
+            // so blocking the UI thread here cannot deadlock.
+            SaveJsonAsync(json).GetAwaiter().GetResult();
         }
 
         public async Task SaveAsync()
         {
+            var json = JsonSerializer.Serialize(Settings, _jsonOptions);
+            await SaveJsonAsync(json).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Writes settings.json atomically (temp file + replace) and keeps one previous
+        /// generation in .bak. Previously a crash or a concurrent save could leave a
+        /// truncated JSON and silently reset every setting on the next launch.
+        /// </summary>
+        private async Task SaveJsonAsync(string json)
+        {
             PathHelper.EnsureDirectory(PathHelper.AppDataDir);
+            await _saveLock.WaitAsync().ConfigureAwait(false);
             try
             {
-                var json = JsonSerializer.Serialize(Settings, _jsonOptions);
-                await File.WriteAllTextAsync(PathHelper.SettingsFile, json);
+                var path = PathHelper.SettingsFile;
+
+                // Settings are saved on every toggle; skip a write when nothing changed.
+                if (string.Equals(json, _lastSavedJson, StringComparison.Ordinal) && File.Exists(path))
+                    return;
+
+                var tempPath = path + ".tmp";
+                await File.WriteAllTextAsync(tempPath, json).ConfigureAwait(false);
+
+                if (File.Exists(path))
+                {
+                    try
+                    {
+                        File.Replace(tempPath, path, path + ".bak", ignoreMetadataErrors: true);
+                    }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or PlatformNotSupportedException)
+                    {
+                        File.Copy(tempPath, path, overwrite: true);
+                        try { File.Delete(tempPath); } catch { }
+                    }
+                }
+                else
+                {
+                    File.Move(tempPath, path);
+                }
+
+                _lastSavedJson = json;
                 _logger.LogDebug("Settings saved.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to save settings.");
             }
+            finally
+            {
+                _saveLock.Release();
+            }
+        }
+
+        private void ApplyLoadedJson(string json)
+        {
+            Settings = JsonSerializer.Deserialize<AppSettings>(json, _jsonOptions) ?? new AppSettings();
+            if (!Settings.IsLanguageManuallySelected && !string.IsNullOrWhiteSpace(Settings.Language)
+                && (Settings.Language is "ru" or "uk" or "en"))
+            {
+                Settings.IsLanguageManuallySelected = true;
+            }
+
+            IsFirstRun = string.IsNullOrWhiteSpace(Settings.DefaultInstallPath);
+            _lastSavedJson = json;
+            _logger.LogInformation("Settings loaded from {Path}", PathHelper.SettingsFile);
         }
 
         public void Reset()
