@@ -4,8 +4,8 @@
                     "version":  "1.0.67",
                     "installer":  "downloads/Nexora-Setup-1.0.67-win-x64.exe",
                     "filename":  "Nexora-Setup-1.0.67-win-x64.exe",
-                    "sizeBytes":  63670604,
-                    "fileModifiedUtc":  "2026-11-21T19:55:14Z",
+                    "sizeBytes":  63670215,
+                    "fileModifiedUtc":  "2026-11-21T20:00:53Z",
                     "releaseDate":  null,
                     "architecture":  "x64",
                     "os":  "Windows 10 build 18362 or later; Windows 11"
@@ -14,8 +14,8 @@
                     {
                         "version":  "1.0.67",
                         "filename":  "Nexora-Setup-1.0.67-win-x64.exe",
-                        "sizeBytes":  63670604,
-                        "fileModifiedUtc":  "2026-11-21T19:55:14Z"
+                        "sizeBytes":  63670215,
+                        "fileModifiedUtc":  "2026-11-21T20:00:53Z"
                     },
                     {
                         "version":  "1.0.66",
