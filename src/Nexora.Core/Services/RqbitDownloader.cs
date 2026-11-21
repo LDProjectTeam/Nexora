@@ -44,6 +44,7 @@ namespace Nexora.Core.Services
         private long _runningUploadBps = -1;
 
         private const int PollIntervalMs = 500;
+        private const int SlowPollIntervalMs = 2000;
         private const int DefaultPort = 3030;
         private const int PeerPortStart = 4240;
         private const int PeerPortEnd = 4249;
@@ -1017,9 +1018,14 @@ namespace Nexora.Core.Services
                 DateTime lastStallRestart = DateTime.MinValue;
                 DateTime lastMetadataRestart = DateTime.MinValue;
 
+                // Poll fast while data or metadata is flowing; back off when the swarm
+                // is idle so several paused/starved torrents do not hit the local API
+                // dozens of times per second.
+                var pollDelayMs = PollIntervalMs;
+
                 while (!ct.IsCancellationRequested)
                 {
-                    await Task.Delay(PollIntervalMs, ct).ConfigureAwait(false);
+                    await Task.Delay(pollDelayMs, ct).ConfigureAwait(false);
 
                     RqbitStatsResponse? stats = null;
                     try
@@ -1260,6 +1266,10 @@ namespace Nexora.Core.Services
                         torrentFinished = true;
                         break;
                     }
+
+                    pollDelayMs = dlRateBps > 0 || !metadataReceived
+                        ? PollIntervalMs
+                        : SlowPollIntervalMs;
                 }
 
                 // Cancellation?

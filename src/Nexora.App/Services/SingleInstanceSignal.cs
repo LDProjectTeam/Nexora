@@ -26,10 +26,10 @@ namespace Nexora.App.Services
             if (ActivateMessage == 0)
                 return;
 
-            for (var attempt = 0; attempt < 6; attempt++)
+            for (var attempt = 0; attempt < 4; attempt++)
             {
                 NativeMethods.PostMessage(HwndBroadcast, ActivateMessage, IntPtr.Zero, IntPtr.Zero);
-                Thread.Sleep(150);
+                Thread.Sleep(120);
             }
         }
 

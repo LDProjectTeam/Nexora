@@ -34,66 +34,98 @@ namespace Nexora.Core.Services
                 return result;
             }
 
-            int total = checksums.Files.Count;
-            int done = 0;
+            var entries = checksums.Files.ToList();
+            var total = entries.Count;
+            var done = 0;
+            var failed = new System.Collections.Concurrent.ConcurrentBag<string>();
+            var missing = new System.Collections.Concurrent.ConcurrentBag<string>();
 
-            foreach (var (relativePath, expectedHash) in checksums.Files)
+            // Hashing is I/O + CPU work; a few files in parallel makes verifying a large
+            // game several times faster without saturating the disk queue.
+            var options = new ParallelOptions
             {
-                ct.ThrowIfCancellationRequested();
+                MaxDegreeOfParallelism = Math.Max(1, Math.Min(4, Environment.ProcessorCount)),
+                CancellationToken = ct
+            };
 
-                var fullPath = Path.Combine(installPath, relativePath);
+            var fullRoot = Path.GetFullPath(installPath).TrimEnd(Path.DirectorySeparatorChar)
+                           + Path.DirectorySeparatorChar;
 
-                // A remote catalog must not be able to make the verifier hash files
-                // outside the game folder (../ traversal).
-                var fullRoot = Path.GetFullPath(installPath).TrimEnd(Path.DirectorySeparatorChar)
-                               + Path.DirectorySeparatorChar;
-                var resolvedPath = Path.GetFullPath(fullPath);
-                if (!resolvedPath.StartsWith(fullRoot, StringComparison.OrdinalIgnoreCase))
-                {
-                    _logger.LogWarning("Checksum path escapes the install folder: {Path}", relativePath);
-                    result.FailedFiles.Add(relativePath);
-                    result.Passed = false;
-                    done++;
-                    continue;
-                }
-
-                if (!File.Exists(resolvedPath))
-                {
-                    _logger.LogWarning("Missing file: {Path}", resolvedPath);
-                    result.MissingFiles.Add(relativePath);
-                    result.Passed = false;
-                    done++;
-                    continue;
-                }
-
-                try
-                {
-                    var actualHash = await HashHelper.ComputeSha256Async(resolvedPath, ct).ConfigureAwait(false);
-                    if (!HashHelper.HashesMatch(actualHash, expectedHash))
-                    {
-                        _logger.LogWarning("Hash mismatch for {File}: expected {Expected}, got {Actual}",
-                            relativePath, expectedHash, actualHash);
-                        result.FailedFiles.Add(relativePath);
-                        result.Passed = false;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error verifying {File}", fullPath);
-                    result.FailedFiles.Add(relativePath);
-                    result.Passed = false;
-                }
-
-                done++;
+            void ReportDone(string relativePath)
+            {
+                var completed = Interlocked.Increment(ref done);
                 progress?.Report(new DownloadProgress
                 {
                     GameId = definition.Id,
-                    Fraction = (double)done / total,
+                    Fraction = (double)completed / total,
                     Phase = "Verifying",
                     PhaseKey = DownloadPhases.Verifying,
                     CurrentFile = relativePath
                 });
             }
+
+            await Parallel.ForEachAsync(entries, options, async (entry, token) =>
+            {
+                var relativePath = entry.Key;
+                var expectedHash = entry.Value;
+
+                string resolvedPath;
+                try
+                {
+                    resolvedPath = Path.GetFullPath(Path.Combine(fullRoot, relativePath));
+                }
+                catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+                {
+                    _logger.LogWarning("Invalid checksum path: {Path}", relativePath);
+                    failed.Add(relativePath);
+                    ReportDone(relativePath);
+                    return;
+                }
+
+                // A remote catalog must not be able to make the verifier hash files
+                // outside the game folder (../ traversal).
+                if (!resolvedPath.StartsWith(fullRoot, StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogWarning("Checksum path escapes the install folder: {Path}", relativePath);
+                    failed.Add(relativePath);
+                    ReportDone(relativePath);
+                    return;
+                }
+
+                if (!File.Exists(resolvedPath))
+                {
+                    _logger.LogWarning("Missing file: {Path}", resolvedPath);
+                    missing.Add(relativePath);
+                    ReportDone(relativePath);
+                    return;
+                }
+
+                try
+                {
+                    var actualHash = await HashHelper.ComputeSha256Async(resolvedPath, token).ConfigureAwait(false);
+                    if (!HashHelper.HashesMatch(actualHash, expectedHash))
+                    {
+                        _logger.LogWarning("Hash mismatch for {File}: expected {Expected}, got {Actual}",
+                            relativePath, expectedHash, actualHash);
+                        failed.Add(relativePath);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error verifying {File}", resolvedPath);
+                    failed.Add(relativePath);
+                }
+
+                ReportDone(relativePath);
+            }).ConfigureAwait(false);
+
+            result.FailedFiles.AddRange(failed);
+            result.MissingFiles.AddRange(missing);
+            result.Passed = failed.IsEmpty && missing.IsEmpty;
 
             _logger.LogInformation("Verification for {GameId}: {Result}", definition.Id,
                 result.Passed ? "PASSED" : $"FAILED ({result.FailedFiles.Count + result.MissingFiles.Count} issues)");

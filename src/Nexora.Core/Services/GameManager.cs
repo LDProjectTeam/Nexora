@@ -1392,6 +1392,8 @@ namespace Nexora.Core.Services
 
             _logger.LogInformation("Shutting down and pausing {Count} active download(s)...", activeGameIds.Count);
 
+            // Mark the cards and cancel our own tokens first: this is fast and keeps the
+            // operation reporting a pause (not a failure) while it unwinds.
             foreach (var gameId in activeGameIds)
             {
                 if (_installations.TryGetValue(gameId, out var installation))
@@ -1400,24 +1402,17 @@ namespace Nexora.Core.Services
                     SetState(installation, InstallState.Paused);
                 }
 
-                // Cancel our own token before unwinding so the operation reports a pause
-                // (not a failure). Otherwise closing the launcher could persist Error and
-                // the next start would show an unusable card instead of Continue.
                 if (_activeCts.TryGetValue(gameId, out var activeCts))
                 {
                     try { activeCts.Cancel(); }
                     catch (ObjectDisposedException) { /* operation already finished */ }
                 }
-
-                try
-                {
-                    await _downloadManager.PauseAndSaveAsync(gameId).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Failed to cleanly pause download {GameId}", gameId);
-                }
             }
+
+            // Pause/save the engine tasks concurrently. Each call can wait seconds for
+            // the torrent sidecar, and doing that sequentially made closing the launcher
+            // take N × timeout.
+            await Task.WhenAll(activeGameIds.Select(PauseForShutdownAsync)).ConfigureAwait(false);
 
             try
             {
@@ -1426,6 +1421,18 @@ namespace Nexora.Core.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to save library during download shutdown.");
+            }
+        }
+
+        private async Task PauseForShutdownAsync(string gameId)
+        {
+            try
+            {
+                await _downloadManager.PauseAndSaveAsync(gameId).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to cleanly pause download {GameId}", gameId);
             }
         }
 

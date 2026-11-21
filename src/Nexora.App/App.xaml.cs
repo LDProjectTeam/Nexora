@@ -49,13 +49,14 @@ namespace Nexora.App
 
             try
             {
-                // Only one launcher may drive the torrent engine at a time. A previous
-                // instance usually needs just a moment to release the mutex during shutdown.
-                _singleInstanceMutex = new Mutex(false, @"Local\Nexora.Launcher.SingleInstance");
+                // Only one launcher may drive the torrent engine at a time. If the object
+                // already existed, give the previous instance a short moment to finish a
+                // shutdown; otherwise activate it immediately instead of waiting 3 seconds.
+                _singleInstanceMutex = new Mutex(false, @"Local\Nexora.Launcher.SingleInstance", out var createdNew);
                 var ownsMutex = false;
                 try
                 {
-                    ownsMutex = _singleInstanceMutex.WaitOne(TimeSpan.FromSeconds(3));
+                    ownsMutex = _singleInstanceMutex.WaitOne(createdNew ? TimeSpan.Zero : TimeSpan.FromSeconds(1));
                 }
                 catch (AbandonedMutexException)
                 {
