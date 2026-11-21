@@ -2,7 +2,6 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 using Nexora.App.ViewModels;
 
 namespace Nexora.App.Views
@@ -12,28 +11,6 @@ namespace Nexora.App.Views
         public DownloadsView()
         {
             InitializeComponent();
-        }
-
-        private void OnDownloadCardLoaded(object sender, RoutedEventArgs e)
-        {
-            UpdateDownloadCardClip(sender as Border);
-        }
-
-        private void OnDownloadCardSizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            UpdateDownloadCardClip(sender as Border);
-        }
-
-        private static void UpdateDownloadCardClip(Border? card)
-        {
-            if (card == null || card.ActualWidth <= 0 || card.ActualHeight <= 0)
-                return;
-
-            const double cornerRadius = 14;
-            card.Clip = new RectangleGeometry(
-                new Rect(0, 0, card.ActualWidth, card.ActualHeight),
-                cornerRadius,
-                cornerRadius);
         }
 
         private void OnDragOver(object sender, DragEventArgs e)

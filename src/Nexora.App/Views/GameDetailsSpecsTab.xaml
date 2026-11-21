@@ -1,0 +1,310 @@
+<UserControl x:Class="Nexora.App.Views.GameDetailsSpecsTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             HorizontalContentAlignment="Stretch"
+             VerticalContentAlignment="Stretch">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Nexora;component/Views/GameDetailsResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+                <Grid Margin="0,14,0,0"
+                      Visibility="{Binding IsSpecsTabSelected, Converter={StaticResource BoolToVis}}">
+                    <Grid.Style>
+                        <Style TargetType="Grid">
+                            <Setter Property="Opacity" Value="0" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsSpecsTabSelected}" Value="True">
+                                    <Setter Property="Opacity" Value="1" />
+                                    <DataTrigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                 From="0" To="1" Duration="0:0:0.22" />
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.EnterActions>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Grid.Style>
+
+                    <StackPanel>
+                        <Border Style="{StaticResource PanelCardStyle}" Margin="0,0,0,14"
+                                Background="#161108" BorderBrush="#3A2B10"
+                                Visibility="{Binding ShowLookupWarning, Converter={StaticResource BoolToVis}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE7BA;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                                           Foreground="{StaticResource WarningBrush}" VerticalAlignment="Top" Margin="0,1,0,0" />
+                                <TextBlock Text="{Binding LookupStatusText}" Margin="10,0,0,0" FontSize="12"
+                                           LineHeight="18" Foreground="#D6B27A" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="14" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Install and version -->
+                            <Border Grid.Column="0" Style="{StaticResource PanelCardStyle}">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource SectionTitleStyle}"
+                                               Text="{DynamicResource GameDetailsSectionInstall}" />
+
+                                    <Grid Margin="0,16,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="142" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Style="{StaticResource SpecLabelStyle}"
+                                                   Text="{DynamicResource DetailDownloadSize}" />
+                                        <TextBlock Grid.Column="1" Style="{StaticResource SpecValueStyle}"
+                                                   Text="{Binding DownloadSizeDisplay}" />
+                                    </Grid>
+                                    <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,12" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="142" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Style="{StaticResource SpecLabelStyle}"
+                                                   Text="{DynamicResource DetailInstallSize}" />
+                                        <TextBlock Grid.Column="1" Style="{StaticResource SpecValueStyle}"
+                                                   Text="{Binding InstalledSizeDisplay}" />
+                                    </Grid>
+                                    <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,12" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="142" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Style="{StaticResource SpecLabelStyle}"
+                                                   Text="{DynamicResource DetailVersion}" />
+                                        <TextBlock Grid.Column="1" Style="{StaticResource SpecValueStyle}"
+                                                   Text="{Binding VersionDisplay}" />
+                                    </Grid>
+                                    <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,12" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="142" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Style="{StaticResource SpecLabelStyle}"
+                                                   Text="{DynamicResource DetailType}" />
+                                        <TextBlock Grid.Column="1" Style="{StaticResource SpecValueStyle}"
+                                                   Foreground="#E7E7E7" Text="{Binding BuildTypeDisplay}" />
+                                    </Grid>
+                                    <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,12" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="142" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Style="{StaticResource SpecLabelStyle}"
+                                                   Text="{DynamicResource DetailSource}" />
+                                        <TextBlock Grid.Column="1" Style="{StaticResource SpecValueStyle}"
+                                                   Text="{Binding SourceDisplay}" />
+                                    </Grid>
+                                    <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,12" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="142" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Style="{StaticResource SpecLabelStyle}"
+                                                   Text="{DynamicResource GameDetailsReleaseAuthor}" />
+                                        <TextBlock Grid.Column="1" Style="{StaticResource SpecValueStyle}"
+                                                   Text="{Binding ReleaseAuthorDisplay}" />
+                                    </Grid>
+                                    <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,12" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="142" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Style="{StaticResource SpecLabelStyle}"
+                                                   Text="{DynamicResource GameDetailsProtocol}" />
+                                        <TextBlock Grid.Column="1" Style="{StaticResource SpecValueStyle}"
+                                                   Text="{Binding ProtocolDisplay}" />
+                                    </Grid>
+                                    <Grid Margin="0,12,0,0"
+                                          Visibility="{Binding HasSeeders, Converter={StaticResource BoolToVis}}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="142" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Style="{StaticResource SpecLabelStyle}"
+                                                   Text="{DynamicResource GameDetailsSeedersPeersLabel}" />
+                                        <TextBlock Grid.Column="1" Style="{StaticResource SpecValueStyle}"
+                                                   Foreground="{StaticResource SuccessBrush}" Text="{Binding SeedersPeersDisplay}" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Release and disk -->
+                            <Border Grid.Column="2" Style="{StaticResource PanelCardStyle}">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource SectionTitleStyle}"
+                                               Text="{DynamicResource GameDetailsSectionRelease}" />
+
+                                    <StackPanel Margin="0,14,0,0"
+                                                Visibility="{Binding HasReleaseTitle, Converter={StaticResource BoolToVis}}">
+                                        <TextBlock Style="{StaticResource CapsLabelStyle}"
+                                                   Text="{DynamicResource DetailOriginalName}" />
+                                        <TextBlock Text="{Binding ReleaseTitleDisplay}" Margin="0,6,0,0"
+                                                   FontSize="12.5" LineHeight="18" Foreground="{StaticResource TextDimBrush}"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+
+                                    <Grid Margin="0,16,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="142" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Style="{StaticResource SpecLabelStyle}"
+                                                   Text="{DynamicResource GameDetailsReleaseUploaded}" />
+                                        <TextBlock Grid.Column="1" Style="{StaticResource SpecValueStyle}"
+                                                   Text="{Binding ReleasePublishDateDisplay}" />
+                                    </Grid>
+                                    <Grid Margin="0,12,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="142" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Style="{StaticResource SpecLabelStyle}"
+                                                   Text="{DynamicResource GameDetailsLanguage}" />
+                                        <TextBlock Grid.Column="1" Style="{StaticResource SpecValueStyle}"
+                                                   Text="{Binding ReleaseLanguageDisplay}" />
+                                    </Grid>
+
+                                    <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,14" />
+
+                                    <TextBlock Style="{StaticResource CapsLabelStyle}"
+                                               Text="{DynamicResource GameDetailsDiskSpaceTitle}" />
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="142" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Style="{StaticResource SpecLabelStyle}"
+                                                   Text="{DynamicResource GameDetailsRequiredSpace}" />
+                                        <TextBlock Grid.Column="1" Style="{StaticResource SpecValueStyle}"
+                                                   Text="{Binding RequiredDiskSpaceDisplay}" />
+                                    </Grid>
+                                    <Grid Margin="0,10,0,0"
+                                          Visibility="{Binding HasDiskSpaceInfo, Converter={StaticResource BoolToVis}}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="142" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Style="{StaticResource SpecLabelStyle}"
+                                                   Text="{DynamicResource GameDetailsAvailableSpace}" />
+                                        <TextBlock Grid.Column="1" Style="{StaticResource SpecValueStyle}"
+                                                   Text="{Binding AvailableDiskSpaceDisplay}" />
+                                    </Grid>
+                                    <Border Background="#121A15" BorderBrush="#1E3A2A" BorderThickness="1"
+                                            CornerRadius="8" Padding="10,7" Margin="0,12,0,0"
+                                            Visibility="{Binding HasDiskSpaceInfo, Converter={StaticResource BoolToVis}}">
+                                        <TextBlock Text="{Binding SpaceStatusDisplay}" FontSize="11.5"
+                                                   TextWrapping="Wrap" Foreground="#6EE7B7" />
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <!-- Official Steam data -->
+                        <Border Style="{StaticResource PanelCardStyle}" Margin="0,14,0,0"
+                                Visibility="{Binding HasSteamMetadata, Converter={StaticResource BoolToVis}}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionTitleStyle}"
+                                           Text="{DynamicResource GameDetailsSectionOfficial}" />
+
+                                <Grid Margin="0,14,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="16" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Style="{StaticResource CapsLabelStyle}"
+                                                   Text="{DynamicResource GameDetailsReleaseDate}" />
+                                        <TextBlock Style="{StaticResource SpecValueStyle}" Margin="0,5,0,0"
+                                                   Text="{Binding SteamReleaseDateDisplay}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Style="{StaticResource CapsLabelStyle}"
+                                                   Text="{DynamicResource DetailDeveloper}" />
+                                        <TextBlock Style="{StaticResource SpecValueStyle}" Margin="0,5,0,0"
+                                                   Text="{Binding SteamDeveloperDisplay}" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid Margin="0,14,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="16" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Style="{StaticResource CapsLabelStyle}"
+                                                   Text="{DynamicResource DetailPublisher}" />
+                                        <TextBlock Style="{StaticResource SpecValueStyle}" Margin="0,5,0,0"
+                                                   Text="{Binding SteamPublisherDisplay}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Style="{StaticResource CapsLabelStyle}"
+                                                   Text="{DynamicResource DetailCategories}" />
+                                        <TextBlock Style="{StaticResource SpecValueStyle}" Margin="0,5,0,0"
+                                                   FontSize="12.5" Text="{Binding SteamGenresDisplay}" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <StackPanel Margin="0,14,0,0"
+                                            Visibility="{Binding HasSteamPlatforms, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Style="{StaticResource CapsLabelStyle}"
+                                               Text="{DynamicResource GameDetailsPlatforms}" />
+                                    <TextBlock Style="{StaticResource SpecValueStyle}" Margin="0,5,0,0"
+                                               FontSize="12.5" Text="{Binding SteamPlatformsDisplay}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- System requirements -->
+                        <Border Style="{StaticResource PanelCardStyle}" Margin="0,14,0,0"
+                                Visibility="{Binding HasSteamRequirements, Converter={StaticResource BoolToVis}}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionTitleStyle}"
+                                           Text="{DynamicResource GameDetailsSectionRequirements}" />
+                                <Grid Margin="0,14,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="16" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"
+                                                Visibility="{Binding HasMinimumRequirements, Converter={StaticResource BoolToVis}}">
+                                        <TextBlock Style="{StaticResource CapsLabelStyle}"
+                                                   Text="{DynamicResource GameDetailsMinimumRequirements}" />
+                                        <TextBlock Text="{Binding MinimumRequirementsDisplay}" Margin="0,7,0,0"
+                                                   FontSize="12" LineHeight="18" Foreground="#AEBACB"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2"
+                                                Visibility="{Binding HasRecommendedRequirements, Converter={StaticResource BoolToVis}}">
+                                        <TextBlock Style="{StaticResource CapsLabelStyle}"
+                                                   Text="{DynamicResource GameDetailsRecommendedRequirements}" />
+                                        <TextBlock Text="{Binding RecommendedRequirementsDisplay}" Margin="0,7,0,0"
+                                                   FontSize="12" LineHeight="18" Foreground="#AEBACB"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+</UserControl>
