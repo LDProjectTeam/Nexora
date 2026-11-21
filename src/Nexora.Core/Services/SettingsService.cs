@@ -23,6 +23,7 @@ namespace Nexora.Core.Services
 
         private readonly SemaphoreSlim _saveLock = new(1, 1);
         private string? _lastSavedJson;
+        private bool _loaded;
 
         /// <summary>
         /// True если settings.json не существовал при загрузке (первый запуск),
@@ -37,6 +38,9 @@ namespace Nexora.Core.Services
 
         public void Load()
         {
+            if (_loaded)
+                return;
+
             PathHelper.EnsureDirectory(PathHelper.AppDataDir);
             var path = PathHelper.SettingsFile;
 
@@ -45,6 +49,7 @@ namespace Nexora.Core.Services
                 _logger.LogInformation("Settings file not found, using defaults.");
                 Settings = new AppSettings();
                 IsFirstRun = true;
+                _loaded = true;
                 Save(); // write defaults
                 return;
             }
@@ -59,10 +64,17 @@ namespace Nexora.Core.Services
                 Settings = new AppSettings();
                 IsFirstRun = true;
             }
+            finally
+            {
+                _loaded = true;
+            }
         }
 
         public async Task LoadAsync()
         {
+            if (_loaded)
+                return;
+
             PathHelper.EnsureDirectory(PathHelper.AppDataDir);
             var path = PathHelper.SettingsFile;
 
@@ -71,6 +83,7 @@ namespace Nexora.Core.Services
                 _logger.LogInformation("Settings file not found, using defaults.");
                 Settings = new AppSettings();
                 IsFirstRun = true;
+                _loaded = true;
                 await SaveAsync(); // write defaults
                 return;
             }
@@ -84,6 +97,10 @@ namespace Nexora.Core.Services
                 _logger.LogError(ex, "Failed to load settings, using defaults.");
                 Settings = new AppSettings();
                 IsFirstRun = true;
+            }
+            finally
+            {
+                _loaded = true;
             }
         }
 

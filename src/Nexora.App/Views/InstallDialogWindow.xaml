@@ -73,7 +73,7 @@
                         <TextBlock Text="{DynamicResource InstallSearch}" FontSize="14"
                                    Foreground="{StaticResource TextLightBrush}" HorizontalAlignment="Center"/>
                         <ProgressBar IsIndeterminate="True" Height="3" Margin="0,12,0,0"
-                                     Foreground="#D5D5D5" Background="#333333" BorderThickness="0"/>
+                                     Foreground="{StaticResource AccentBrush}" Background="#333333" BorderThickness="0"/>
                     </StackPanel>
 
                     <!-- Error panel -->
@@ -259,7 +259,7 @@
 
                                 <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,0">
                                     <TextBlock Text="{DynamicResource InstallSeeders}" FontSize="10" Foreground="{StaticResource TextSoftBrush}" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                                    <TextBlock x:Name="SeedersText" FontSize="15" FontWeight="SemiBold" Foreground="#D5D5D5"/>
+                                    <TextBlock x:Name="SeedersText" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}"/>
                                 </StackPanel>
 
                                 <StackPanel Grid.Row="1" Grid.Column="1" Margin="8,0,0,0">
