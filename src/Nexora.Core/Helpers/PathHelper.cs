@@ -240,6 +240,110 @@ namespace Nexora.Core.Helpers
             return false;
         }
 
+        /// <summary>
+        /// Returns false for paths that must never be deleted recursively. Guards uninstall,
+        /// "remove download" and any future cleanup against a corrupted library.json or a
+        /// wrong install path (drive roots, user profile, Windows, the launcher itself).
+        /// When <paramref name="managedRoot"/> is provided, the path must be strictly inside
+        /// it — the library root itself is never removable.
+        /// </summary>
+        public static bool IsSafeToDeleteTree(string? path, string? managedRoot = null)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return false;
+
+            string full;
+            try
+            {
+                full = Path.GetFullPath(path)
+                    .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            }
+            catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+            {
+                return false;
+            }
+
+            // "C:" / "C:\" and anything shorter than a real folder.
+            if (full.Length <= 3)
+                return false;
+
+            var root = Path.GetPathRoot(full);
+            if (string.IsNullOrEmpty(root)
+                || string.Equals(full, root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                    StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            // Never delete the launcher folder or any of its parents.
+            var appDirectory = AppDomain.CurrentDomain.BaseDirectory
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (IsSameOrInside(appDirectory, full))
+                return false;
+
+            var windowsDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+            var systemDirectory = Environment.GetFolderPath(Environment.SpecialFolder.System);
+            if (IsSameOrInside(full, windowsDirectory) || IsSameOrInside(full, systemDirectory))
+                return false;
+
+            // These folders themselves are dangerous, but installing a game into a
+            // subfolder is legitimate, so only an exact match is refused.
+            var exactProtectedFolders = new[]
+            {
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonProgramFiles),
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonProgramFilesX86)
+            };
+
+            foreach (var protectedFolder in exactProtectedFolders)
+            {
+                if (string.IsNullOrWhiteSpace(protectedFolder))
+                    continue;
+
+                var normalized = protectedFolder
+                    .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                if (string.Equals(full, normalized, StringComparison.OrdinalIgnoreCase))
+                    return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(managedRoot))
+            {
+                try
+                {
+                    var managed = Path.GetFullPath(managedRoot)
+                        .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+                    if (string.Equals(full, managed, StringComparison.OrdinalIgnoreCase)
+                        || !IsSameOrInside(full, managed))
+                        return false;
+                }
+                catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool IsSameOrInside(string path, string parent)
+        {
+            if (string.IsNullOrWhiteSpace(path) || string.IsNullOrWhiteSpace(parent))
+                return false;
+
+            var normalizedPath = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var normalizedParent = parent.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            return string.Equals(normalizedPath, normalizedParent, StringComparison.OrdinalIgnoreCase)
+                || normalizedPath.StartsWith(normalizedParent + Path.DirectorySeparatorChar,
+                    StringComparison.OrdinalIgnoreCase);
+        }
+
         /// <summary>Built-in catalog path (next to the executable or walking up to repo root).</summary>
         public static string BuiltInCatalogPath
         {

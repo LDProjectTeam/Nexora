@@ -19,6 +19,9 @@ namespace Nexora.Core.Services
         private readonly ILogger<HttpDownloader> _logger;
         private const int BufferSize = 81920; // 80 KB
 
+        /// <summary>A connection that sends nothing for this long is considered dead.</summary>
+        private static readonly TimeSpan IdleTimeout = TimeSpan.FromSeconds(90);
+
         public HttpDownloader(HttpClient http, ILogger<HttpDownloader> logger)
         {
             _http = http;
@@ -132,9 +135,28 @@ namespace Nexora.Core.Services
             long smoothedSpeedBps = 0;
             var lastReportTime = sw.Elapsed;
 
-            int read;
-            while ((read = await stream.ReadAsync(buffer, 0, buffer.Length, ct).ConfigureAwait(false)) > 0)
+            // CancelAfter() is re-armed on every read. Without this a half-open TCP
+            // connection made the download hang forever (torrents already detect stalls).
+            using var idleCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+
+            while (true)
             {
+                idleCts.CancelAfter(IdleTimeout);
+
+                int read;
+                try
+                {
+                    read = await stream.ReadAsync(buffer, 0, buffer.Length, idleCts.Token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+                {
+                    throw new IOException(
+                        $"The server stopped sending data for {IdleTimeout.TotalSeconds:0} seconds.");
+                }
+
+                if (read <= 0)
+                    break;
+
                 await file.WriteAsync(buffer, 0, read, ct).ConfigureAwait(false);
                 downloaded += read;
 
@@ -182,6 +204,15 @@ namespace Nexora.Core.Services
                             await Task.Delay(Math.Min(delay, 1000), ct).ConfigureAwait(false);
                     }
                 }
+            }
+
+            // A graceful EOF may still be a truncated response (dropped connection,
+            // proxy, lying Content-Length). Never report success for a partial file:
+            // installing it would silently produce a broken game.
+            if (totalBytes > 0 && downloaded < totalBytes)
+            {
+                throw new IOException(
+                    $"The connection closed early: received {downloaded} of {totalBytes} bytes.");
             }
         }
     }

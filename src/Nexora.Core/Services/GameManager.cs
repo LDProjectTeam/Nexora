@@ -935,6 +935,18 @@ namespace Nexora.Core.Services
 
                 _pausedReleases.TryRemove(gameId, out _);
 
+                var managedRoot = !string.IsNullOrWhiteSpace(currentInstallation?.TargetLibraryPath)
+                    ? currentInstallation!.TargetLibraryPath
+                    : null;
+                if (!PathHelper.IsSafeToDeleteTree(downloadPath, managedRoot))
+                {
+                    _logger.LogError(
+                        "Refusing to remove download {GameId}: suspicious path {Path}",
+                        gameId, downloadPath);
+                    return OperationResult.Fail(Localizer.T("DeleteUnsafePath",
+                        "Удаление отменено: путь выглядит подозрительно (корень диска или системная папка)."));
+                }
+
                 // Mark the removal before resetting the state. Any state/progress write
                 // from the operation that is still unwinding in the background is now
                 // ignored, so a removed card can never come back as Paused/Installed.
@@ -1132,6 +1144,19 @@ namespace Nexora.Core.Services
                 return OperationResult.Fail("Game not installed.");
 
             _removedDownloads.TryRemove(gameId, out _);
+
+            // Never delete a drive root / system folder / the library root because of a
+            // corrupted install path in library.json.
+            if (!installation.IsExternalShortcut
+                && !PathHelper.IsSafeToDeleteTree(installation.InstallPath, installation.TargetLibraryPath))
+            {
+                _logger.LogError(
+                    "Refusing to uninstall {GameId}: install path {Path} is not a safe game folder.",
+                    gameId, installation.InstallPath);
+                return OperationResult.Fail(Localizer.T("DeleteUnsafePath",
+                    "Удаление отменено: путь выглядит подозрительно (корень диска или системная папка)."));
+            }
+
             SetState(installation, InstallState.Uninstalling);
 
             // Imported shortcuts point at user-managed game files. Removing the library entry

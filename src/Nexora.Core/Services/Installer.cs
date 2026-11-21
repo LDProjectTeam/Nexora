@@ -192,6 +192,13 @@ namespace Nexora.Core.Services
                 if (!Directory.Exists(installPath))
                     return Task.FromResult(OperationResult.Ok());
 
+                if (!PathHelper.IsSafeToDeleteTree(installPath))
+                {
+                    _logger.LogError("Refusing to uninstall {GameId}: suspicious install path {Path}", gameId, installPath);
+                    return Task.FromResult(OperationResult.Fail(Localizer.T("DeleteUnsafePath",
+                        "Удаление отменено: путь выглядит подозрительно (корень диска или системная папка).")));
+                }
+
                 _logger.LogInformation("Uninstalling {GameId} from {Path}", gameId, installPath);
                 DeleteDirectory(installPath);
                 _logger.LogInformation("{GameId} uninstalled.", gameId);
@@ -1257,6 +1264,9 @@ namespace Nexora.Core.Services
         private static void DeleteDirectory(string path)
         {
             if (!Directory.Exists(path)) return;
+
+            if (!PathHelper.IsSafeToDeleteTree(path))
+                throw new InvalidOperationException($"Refusing to delete a suspicious path: {path}");
 
             foreach (var file in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
                 File.SetAttributes(file, FileAttributes.Normal);

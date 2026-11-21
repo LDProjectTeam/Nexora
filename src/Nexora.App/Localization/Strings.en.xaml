@@ -458,6 +458,7 @@
     <sys:String x:Key="GameDetailsFileHealth">File health</sys:String>
     <sys:String x:Key="GameDetailsFileHealthHint">Integrity check compares game files against hashes and reports corruption.</sys:String>
     <sys:String x:Key="GameDetailsEnglishFallback">A localized description is unavailable; showing the original English Steam text.</sys:String>
+    <sys:String x:Key="DeleteUnsafePath">Refusing to delete a suspicious path (drive root, system folder or library root). If needed, remove the folder manually.</sys:String>
     <sys:String x:Key="InstallChecksumMismatch">Checksum verification failed ({0} problem file(s)). The corrupted data was removed — press Retry to download the game again.</sys:String>
     <sys:String x:Key="UnexpectedErrorFormat">The operation failed: {0}</sys:String>
     <sys:String x:Key="ErrorLogLocationFormat">Details were written to the log: {0}</sys:String>

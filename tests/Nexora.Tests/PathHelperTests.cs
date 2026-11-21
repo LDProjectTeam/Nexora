@@ -121,4 +121,41 @@ public class PathHelperTests
                 Directory.Delete(root, recursive: true);
         }
     }
+
+    [Fact]
+    public void IsSafeToDeleteTree_RejectsDangerousPathsAndRespectsTheLibraryRoot()
+    {
+        Assert.False(PathHelper.IsSafeToDeleteTree(null));
+        Assert.False(PathHelper.IsSafeToDeleteTree(string.Empty));
+        Assert.False(PathHelper.IsSafeToDeleteTree(Path.GetPathRoot(Path.GetTempPath())));
+        Assert.False(PathHelper.IsSafeToDeleteTree(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)));
+        Assert.False(PathHelper.IsSafeToDeleteTree(
+            Environment.GetFolderPath(Environment.SpecialFolder.Windows)));
+        Assert.False(PathHelper.IsSafeToDeleteTree(AppDomain.CurrentDomain.BaseDirectory));
+
+        var library = Path.Combine(Path.GetTempPath(), "Nexora-SafetyTest-" + Guid.NewGuid().ToString("N"));
+        var game = Path.Combine(library, "SomeGame");
+        var outside = Path.Combine(Path.GetTempPath(), "Nexora-Outside-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(game);
+        Directory.CreateDirectory(outside);
+
+        try
+        {
+            // A normal game folder inside the library is deletable...
+            Assert.True(PathHelper.IsSafeToDeleteTree(game));
+            Assert.True(PathHelper.IsSafeToDeleteTree(game, library));
+
+            // ...but the library root itself and folders outside it are not.
+            Assert.False(PathHelper.IsSafeToDeleteTree(library, library));
+            Assert.False(PathHelper.IsSafeToDeleteTree(outside, library));
+        }
+        finally
+        {
+            if (Directory.Exists(library))
+                Directory.Delete(library, recursive: true);
+            if (Directory.Exists(outside))
+                Directory.Delete(outside, recursive: true);
+        }
+    }
 }
