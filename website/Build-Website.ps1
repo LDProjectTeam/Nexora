@@ -12,7 +12,7 @@ $projectXml = [xml](Get-Content -LiteralPath $appProject -Raw)
 $version = [string]$projectXml.Project.PropertyGroup.Version
 if ([string]::IsNullOrWhiteSpace($version)) { throw 'App version not found in Nexora.App.csproj.' }
 $setupText = Get-Content -LiteralPath $setupScript -Raw
-if ($setupText -notmatch '(?m)^#define AppVersion "([^"]+)"') { throw 'Installer version not found in Nexora.iss.' }
+if ($setupText -notmatch '(?m)^\s*#define AppVersion "([^"]+)"') { throw 'Installer version not found in Nexora.iss.' }
 if ($Matches[1] -ne $version) { throw "Version mismatch: app=$version, installer=$($Matches[1])." }
 $installerName = "Nexora-Setup-$version-win-x64.exe"
 $installerPath = Join-Path $installerDir $installerName

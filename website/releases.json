@@ -1,16 +1,22 @@
 ﻿{
     "generatedFrom":  "src/Nexora.App/Nexora.App.csproj and artifacts/installer",
     "current":  {
-                    "version":  "1.0.66",
-                    "installer":  "downloads/Nexora-Setup-1.0.66-win-x64.exe",
-                    "filename":  "Nexora-Setup-1.0.66-win-x64.exe",
-                    "sizeBytes":  60683335,
-                    "fileModifiedUtc":  "2026-11-20T17:32:36Z",
+                    "version":  "1.0.67",
+                    "installer":  "downloads/Nexora-Setup-1.0.67-win-x64.exe",
+                    "filename":  "Nexora-Setup-1.0.67-win-x64.exe",
+                    "sizeBytes":  63659801,
+                    "fileModifiedUtc":  "2026-11-21T18:01:24Z",
                     "releaseDate":  null,
                     "architecture":  "x64",
                     "os":  "Windows 10 build 18362 or later; Windows 11"
                 },
     "history":  [
+                    {
+                        "version":  "1.0.67",
+                        "filename":  "Nexora-Setup-1.0.67-win-x64.exe",
+                        "sizeBytes":  63659801,
+                        "fileModifiedUtc":  "2026-11-21T18:01:24Z"
+                    },
                     {
                         "version":  "1.0.66",
                         "filename":  "Nexora-Setup-1.0.66-win-x64.exe",
@@ -22,55 +28,7 @@
                         "filename":  "Nexora-Setup-1.0.65-win-x64.exe",
                         "sizeBytes":  60682350,
                         "fileModifiedUtc":  "2026-11-15T22:03:39Z"
-                    },
-                    {
-                        "version":  "1.0.64",
-                        "filename":  "Nexora-Setup-1.0.64-win-x64.exe",
-                        "sizeBytes":  60685846,
-                        "fileModifiedUtc":  "2026-11-15T00:17:23Z"
-                    },
-                    {
-                        "version":  "1.0.63",
-                        "filename":  "Nexora-Setup-1.0.63-win-x64.exe",
-                        "sizeBytes":  60681205,
-                        "fileModifiedUtc":  "2026-11-15T00:14:24Z"
-                    },
-                    {
-                        "version":  "1.0.62",
-                        "filename":  "Nexora-Setup-1.0.62-win-x64.exe",
-                        "sizeBytes":  60679407,
-                        "fileModifiedUtc":  "2026-11-15T00:10:27Z"
-                    },
-                    {
-                        "version":  "1.0.61",
-                        "filename":  "Nexora-Setup-1.0.61-win-x64.exe",
-                        "sizeBytes":  60683950,
-                        "fileModifiedUtc":  "2026-11-15T00:06:46Z"
-                    },
-                    {
-                        "version":  "1.0.60",
-                        "filename":  "Nexora-Setup-1.0.60-win-x64.exe",
-                        "sizeBytes":  60676846,
-                        "fileModifiedUtc":  "2026-11-14T23:58:26Z"
-                    },
-                    {
-                        "version":  "1.0.59",
-                        "filename":  "Nexora-Setup-1.0.59-win-x64.exe",
-                        "sizeBytes":  60676208,
-                        "fileModifiedUtc":  "2026-11-14T23:48:52Z"
-                    },
-                    {
-                        "version":  "1.0.58",
-                        "filename":  "Nexora-Setup-1.0.58-win-x64.exe",
-                        "sizeBytes":  60677214,
-                        "fileModifiedUtc":  "2026-11-14T23:37:27Z"
-                    },
-                    {
-                        "version":  "1.0.57",
-                        "filename":  "Nexora-Setup-1.0.57-win-x64.exe",
-                        "sizeBytes":  60673872,
-                        "fileModifiedUtc":  "2026-11-14T23:27:58Z"
                     }
                 ],
-    "historyCount":  67
+    "historyCount":  3
 }

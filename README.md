@@ -1,6 +1,6 @@
 # Nexora — игровой лаунчер для Windows (.NET 8 + WPF)
 
-Полнофункциональный, модульный и легко расширяемый игровой лаунчер для Windows со встроенным **BitTorrent движком (MonoTorrent)**, поддержкой HTTP(S) докачки, проверкой целостности файлов по **SHA-256**, атомарной установкой и дельта-обновлениями.
+Полнофункциональный, модульный и легко расширяемый игровой лаунчер для Windows со встроенным **BitTorrent-движком на базе rqbit (Rust, отдельный сайдкар)**, поддержкой HTTP(S) докачки с контролем длины и idle-timeout, проверкой целостности файлов по **SHA-256**, атомарной установкой, безопасным удалением и обновлениями.
 
 ---
 
@@ -46,10 +46,10 @@ d:\launcher\publish\Nexora.exe
 - Фильтры по категориям (Все, Action, Cyberpunk, Инди, Shooter и др.).
 
 ### 2. Загрузка и установка
-- **Встроенный BitTorrent-движок** на базе `MonoTorrent 3.x`:
+- **Встроенный BitTorrent-движок** на базе `rqbit` (Rust, отдельный процесс `Nexora.TorrentEngine.exe`):
   - Поддержка `magnet:`-ссылок и `.torrent`-файлов по URL.
   - Сохранение `fast resume` данных при паузе или закрытии лаунчера.
-  - Ограничение скорости скачивания и отдачи.
+  - Ограничение скорости скачивания и отдачи, автоматическое восстановление после зависаний.
 - **HTTP / HTTPS загрузчик**:
   - Поддержка возобновления докачки через заголовок `Range`.
   - Безопасное скачивание во временную папку (`staging`).
@@ -72,10 +72,10 @@ d:\launcher\publish\Nexora.exe
 
 ### 6. Настройки
 - Выбор папки установки игр по умолчанию.
-- Выбор временной папки загрузок.
 - Ограничение скорости скачивания и отдачи (МБ/с).
 - Очистка временных файлов и кэша торрентов одной кнопкой.
 - **Кастомные источники каталога**: возможность подключить прямую ссылку на Google Диск / CDN / GitHub с каталогом `games.json`.
+- Логи приложения: `%APPDATA%\Nexora\logs` (10 последних дней, пишутся и ошибки Core-сервисов).
 
 ### 7. Хранение обложек и кэша
 - Обложки и баннеры сохраняются в **WebP** с уменьшением до нужного UI размера
@@ -87,42 +87,44 @@ d:\launcher\publish\Nexora.exe
 
 ---
 
----
-
 ## 🛠 Архитектура проекта
 
 ```
-d:\launcher\
+Nexora\
 ├── Run-Launcher.bat                  # Запуск в 1 клик
 ├── publish\                          # Готовые бинарники (.exe и библиотеки)
 │   └── Nexora.exe
 ├── data\
-│   ├── games.json                    # Каталог игр (схема данных)
+│   ├── games.json                    # Каталог игр (по умолчанию пустой шаблон)
 │   └── test_game\                    # Локальные тестовые архивы (v1.0 и v1.1)
 ├── docs\
 │   └── ADDING_GAMES.md               # Руководство по добавлению новых игр
 ├── src\
 │   ├── Nexora.Core\               # Чистая бизнес-логика (.NET 8)
-│   │   ├── Models\                   # GameDefinition, GameInstallation, AppSettings...
+│   │   ├── Models\                   # GameDefinition, GameInstallation, AppSettings, DownloadPhases...
 │   │   ├── Interfaces\               # IGameManager, IDownloadManager, IInstaller...
-│   │   ├── Services\                 # TorrentDownloader, HttpDownloader, FileVerifier...
+│   │   ├── Services\                 # RqbitDownloader, HttpDownloader, Installer, FileVerifier...
 │   │   └── Helpers\                  # HashHelper, PathHelper, SizeFormatter...
 │   └── Nexora.App\                # UI слой (WPF .NET 8)
 │       ├── Views\                    # MainWindow, HomeView, LibraryView, SettingsView...
 │       ├── ViewModels\               # MainViewModel, GameCardViewModel, SettingsViewModel...
+│       ├── Services\                 # AppLog, ErrorReporter, LocalizationManager...
 │       ├── Themes\                   # DarkTheme.xaml (стили, кисти, анимации)
 │       └── Converters\               # ValueConverters
 └── tests\
-    └── Nexora.Tests\              # Интеграционные xUnit тесты (100% Passed)
+    └── Nexora.Tests\              # xUnit тесты (135 тестов, полный прогон зелёный)
 ```
 
 ---
 
 ## ➕ Как добавить новые игры?
 
-Подробно описано в файле [docs/ADDING_GAMES.md](file:///d:/launcher/docs/ADDING_GAMES.md).
-Вам достаточно добавить новый JSON-объект в [data/games.json](file:///d:/launcher/data/games.json) с полями:
+Подробно описано в файле [docs/ADDING_GAMES.md](docs/ADDING_GAMES.md).
+Вам достаточно добавить новый JSON-объект в [data/games.json](data/games.json) с полями:
 - `id`, `name`, `description`, `version`, `sizeBytes`
 - `downloadSources`: список торрент magnet-ссылок или HTTP URL
 - `executable`: имя запускаемого файла игры
-- `checksums`: хеши SHA-256 для проверки целостности.
+- `checksums`: хеши SHA-256 **финальных файлов игры** (проверяются после распаковки; при несовпадении установка отменяется).
+
+> По умолчанию `data/games.json` пустой: лаунчер ищет игры через подключённые источники (Rutor) и пользовательские каталоги.
+> Встроенный каталог — это шаблон/точка расширения, а не обязательный список игр.
