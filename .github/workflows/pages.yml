@@ -36,7 +36,8 @@ jobs:
         run: |
           $site = Join-Path $PWD '_site'
           New-Item -ItemType Directory -Path $site | Out-Null
-          Copy-Item website/index.html, website/styles.css, website/script.js, website/nexora.ico, website/releases.json -Destination $site
+          $exclude = @('Build-Website.ps1', 'Serve-Website.ps1', 'README.md')
+          Get-ChildItem website -File | Where-Object { $_.Name -notin $exclude } | Copy-Item -Destination $site
           Copy-Item website/assets -Destination (Join-Path $site 'assets') -Recurse
           New-Item -ItemType File -Path (Join-Path $site '.nojekyll') | Out-Null
 

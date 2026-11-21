@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="website/assets/logo.png" width="88" alt="Nexora">
+<img src="docs/logo.png" width="88" alt="Nexora">
 
 # 🎮 Nexora
 
@@ -13,9 +13,9 @@
 [![CI](https://github.com/LDProjectTeam/Nexora/actions/workflows/ci.yml/badge.svg)](https://github.com/LDProjectTeam/Nexora/actions/workflows/ci.yml)
 
 <p align="center">
-  <a href="website/assets/screens/home.png"><img src="website/assets/screens/home.png" alt="Главный экран Nexora" width="32%"></a>
-  <a href="website/assets/screens/library.png"><img src="website/assets/screens/library.png" alt="Библиотека Nexora" width="32%"></a>
-  <a href="website/assets/screens/details.png"><img src="website/assets/screens/details.png" alt="Карточка игры в Nexora" width="32%"></a>
+  <a href="docs/screenshots/home.png"><img src="docs/screenshots/home.png" alt="Главный экран Nexora" width="32%"></a>
+  <a href="docs/screenshots/library.png"><img src="docs/screenshots/library.png" alt="Библиотека Nexora" width="32%"></a>
+  <a href="docs/screenshots/details.png"><img src="docs/screenshots/details.png" alt="Карточка игры в Nexora" width="32%"></a>
 </p>
 
 </div>
