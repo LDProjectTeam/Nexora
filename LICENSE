@@ -1,27 +1,36 @@
 Copyright (c) 2026 Nexora. All rights reserved.
 
-PROPRIETARY LICENSE
+SOURCE-AVAILABLE PROPRIETARY LICENSE
 
-This software and its source code are proprietary and confidential.
+This repository is published for public viewing only. The source code,
+website, artwork and other files are made available so that anyone can read
+and review them. Public availability does not make this project open source
+and grants no right to use, copy, modify or redistribute any part of it.
 
-Permission is granted to download and use the compiled application for
-personal, non-commercial purposes only.
+Permission is granted to download and run the compiled application for
+personal, non-commercial purposes only, and to view the source code for
+reference.
 
 You may not, without prior written permission from the copyright holder:
 
-1. Copy, reproduce, or redistribute the source code or the compiled
-   application, in whole or in part.
-2. Modify, adapt, translate, or create derivative works based on the
-   source code.
-3. Sell, sublicense, rent, lease, or otherwise commercially exploit the
-   software or any part of it.
-4. Remove or alter any copyright, trademark, or other proprietary notices.
+1. Copy, reproduce, clone, fork, mirror or redistribute the source code, the
+   website, the artwork, the compiled application or any part of them.
+2. Modify, adapt, translate or create derivative works based on the source
+   code, the website, the artwork or the application.
+3. Use any part of this project in another product, service, repository or
+   work, or use it to train machine-learning or other automated systems.
+4. Sell, sublicense, rent, lease or otherwise commercially exploit the
+   project or any part of it.
+5. Remove, alter or obscure any copyright, trademark or other proprietary
+   notices.
 
-The software is provided "as is", without warranty of any kind, express or
-implied, including but not limited to the warranties of merchantability,
-fitness for a particular purpose, and non-infringement. In no event shall
-the copyright holder be liable for any claim, damages, or other liability
-arising from, out of, or in connection with the software or its use.
+No patent, trademark or other intellectual-property rights are granted.
+
+THE PROJECT IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE PROJECT OR ITS USE.
 
 Third-party libraries and components included with or downloaded by the
 application remain subject to their own licenses.

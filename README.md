@@ -228,9 +228,11 @@ Website:   HTML · CSS · JavaScript
 
 Copyright (c) 2026 **Nexora**. All rights reserved.
 
-This project is proprietary. Copying, modifying, or distributing the code without written permission from the author is prohibited. See [LICENSE](LICENSE) for details.
+This repository is source-available: you may read the code, but the project is proprietary. Copying, modifying, redistributing, or reusing any part of it without written permission from the author is prohibited. See [LICENSE](LICENSE) for details.
 
-Данный проект является проприетарным. Копирование, изменение или распространение кода без письменного разрешения автора запрещено. Подробности — в [LICENSE](LICENSE).
+Данный репозиторий является source-available: код можно читать, но проект проприетарный. Копирование, изменение, распространение или повторное использование любой части без письменного разрешения автора запрещены. Подробности — в [LICENSE](LICENSE).
+
+Цей репозиторій є source-available: код можна читати, але проєкт пропрієтарний. Копіювання, зміна, розповсюдження або повторне використання будь-якої частини без письмового дозволу автора заборонені. Деталі — у [LICENSE](LICENSE).
 
 ---
 
