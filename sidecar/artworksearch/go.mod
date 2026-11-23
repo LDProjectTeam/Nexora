@@ -1,3 +1,3 @@
-module nexora/artwork-search
+module vellum/artwork-search
 
 go 1.23

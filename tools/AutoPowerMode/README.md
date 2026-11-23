@@ -153,7 +153,7 @@ cd D:\launcher\tools\AutoPowerMode
 - Windows 10/11 x64.
 - Lenovo Gaming с установленным драйвером Lenovo GameZone (обычно уже есть
   вместе с Lenovo Vantage / Legion Zone).
-- .NET 8 Desktop Runtime (на машинах с Nexora он уже установлен). Для сборки
+- .NET 8 Desktop Runtime (на машинах с Vellum он уже установлен). Для сборки
   без зависимости от runtime используйте `.\Build.ps1 -SelfContained`.
 
 ## Ограничения

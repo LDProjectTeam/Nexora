@@ -1,7 +1,7 @@
-# Nexora Windows installer
+# Vellum Windows installer
 
-The installer is built with Inno Setup 6 and publishes Nexora as a self-contained
-`win-x64` application. It installs per-user under `%LocalAppData%\Programs\Nexora`,
+The installer is built with Inno Setup 6 and publishes Vellum as a self-contained
+`win-x64` application. It installs per-user under `%LocalAppData%\Programs\Vellum`,
 creates a Start menu shortcut, and optionally creates a desktop shortcut. It does
 not require administrator rights and does not remove the user's games or settings
 when uninstalled. The default `Library` folder is created next to the installed

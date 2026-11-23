@@ -11,8 +11,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Nexora.App\Nexora.App.csproj" />
-    <ProjectReference Include="..\..\src\Nexora.Core\Nexora.Core.csproj" />
+    <ProjectReference Include="..\..\src\Vellum.App\Vellum.App.csproj" />
+    <ProjectReference Include="..\..\src\Vellum.Core\Vellum.Core.csproj" />
   </ItemGroup>
 
 </Project>

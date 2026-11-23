@@ -1,6 +1,6 @@
 @echo off
 setlocal
-title Nexora Launcher
+title Vellum Launcher
 cd /d "%~dp0"
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0Run-Launcher.ps1" %*

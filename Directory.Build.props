@@ -10,7 +10,7 @@
 
   <!-- The product and its test project must stay warning-free. Third-party tools
        in tools\ keep their own settings. -->
-  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Nexora.Core' Or '$(MSBuildProjectName)' == 'Nexora.App' Or '$(MSBuildProjectName)' == 'Nexora.Tests'">
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Vellum.Core' Or '$(MSBuildProjectName)' == 'Vellum.App' Or '$(MSBuildProjectName)' == 'Vellum.Tests'">
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 

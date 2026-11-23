@@ -1,0 +1,131 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+        <!-- Compact Action Button Style for Downloads Header & Cards -->
+        <Style x:Key="DownloadGhostButtonStyle" TargetType="Button">
+            <Setter Property="FocusVisualStyle" Value="{DynamicResource VellumFocusVisualStyle}" />
+            <Setter Property="Background" Value="{DynamicResource CardBgBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="11,6" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="7"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardBgHoverBrush}" />
+                                <Setter TargetName="Bd" Property="Background" Value="#2D2D2D" />
+                                <Setter Property="Foreground" Value="{DynamicResource PureWhiteBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#181A20" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Filter Tab Button Style -->
+        <Style x:Key="DownloadFilterChipStyle" TargetType="Button">
+            <Setter Property="FocusVisualStyle" Value="{DynamicResource VellumFocusVisualStyle}" />
+            <Setter Property="Background" Value="{DynamicResource BgDarkBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ChipBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ChipBorder" Property="Background" Value="{DynamicResource CardBgHoverBrush}" />
+                                <Setter TargetName="ChipBorder" Property="Background" Value="{DynamicResource SurfaceRaisedBrush}" />
+                                <Setter Property="Foreground" Value="#F3F4F6" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- State-Aware Rounded Progress Bar -->
+        <Style x:Key="DownloadCardProgressBar" TargetType="ProgressBar">
+            <Setter Property="Height" Value="8" />
+            <Setter Property="Background" Value="{DynamicResource BorderBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                ClipToBounds="True">
+                            <Grid x:Name="TemplateRoot">
+                                <Border x:Name="PART_Track" />
+                                <Border x:Name="PART_Indicator"
+                                        HorizontalAlignment="Left"
+                                        Background="{TemplateBinding Foreground}"
+                                        CornerRadius="4" />
+                            </Grid>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding DownloadVisualState}" Value="Preparing">
+                    <Setter Property="Foreground" Value="#6366F1" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding DownloadVisualState}" Value="Waiting">
+                    <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding DownloadVisualState}" Value="Queued">
+                    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding DownloadVisualState}" Value="Paused">
+                    <Setter Property="Foreground" Value="{DynamicResource SlateMutedBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding DownloadVisualState}" Value="Verifying">
+                    <Setter Property="Foreground" Value="#EC4899" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding DownloadVisualState}" Value="Installing">
+                    <Setter Property="Foreground" Value="#8B5CF6" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding DownloadVisualState}" Value="Finalizing">
+                    <Setter Property="Foreground" Value="#14B8A6" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding DownloadVisualState}" Value="Completed">
+                    <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding DownloadVisualState}" Value="Error">
+                    <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+</ResourceDictionary>

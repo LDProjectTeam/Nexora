@@ -1,8 +1,8 @@
-# Оптимизация хранения данных и производительности Nexora
+# Оптимизация хранения данных и производительности Vellum
 
 Документ фиксирует результаты аудита хранилища лаунчера, внедрённые изменения и
 оставшиеся точки роста. Замеры сделаны на реальном профиле
-`%APPDATA%\Nexora` (259 файлов кэша обложек, 35.98 МБ) в ноябре 2026.
+`%APPDATA%\Vellum` (259 файлов кэша обложек, 35.98 МБ) в ноябре 2026.
 
 ---
 
@@ -16,8 +16,8 @@
 
 | Тип | Макс. ширина | Качество | Куда попадает |
 |---|---|---|---|
-| Cover (карточка) | 640 px | 82 | `%APPDATA%\Nexora\artwork\*.webp` |
-| Banner / hero | 1600 px | 78 | `%APPDATA%\Nexora\artwork\*.webp` |
+| Cover (карточка) | 640 px | 82 | `%APPDATA%\Vellum\artwork\*.webp` |
+| Banner / hero | 1600 px | 78 | `%APPDATA%\Vellum\artwork\*.webp` |
 
 - уменьшение только вниз (маленькие обложки не растягиваются);
 - EXIF-ориентация применяется, метаданные (EXIF/XMP/ICC) удаляются;
@@ -103,11 +103,11 @@ powershell -ExecutionPolicy Bypass -File tools\Clean-DevArtifacts.ps1 -Apply
 
 | Путь | Что | Размер | Политика |
 |---|---|---:|---|
-| `%APPDATA%\Nexora\artwork` | обложки/баннеры WebP + JSON-метаданные | ≤ 200 МБ | WebP, cap + LRU по времени, 150 дней |
-| `%APPDATA%\Nexora\library.json` | установленные игры и прогресс | ~4 КБ на 2 игры | атомарно, `.bak`, пропуск идентичных |
-| `%APPDATA%\Nexora\settings.json` | настройки | < 1 КБ | пишется при изменении |
-| `%APPDATA%\Nexora\torrents` | fast-resume торрентов | ~50 КБ | очищается кнопкой |
-| `%APPDATA%\Nexora\steam-metadata` | карточки Steam Store | 9–27 КБ/игра | TTL 14 дней (позитив) / 7 дней (негатив) |
+| `%APPDATA%\Vellum\artwork` | обложки/баннеры WebP + JSON-метаданные | ≤ 200 МБ | WebP, cap + LRU по времени, 150 дней |
+| `%APPDATA%\Vellum\library.json` | установленные игры и прогресс | ~4 КБ на 2 игры | атомарно, `.bak`, пропуск идентичных |
+| `%APPDATA%\Vellum\settings.json` | настройки | < 1 КБ | пишется при изменении |
+| `%APPDATA%\Vellum\torrents` | fast-resume торрентов | ~50 КБ | очищается кнопкой |
+| `%APPDATA%\Vellum\steam-metadata` | карточки Steam Store | 9–27 КБ/игра | TTL 14 дней (позитив) / 7 дней (негатив) |
 | `<папка лаунчера>\Library` | сами игры | гигабайты | пользовательские данные |
 | `artifacts\installer`, `publish-portable*`, `bin/obj` | артефакты сборки | 14.6 ГБ | скрипт очистки |
 
@@ -138,17 +138,17 @@ powershell -ExecutionPolicy Bypass -File tools\Clean-DevArtifacts.ps1 -Apply
 
 ## 4. Изменённые файлы
 
-- `src/Nexora.Core/Helpers/ArtworkImageOptimizer.cs` — новый: WebP + downscale.
-- `src/Nexora.Core/Services/ArtworkCacheMaintenance.cs` — новый: миграция и чистка кэша.
-- `src/Nexora.Core/Services/SteamArtworkService.cs` — сохранение artwork в WebP, ленивая миграция старых JPEG.
-- `src/Nexora.Core/Helpers/PathHelper.cs` — пути `artwork`/`steam-metadata`.
-- `src/Nexora.Core/Services/GameManager.cs` — атомарное и экономное сохранение `library.json`.
-- `src/Nexora.App/Converters/ValueConverters.cs` — WebP-декодер, LRU-кэш, `OnLoad`.
-- `src/Nexora.App/Views/HomeView.xaml.cs` — определение готовности WebP-обложки для hero-перехода.
-- `src/Nexora.App/ViewModels/SettingsViewModel.cs` — учёт и очистка artwork/steam-metadata.
-- `src/Nexora.App/App.xaml.cs` — фоновое обслуживание кэша, уровень логов.
-- `src/Nexora.Core/Nexora.Core.csproj` — SkiaSharp 2.88.9 (MIT).
-- `tests/Nexora.Tests/ArtworkStorageTests.cs` — новые тесты конвертации и обслуживания кэша.
+- `src/Vellum.Core/Helpers/ArtworkImageOptimizer.cs` — новый: WebP + downscale.
+- `src/Vellum.Core/Services/ArtworkCacheMaintenance.cs` — новый: миграция и чистка кэша.
+- `src/Vellum.Core/Services/SteamArtworkService.cs` — сохранение artwork в WebP, ленивая миграция старых JPEG.
+- `src/Vellum.Core/Helpers/PathHelper.cs` — пути `artwork`/`steam-metadata`.
+- `src/Vellum.Core/Services/GameManager.cs` — атомарное и экономное сохранение `library.json`.
+- `src/Vellum.App/Converters/ValueConverters.cs` — WebP-декодер, LRU-кэш, `OnLoad`.
+- `src/Vellum.App/Views/HomeView.xaml.cs` — определение готовности WebP-обложки для hero-перехода.
+- `src/Vellum.App/ViewModels/SettingsViewModel.cs` — учёт и очистка artwork/steam-metadata.
+- `src/Vellum.App/App.xaml.cs` — фоновое обслуживание кэша, уровень логов.
+- `src/Vellum.Core/Vellum.Core.csproj` — SkiaSharp 2.88.9 (MIT).
+- `tests/Vellum.Tests/ArtworkStorageTests.cs` — новые тесты конвертации и обслуживания кэша.
 - `tools/Clean-DevArtifacts.ps1` — очистка артефактов сборки.
 
 > Почему SkiaSharp, а не ImageSharp: начиная с 3.2.0 ImageSharp требует
@@ -162,13 +162,13 @@ powershell -ExecutionPolicy Bypass -File tools\Clean-DevArtifacts.ps1 -Apply
 
 ```powershell
 # тесты
-.\.dotnet\dotnet.exe test tests\Nexora.Tests\Nexora.Tests.csproj -c Debug
+.\.dotnet\dotnet.exe test tests\Vellum.Tests\Vellum.Tests.csproj -c Debug
 
 # сборка приложения
-.\.dotnet\dotnet.exe build src\Nexora.App\Nexora.App.csproj -c Debug
+.\.dotnet\dotnet.exe build src\Vellum.App\Vellum.App.csproj -c Debug
 
 # состояние кэша artwork
-Get-ChildItem "$env:APPDATA\Nexora\artwork" -File |
+Get-ChildItem "$env:APPDATA\Vellum\artwork" -File |
     Group-Object Extension |
     ForEach-Object { "{0}: {1}" -f $_.Name, $_.Count }
 ```

@@ -5,22 +5,22 @@ $siteRoot = $PSScriptRoot
 $projectRoot = Split-Path $siteRoot -Parent
 $distPath = Join-Path $siteRoot 'dist'
 $installerDir = Join-Path $projectRoot 'artifacts/installer'
-$appProject = Join-Path $projectRoot 'src/Nexora.App/Nexora.App.csproj'
-$setupScript = Join-Path $projectRoot 'installer/Nexora.iss'
+$appProject = Join-Path $projectRoot 'src/Vellum.App/Vellum.App.csproj'
+$setupScript = Join-Path $projectRoot 'installer/Vellum.iss'
 
 $projectXml = [xml](Get-Content -LiteralPath $appProject -Raw)
 $version = [string]$projectXml.Project.PropertyGroup.Version
-if ([string]::IsNullOrWhiteSpace($version)) { throw 'App version not found in Nexora.App.csproj.' }
+if ([string]::IsNullOrWhiteSpace($version)) { throw 'App version not found in Vellum.App.csproj.' }
 $setupText = Get-Content -LiteralPath $setupScript -Raw
-if ($setupText -notmatch '(?m)^\s*#define AppVersion "([^"]+)"') { throw 'Installer version not found in Nexora.iss.' }
+if ($setupText -notmatch '(?m)^\s*#define AppVersion "([^"]+)"') { throw 'Installer version not found in Vellum.iss.' }
 if ($Matches[1] -ne $version) { throw "Version mismatch: app=$version, installer=$($Matches[1])." }
-$installerName = "Nexora-Setup-$version-win-x64.exe"
+$installerName = "Vellum-Setup-$version-win-x64.exe"
 $installerPath = Join-Path $installerDir $installerName
 if (-not (Test-Path -LiteralPath $installerPath -PathType Leaf)) { throw "Installer not found: $installerPath" }
 $installer = Get-Item -LiteralPath $installerPath
 
-$history = @(Get-ChildItem -LiteralPath $installerDir -File -Filter 'Nexora-Setup-*-win-x64.exe' | ForEach-Object {
-    if ($_.BaseName -match '^Nexora-Setup-(\d+\.\d+\.\d+)-win-x64$') {
+$history = @(Get-ChildItem -LiteralPath $installerDir -File -Filter 'Vellum-Setup-*-win-x64.exe' | ForEach-Object {
+    if ($_.BaseName -match '^Vellum-Setup-(\d+\.\d+\.\d+)-win-x64$') {
         [pscustomobject]@{ Version = $Matches[1]; File = $_ }
     }
 } | Sort-Object { [version]$_.Version } -Descending | Select-Object -First 10 | ForEach-Object {
@@ -43,10 +43,10 @@ $current = [pscustomobject]@{
     os = 'Windows 10 build 18362 or later; Windows 11'
 }
 $manifest = [pscustomobject]@{
-    generatedFrom = 'src/Nexora.App/Nexora.App.csproj and artifacts/installer'
+    generatedFrom = 'src/Vellum.App/Vellum.App.csproj and artifacts/installer'
     current = $current
     history = $history
-    historyCount = @(Get-ChildItem -LiteralPath $installerDir -File -Filter 'Nexora-Setup-*-win-x64.exe').Count
+    historyCount = @(Get-ChildItem -LiteralPath $installerDir -File -Filter 'Vellum-Setup-*-win-x64.exe').Count
 }
 $manifest | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $siteRoot 'releases.json') -Encoding utf8
 
@@ -82,5 +82,5 @@ if ($distManifest.current.version -ne $version -or $builtInstaller.Length -ne $i
     throw 'Production output verification failed.'
 }
 Write-Host "Website built to $distPath"
-Write-Host "Nexora $version installer: $([math]::Round($installer.Length / 1MB, 1)) MiB"
+Write-Host "Vellum $version installer: $([math]::Round($installer.Length / 1MB, 1)) MiB"
 Write-Host "Installer archive entries found: $($manifest.historyCount)"

@@ -1,10 +1,10 @@
 ﻿# ==============================================================================
-# Nexora Launcher — запуск актуальной сборки с живыми логами в консоли.
+# Vellum Launcher — запуск актуальной сборки с живыми логами в консоли.
 #
 # Порядок выбора:
-#   1. publish\Nexora.exe
-#   2. publish-portable\Nexora.exe
-#   3. самая свежая сборка в src\Nexora.App\bin\Release|Debug (dev-режим)
+#   1. publish\Vellum.exe
+#   2. publish-portable\Vellum.exe
+#   3. самая свежая сборка в src\Vellum.App\bin\Release|Debug (dev-режим)
 #
 # Явный путь можно передать параметром: .\Run-Launcher.ps1 -ExePath <путь>
 # ==============================================================================
@@ -22,7 +22,7 @@ if (-not $scriptDir) { $scriptDir = (Get-Location).Path }
 
 function Write-Banner {
     Write-Host "============================================================" -ForegroundColor Cyan
-    Write-Host "              Nexora Universal Launcher                     " -ForegroundColor Yellow
+    Write-Host "              Vellum Universal Launcher                     " -ForegroundColor Yellow
     Write-Host "============================================================" -ForegroundColor Cyan
 }
 
@@ -50,7 +50,7 @@ if ($ExePath) {
     $candidates.Add((Get-Item -LiteralPath $ExePath))
 }
 else {
-    foreach ($relative in @('publish\Nexora.exe', 'publish-portable\Nexora.exe')) {
+    foreach ($relative in @('publish\Vellum.exe', 'publish-portable\Vellum.exe')) {
         $path = Join-Path $scriptDir $relative
         if (Test-Path -LiteralPath $path -PathType Leaf) {
             $candidates.Add((Get-Item -LiteralPath $path))
@@ -59,7 +59,7 @@ else {
 
     # Dev fallback: the newest build produced by `dotnet build`.
     if ($candidates.Count -eq 0) {
-        Get-ChildItem -Path $scriptDir -Filter 'Nexora.exe' -Recurse -ErrorAction SilentlyContinue |
+        Get-ChildItem -Path $scriptDir -Filter 'Vellum.exe' -Recurse -ErrorAction SilentlyContinue |
             Where-Object { $_.FullName -match '\\bin\\(Release|Debug)\\' } |
             ForEach-Object { $candidates.Add($_) }
     }
@@ -67,7 +67,7 @@ else {
 
 $exe = $candidates | Sort-Object LastWriteTime -Descending | Select-Object -First 1
 if (-not $exe) {
-    Write-Host "[ERROR] Nexora.exe не найден." -ForegroundColor Red
+    Write-Host "[ERROR] Vellum.exe не найден." -ForegroundColor Red
     Write-Host "Сначала опубликуйте проект: .\installer\Build-Installer.ps1 или dotnet publish." -ForegroundColor Yellow
     Wait-ForKey
     exit 1
@@ -111,7 +111,7 @@ try {
     $proc.BeginOutputReadLine()
     $proc.BeginErrorReadLine()
 
-    Write-Host "[LAUNCHER] Nexora запущен (PID: $($proc.Id))" -ForegroundColor Green
+    Write-Host "[LAUNCHER] Vellum запущен (PID: $($proc.Id))" -ForegroundColor Green
     Write-Host "[LAUNCHER] Логи приложения идут ниже. Закройте лаунчер, чтобы выйти." -ForegroundColor Cyan
     Write-Host "------------------------------------------------------------" -ForegroundColor DarkGray
 
@@ -139,6 +139,6 @@ finally {
 }
 
 Write-Host ""
-Write-Host "Полный лог: $env:APPDATA\Nexora\logs" -ForegroundColor DarkGray
+Write-Host "Полный лог: $env:APPDATA\Vellum\logs" -ForegroundColor DarkGray
 Wait-ForKey
 exit $exitCode

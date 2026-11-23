@@ -12,7 +12,7 @@
     <ApplicationIcon>icons\active.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Version>1.0.0</Version>
-    <Authors>Nexora</Authors>
+    <Authors>Vellum</Authors>
     <Product>AutoPowerMode</Product>
     <Description>Автоматическое переключение режима производительности Lenovo при запуске игр.</Description>
   </PropertyGroup>

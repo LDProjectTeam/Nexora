@@ -1,9 +1,9 @@
 ﻿{
-    "generatedFrom":  "src/Nexora.App/Nexora.App.csproj and artifacts/installer",
+    "generatedFrom":  "src/Vellum.App/Vellum.App.csproj and artifacts/installer",
     "current":  {
                     "version":  "1.0.68",
-                    "installer":  "downloads/Nexora-Setup-1.0.68-win-x64.exe",
-                    "filename":  "Nexora-Setup-1.0.68-win-x64.exe",
+                    "installer":  "downloads/Vellum-Setup-1.0.68-win-x64.exe",
+                    "filename":  "Vellum-Setup-1.0.68-win-x64.exe",
                     "sizeBytes":  63669771,
                     "fileModifiedUtc":  "2026-11-21T22:59:31Z",
                     "releaseDate":  null,
@@ -13,25 +13,25 @@
     "history":  [
                     {
                         "version":  "1.0.68",
-                        "filename":  "Nexora-Setup-1.0.68-win-x64.exe",
+                        "filename":  "Vellum-Setup-1.0.68-win-x64.exe",
                         "sizeBytes":  63669771,
                         "fileModifiedUtc":  "2026-11-21T22:59:31Z"
                     },
                     {
                         "version":  "1.0.67",
-                        "filename":  "Nexora-Setup-1.0.67-win-x64.exe",
+                        "filename":  "Vellum-Setup-1.0.67-win-x64.exe",
                         "sizeBytes":  63670202,
                         "fileModifiedUtc":  "2026-11-21T20:08:24Z"
                     },
                     {
                         "version":  "1.0.66",
-                        "filename":  "Nexora-Setup-1.0.66-win-x64.exe",
+                        "filename":  "Vellum-Setup-1.0.66-win-x64.exe",
                         "sizeBytes":  60683335,
                         "fileModifiedUtc":  "2026-11-20T17:32:36Z"
                     },
                     {
                         "version":  "1.0.65",
-                        "filename":  "Nexora-Setup-1.0.65-win-x64.exe",
+                        "filename":  "Vellum-Setup-1.0.65-win-x64.exe",
                         "sizeBytes":  60682350,
                         "fileModifiedUtc":  "2026-11-15T22:03:39Z"
                     }

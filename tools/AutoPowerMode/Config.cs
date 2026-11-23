@@ -185,7 +185,7 @@ internal sealed class AppConfig
         "vlc", "mpv", "mpc-hc64", "mpc-be64", "potplayermini64", "potplayermini", "kmplayer", "wmplayer", "spotify",
         "steam", "steamwebhelper", "epicgameslauncher", "battle.net", "agent", "origin", "eaapp", "eadesktop",
         "ubisoftconnect", "upc", "uplay", "rgl", "galaxylauncher", "goggalaxy", "playnite",
-        "nexora", "nexora.torrentengine",
+        "vellum", "vellum.torrentengine",
         "discord", "telegram", "whatsapp", "zoom", "teams", "ms-teams", "slack",
         "code", "devenv", "idea64", "pycharm64", "rider64", "webstorm64",
         "obs64", "obs32", "photoshop", "illustrator", "afterfx", "adobe premiere pro", "resolve", "blender",

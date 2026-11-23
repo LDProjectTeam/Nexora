@@ -21,7 +21,7 @@ try {
             if ($request.HttpMethod -notin @('GET', 'HEAD')) { $response.StatusCode = 405; continue }
             $relative = [Uri]::UnescapeDataString($request.Url.AbsolutePath.TrimStart('/'))
             if ([string]::IsNullOrWhiteSpace($relative)) { $relative = 'index.html' }
-            if ($relative -match '^downloads/Nexora-Setup-\d+\.\d+\.\d+-win-x64\.exe$') {
+            if ($relative -match '^downloads/Vellum-Setup-\d+\.\d+\.\d+-win-x64\.exe$') {
                 $target = Join-Path $installerRoot (Split-Path $relative -Leaf)
                 if (-not (Test-Path -LiteralPath $target -PathType Leaf)) { $response.StatusCode = 404; continue }
             } else {

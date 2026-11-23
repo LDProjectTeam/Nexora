@@ -1,21 +1,21 @@
 <div align="center">
 
-<img src="docs/logo.png" width="88" alt="Nexora">
+<img src="docs/logo.png" width="88" alt="Vellum">
 
-# 🎮 Nexora
+# 🎮 Vellum
 
 **Игровой лаунчер для Windows: каталог, загрузки и библиотека в одном окне**
 
-[![Version](https://img.shields.io/badge/version-1.0.68-3ddc97?style=for-the-badge)](https://github.com/LDProjectTeam/Nexora/releases/latest)
-[![Platform](https://img.shields.io/badge/platform-Windows-0078D6?style=for-the-badge&logo=windows)](https://github.com/LDProjectTeam/Nexora/releases/latest)
+[![Version](https://img.shields.io/badge/version-1.0.68-3ddc97?style=for-the-badge)](https://github.com/LDProjectTeam/Vellum/releases/latest)
+[![Platform](https://img.shields.io/badge/platform-Windows-0078D6?style=for-the-badge&logo=windows)](https://github.com/LDProjectTeam/Vellum/releases/latest)
 [![.NET](https://img.shields.io/badge/.NET-8-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/license-Proprietary-darkred?style=for-the-badge)](LICENSE)
-[![CI](https://github.com/LDProjectTeam/Nexora/actions/workflows/ci.yml/badge.svg)](https://github.com/LDProjectTeam/Nexora/actions/workflows/ci.yml)
+[![CI](https://github.com/LDProjectTeam/Vellum/actions/workflows/ci.yml/badge.svg)](https://github.com/LDProjectTeam/Vellum/actions/workflows/ci.yml)
 
 <p align="center">
-  <a href="docs/screenshots/home.png"><img src="docs/screenshots/home.png" alt="Главный экран Nexora" width="32%"></a>
-  <a href="docs/screenshots/library.png"><img src="docs/screenshots/library.png" alt="Библиотека Nexora" width="32%"></a>
-  <a href="docs/screenshots/details.png"><img src="docs/screenshots/details.png" alt="Карточка игры в Nexora" width="32%"></a>
+  <a href="docs/screenshots/home.png"><img src="docs/screenshots/home.png" alt="Главный экран Vellum" width="32%"></a>
+  <a href="docs/screenshots/library.png"><img src="docs/screenshots/library.png" alt="Библиотека Vellum" width="32%"></a>
+  <a href="docs/screenshots/details.png"><img src="docs/screenshots/details.png" alt="Карточка игры в Vellum" width="32%"></a>
 </p>
 
 </div>
@@ -28,9 +28,9 @@
 
 **Лаунчер для Windows, который ведёт игру от поиска в каталоге до кнопки «Играть»**
 
-> Nexora ищет игры в подключённых источниках, качает их через BitTorrent или HTTP с докачкой, проверяет файлы по SHA-256 и собирает установленное в одну библиотеку.
+> Vellum ищет игры в подключённых источниках, качает их через BitTorrent или HTTP с докачкой, проверяет файлы по SHA-256 и собирает установленное в одну библиотеку.
 
-[**⬇️ Скачать**](https://github.com/LDProjectTeam/Nexora/releases/latest) · [**🌐 Сайт**](https://ldprojectteam.github.io/Nexora/) · [**🐛 Сообщить о баге**](https://github.com/LDProjectTeam/Nexora/issues)
+[**⬇️ Скачать**](https://github.com/LDProjectTeam/Vellum/releases/latest) · [**🌐 Сайт**](https://ldprojectteam.github.io/Vellum/) · [**🐛 Сообщить о баге**](https://github.com/LDProjectTeam/Vellum/issues)
 
 ### ✨ Возможности
 
@@ -48,8 +48,8 @@
 
 ### 🚀 Установка
 
-1. Открой [**Releases**](https://github.com/LDProjectTeam/Nexora/releases/latest)
-2. Скачай `Nexora-Setup-1.0.68-win-x64.exe`
+1. Открой [**Releases**](https://github.com/LDProjectTeam/Vellum/releases/latest)
+2. Скачай `Vellum-Setup-1.0.68-win-x64.exe`
 3. Запусти установщик и выбери папку библиотеки при первом старте
 
 Установка идёт в профиль пользователя, права администратора не нужны. `.NET` ставить отдельно не требуется: сборка self-contained.
@@ -61,9 +61,9 @@
 Нужны .NET 8 SDK, PowerShell и [Inno Setup 6](https://jrsoftware.org/isinfo.php).
 
 ```powershell
-dotnet restore Nexora.sln
-dotnet build Nexora.sln -c Release
-dotnet test tests/Nexora.Tests/Nexora.Tests.csproj -c Release
+dotnet restore Vellum.sln
+dotnet build Vellum.sln -c Release
+dotnet test tests/Vellum.Tests/Vellum.Tests.csproj -c Release
 
 # запуск собранного лаунчера
 .\Run-Launcher.bat
@@ -78,16 +78,16 @@ dotnet test tests/Nexora.Tests/Nexora.Tests.csproj -c Release
 ### 🛠 Архитектура
 
 ```
-Nexora/
+Vellum/
 ├── src/
-│   ├── Nexora.Core/          # каталог, загрузчики, установка, проверка файлов
-│   └── Nexora.App/           # WPF-интерфейс, view models, темы, локализация
+│   ├── Vellum.Core/          # каталог, загрузчики, установка, проверка файлов
+│   └── Vellum.App/           # WPF-интерфейс, view models, темы, локализация
 ├── sidecar/                  # вспомогательные сервисы
 ├── tools/bin/                # rqbit.exe и служебные утилиты
 ├── installer/                # Inno Setup 6 и сборка установщика
 ├── website/                  # статический сайт и скриншоты
 ├── docs/                     # добавление игр и оптимизация
-└── tests/Nexora.Tests/       # xUnit-тесты
+└── tests/Vellum.Tests/       # xUnit-тесты
 ```
 
 ### 📚 Документация
@@ -102,9 +102,9 @@ Nexora/
 
 **Лаунчер для Windows, який веде гру від пошуку в каталозі до кнопки «Грати»**
 
-> Nexora шукає ігри в підключених джерелах, завантажує їх через BitTorrent або HTTP з докачуванням, перевіряє файли за SHA-256 і збирає встановлене в одну бібліотеку.
+> Vellum шукає ігри в підключених джерелах, завантажує їх через BitTorrent або HTTP з докачуванням, перевіряє файли за SHA-256 і збирає встановлене в одну бібліотеку.
 
-[**⬇️ Завантажити**](https://github.com/LDProjectTeam/Nexora/releases/latest) · [**🌐 Сайт**](https://ldprojectteam.github.io/Nexora/) · [**🐛 Повідомити про баг**](https://github.com/LDProjectTeam/Nexora/issues)
+[**⬇️ Завантажити**](https://github.com/LDProjectTeam/Vellum/releases/latest) · [**🌐 Сайт**](https://ldprojectteam.github.io/Vellum/) · [**🐛 Повідомити про баг**](https://github.com/LDProjectTeam/Vellum/issues)
 
 ### ✨ Можливості
 
@@ -122,8 +122,8 @@ Nexora/
 
 ### 🚀 Встановлення
 
-1. Відкрий [**Releases**](https://github.com/LDProjectTeam/Nexora/releases/latest)
-2. Завантаж `Nexora-Setup-1.0.68-win-x64.exe`
+1. Відкрий [**Releases**](https://github.com/LDProjectTeam/Vellum/releases/latest)
+2. Завантаж `Vellum-Setup-1.0.68-win-x64.exe`
 3. Запусти інсталятор і вибери папку бібліотеки під час першого запуску
 
 Встановлення відбувається в профіль користувача, права адміністратора не потрібні. `.NET` встановлювати окремо не потрібно: збірка self-contained.
@@ -135,9 +135,9 @@ Nexora/
 Потрібні .NET 8 SDK, PowerShell і [Inno Setup 6](https://jrsoftware.org/isinfo.php).
 
 ```powershell
-dotnet restore Nexora.sln
-dotnet build Nexora.sln -c Release
-dotnet test tests/Nexora.Tests/Nexora.Tests.csproj -c Release
+dotnet restore Vellum.sln
+dotnet build Vellum.sln -c Release
+dotnet test tests/Vellum.Tests/Vellum.Tests.csproj -c Release
 
 # запуск зібраного лаунчера
 .\Run-Launcher.bat
@@ -161,9 +161,9 @@ dotnet test tests/Nexora.Tests/Nexora.Tests.csproj -c Release
 
 **A Windows launcher that takes a game from catalog search to the Play button**
 
-> Nexora finds games in connected sources, downloads them over BitTorrent or HTTP with resume, verifies files by SHA-256, and keeps everything installed in one library.
+> Vellum finds games in connected sources, downloads them over BitTorrent or HTTP with resume, verifies files by SHA-256, and keeps everything installed in one library.
 
-[**⬇️ Download**](https://github.com/LDProjectTeam/Nexora/releases/latest) · [**🌐 Website**](https://ldprojectteam.github.io/Nexora/) · [**🐛 Report a Bug**](https://github.com/LDProjectTeam/Nexora/issues)
+[**⬇️ Download**](https://github.com/LDProjectTeam/Vellum/releases/latest) · [**🌐 Website**](https://ldprojectteam.github.io/Vellum/) · [**🐛 Report a Bug**](https://github.com/LDProjectTeam/Vellum/issues)
 
 ### ✨ Features
 
@@ -181,8 +181,8 @@ dotnet test tests/Nexora.Tests/Nexora.Tests.csproj -c Release
 
 ### 🚀 Installation
 
-1. Open [**Releases**](https://github.com/LDProjectTeam/Nexora/releases/latest)
-2. Download `Nexora-Setup-1.0.68-win-x64.exe`
+1. Open [**Releases**](https://github.com/LDProjectTeam/Vellum/releases/latest)
+2. Download `Vellum-Setup-1.0.68-win-x64.exe`
 3. Run the installer and choose a library folder on first launch
 
 The app installs into your user profile and does not need administrator rights. .NET is included in the self-contained build.
@@ -194,9 +194,9 @@ The app installs into your user profile and does not need administrator rights. 
 You need the .NET 8 SDK, PowerShell, and [Inno Setup 6](https://jrsoftware.org/isinfo.php).
 
 ```powershell
-dotnet restore Nexora.sln
-dotnet build Nexora.sln -c Release
-dotnet test tests/Nexora.Tests/Nexora.Tests.csproj -c Release
+dotnet restore Vellum.sln
+dotnet build Vellum.sln -c Release
+dotnet test tests/Vellum.Tests/Vellum.Tests.csproj -c Release
 
 # run the built launcher
 .\Run-Launcher.bat
@@ -226,7 +226,7 @@ Website:   HTML · CSS · JavaScript
 
 ## 📜 License / Лицензия
 
-Copyright (c) 2026 **Nexora**. All rights reserved.
+Copyright (c) 2026 **Vellum**. All rights reserved.
 
 This repository is source-available: you may read the code, but the project is proprietary. Copying, modifying, redistributing, or reusing any part of it without written permission from the author is prohibited. See [LICENSE](LICENSE) for details.
 

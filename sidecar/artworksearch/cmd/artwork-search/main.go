@@ -25,7 +25,7 @@ import (
 	"sync"
 	"time"
 
-	art "nexora/artwork-search"
+	art "vellum/artwork-search"
 )
 
 type request struct {
@@ -316,7 +316,7 @@ func get(ctx context.Context, raw string, limit int64) ([]byte, http.Header, err
 	if e != nil {
 		return nil, nil, e
 	}
-	req.Header.Set("User-Agent", "Nexora/1.0 artwork-search")
+	req.Header.Set("User-Agent", "Vellum/1.0 artwork-search")
 	req.Header.Set("Accept", "image/avif,image/webp,image/*,application/json,text/html;q=0.9,*/*;q=0.8")
 	r, e := client.Do(req)
 	if e != nil {

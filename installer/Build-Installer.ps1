@@ -5,8 +5,8 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$project = Join-Path $repoRoot 'src\Nexora.App\Nexora.App.csproj'
-$scriptPath = Join-Path $PSScriptRoot 'Nexora.iss'
+$project = Join-Path $repoRoot 'src\Vellum.App\Vellum.App.csproj'
+$scriptPath = Join-Path $PSScriptRoot 'Vellum.iss'
 $installerOutput = Join-Path $repoRoot 'artifacts\installer'
 # Stage on the repository drive: the system temp drive (usually C:) can be full
 # while D: still has plenty of room for the self-contained publish output.
@@ -76,7 +76,7 @@ try {
             throw ".NET publish failed with exit code $LASTEXITCODE."
         }
 
-        $appExe = Join-Path $stageDir 'Nexora.exe'
+        $appExe = Join-Path $stageDir 'Vellum.exe'
         if (-not (Test-Path $appExe)) {
             throw "Published application executable was not found: $appExe"
         }

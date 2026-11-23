@@ -12,15 +12,15 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using Nexora.App.Services;
-using Nexora.App.ViewModels;
-using Nexora.App.Views;
-using Nexora.Core.Helpers;
-using Nexora.Core.Interfaces;
-using Nexora.Core.Models;
-using Nexora.Core.Services;
+using Vellum.App.Services;
+using Vellum.App.ViewModels;
+using Vellum.App.Views;
+using Vellum.Core.Helpers;
+using Vellum.Core.Interfaces;
+using Vellum.Core.Models;
+using Vellum.Core.Services;
 
-namespace Nexora.GameDetailsVerifier
+namespace Vellum.GameDetailsVerifier
 {
     internal static class Program
     {
@@ -29,14 +29,14 @@ namespace Nexora.GameDetailsVerifier
 
         private static int _assertions;
         private static readonly string ArtworkDir =
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Nexora", "artwork");
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Vellum", "artwork");
 
         [STAThread]
         private static int Main()
         {
             // Never touch the real launcher profile (library, downloads, caches).
-            var dataDir = Path.Combine(Path.GetTempPath(), "nexora-verifier-data");
-            Environment.SetEnvironmentVariable("NEXORA_DATA_DIR", dataDir);
+            var dataDir = Path.Combine(Path.GetTempPath(), "vellum-verifier-data");
+            Environment.SetEnvironmentVariable("VELLUM_DATA_DIR", dataDir);
             try { Directory.CreateDirectory(dataDir); } catch { }
             try
             {
@@ -47,7 +47,7 @@ namespace Nexora.GameDetailsVerifier
             catch { }
 
             Console.WriteLine("==========================================================");
-            Console.WriteLine(" NEXORA GAME DETAILS WINDOW — VERIFICATION RUNNER (v2)");
+            Console.WriteLine(" VELLUM GAME DETAILS WINDOW — VERIFICATION RUNNER (v2)");
             Console.WriteLine("==========================================================");
             Console.WriteLine("Data dir: " + dataDir);
             Console.WriteLine("Screenshots: " + ShotRoot);
@@ -58,14 +58,14 @@ namespace Nexora.GameDetailsVerifier
 
             app.Resources.MergedDictionaries.Add(new ResourceDictionary
             {
-                Source = new Uri("pack://application:,,,/Nexora;component/Themes/DarkTheme.xaml", UriKind.Absolute)
+                Source = new Uri("pack://application:,,,/Vellum;component/Themes/DarkTheme.xaml", UriKind.Absolute)
             });
             app.Resources.MergedDictionaries.Add(new ResourceDictionary
             {
-                Source = new Uri("pack://application:,,,/Nexora;component/Localization/Strings.ru.xaml", UriKind.Absolute)
+                Source = new Uri("pack://application:,,,/Vellum;component/Localization/Strings.ru.xaml", UriKind.Absolute)
             });
-            app.Resources["NexoraAppIcon"] =
-                new BitmapImage(new Uri("pack://application:,,,/Nexora;component/Assets/NEXORA_icon_light.ico"));
+            app.Resources["VellumAppIcon"] =
+                new BitmapImage(new Uri("pack://application:,,,/Vellum;component/Assets/VELLUM_icon_light.ico"));
             LocalizationManager.SetLanguage("ru");
 
             Directory.CreateDirectory(ShotRoot);
@@ -256,7 +256,7 @@ namespace Nexora.GameDetailsVerifier
             Console.WriteLine("  ✓ build type / author / developer / publisher separation");
 
             // Installed state and storage actions.
-            var installDir = Path.Combine(Path.GetTempPath(), "nexora-verifier-install", "Cyberpunk 2077");
+            var installDir = Path.Combine(Path.GetTempPath(), "vellum-verifier-install", "Cyberpunk 2077");
             Directory.CreateDirectory(installDir);
             var installed = new GameInstallation
             {
@@ -385,7 +385,7 @@ namespace Nexora.GameDetailsVerifier
             Render(window, "03-storage-not-installed.png");
 
             // 4. Installed state.
-            var installDir = Path.Combine(Path.GetTempPath(), "nexora-verifier-install", "Cyberpunk 2077");
+            var installDir = Path.Combine(Path.GetTempPath(), "vellum-verifier-install", "Cyberpunk 2077");
             Directory.CreateDirectory(installDir);
             card.UpdateInstallation(new GameInstallation
             {

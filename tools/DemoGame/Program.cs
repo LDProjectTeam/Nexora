@@ -13,7 +13,7 @@ namespace DemoGame
             Console.WriteLine("         CYBER RUNNER 2088 — TEST GAME            ");
             Console.WriteLine("==================================================");
             Console.ResetColor();
-            Console.WriteLine("Game successfully launched via Nexora!");
+            Console.WriteLine("Game successfully launched via Vellum!");
             Console.WriteLine($"Arguments received: {string.Join(" ", args)}");
             Console.WriteLine($"Running directory: {AppDomain.CurrentDomain.BaseDirectory}");
             Console.WriteLine();

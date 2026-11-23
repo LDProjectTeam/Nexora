@@ -1,5 +1,5 @@
 (() => {
-  const locale = window.NexoraLocale || { lang: 'ru', translate: (value) => value };
+  const locale = window.VellumLocale || { lang: 'ru', translate: (value) => value };
   const t = locale.translate;
   const intlLocale = locale.lang === 'en' ? 'en-US' : locale.lang === 'ua' ? 'uk-UA' : 'ru-RU';
   const menuButton = document.querySelector('.menu-toggle');
@@ -170,10 +170,10 @@
     copyButton.addEventListener('click', async () => {
       const status = document.querySelector('[data-copy-status]');
       try {
-        await navigator.clipboard.writeText('%APPDATA%\\Nexora');
+        await navigator.clipboard.writeText('%APPDATA%\\Vellum');
         status.textContent = t('Путь скопирован');
       } catch {
-        status.textContent = t('Скопируй путь вручную: %APPDATA%\\Nexora');
+        status.textContent = t('Скопируй путь вручную: %APPDATA%\\Vellum');
       }
     });
   }

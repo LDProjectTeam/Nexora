@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Reports (and optionally removes) build artifacts that make the Nexora repository huge.
+    Reports (and optionally removes) build artifacts that make the Vellum repository huge.
 
 .DESCRIPTION
     The repository accumulates one publish folder and one installer per fix iteration.
@@ -13,7 +13,7 @@
     Delete the listed files and folders. Without it the script is read-only.
 
 .PARAMETER KeepInstallers
-    How many newest artifacts\installer\Nexora-Setup-*.exe files to keep. Default 3.
+    How many newest artifacts\installer\Vellum-Setup-*.exe files to keep. Default 3.
 
 .PARAMETER KeepPortableBuilds
     How many newest publish-portable* folders to keep. Default 2.
@@ -36,8 +36,8 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
-if (-not (Test-Path (Join-Path $root 'Nexora.sln'))) {
-    throw "Nexora.sln not found next to tools\; run this script from the repository."
+if (-not (Test-Path (Join-Path $root 'Vellum.sln'))) {
+    throw "Vellum.sln not found next to tools\; run this script from the repository."
 }
 
 function Get-PathSize {
@@ -76,7 +76,7 @@ $candidates = [System.Collections.Generic.List[object]]::new()
 # 1. Installer builds: one executable per version, tens of megabytes each.
 $installerDir = Join-Path $root 'artifacts\installer'
 if (Test-Path $installerDir) {
-    Get-ChildItem $installerDir -Filter 'Nexora-Setup-*.exe' -File |
+    Get-ChildItem $installerDir -Filter 'Vellum-Setup-*.exe' -File |
         Sort-Object LastWriteTime -Descending |
         Select-Object -Skip $KeepInstallers |
         ForEach-Object { Add-Candidate $candidates $_.FullName 'old installer build' }
@@ -146,8 +146,8 @@ if (-not $Apply) {
     exit 0
 }
 
-if (Get-Process -Name 'Nexora', 'Nexora.TorrentEngine' -ErrorAction SilentlyContinue) {
-    throw 'Close Nexora and its torrent engine before cleaning publish folders.'
+if (Get-Process -Name 'Vellum', 'Vellum.TorrentEngine' -ErrorAction SilentlyContinue) {
+    throw 'Close Vellum and its torrent engine before cleaning publish folders.'
 }
 
 $freed = 0
