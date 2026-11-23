@@ -4,8 +4,8 @@
                     "version":  "1.0.68",
                     "installer":  "downloads/Vellum-Setup-1.0.68-win-x64.exe",
                     "filename":  "Vellum-Setup-1.0.68-win-x64.exe",
-                    "sizeBytes":  63669771,
-                    "fileModifiedUtc":  "2026-11-21T22:59:31Z",
+                    "sizeBytes":  63707902,
+                    "fileModifiedUtc":  "2026-11-23T19:48:22Z",
                     "releaseDate":  null,
                     "architecture":  "x64",
                     "os":  "Windows 10 build 18362 or later; Windows 11"
@@ -14,27 +14,9 @@
                     {
                         "version":  "1.0.68",
                         "filename":  "Vellum-Setup-1.0.68-win-x64.exe",
-                        "sizeBytes":  63669771,
-                        "fileModifiedUtc":  "2026-11-21T22:59:31Z"
-                    },
-                    {
-                        "version":  "1.0.67",
-                        "filename":  "Vellum-Setup-1.0.67-win-x64.exe",
-                        "sizeBytes":  63670202,
-                        "fileModifiedUtc":  "2026-11-21T20:08:24Z"
-                    },
-                    {
-                        "version":  "1.0.66",
-                        "filename":  "Vellum-Setup-1.0.66-win-x64.exe",
-                        "sizeBytes":  60683335,
-                        "fileModifiedUtc":  "2026-11-20T17:32:36Z"
-                    },
-                    {
-                        "version":  "1.0.65",
-                        "filename":  "Vellum-Setup-1.0.65-win-x64.exe",
-                        "sizeBytes":  60682350,
-                        "fileModifiedUtc":  "2026-11-15T22:03:39Z"
+                        "sizeBytes":  63707902,
+                        "fileModifiedUtc":  "2026-11-23T19:48:22Z"
                     }
                 ],
-    "historyCount":  4
+    "historyCount":  1
 }
