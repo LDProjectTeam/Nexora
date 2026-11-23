@@ -1,0 +1,314 @@
+﻿using System.Diagnostics;
+using System.Text;
+using Microsoft.Win32;
+
+namespace Vellum.Migrator;
+
+public sealed class MigrationResult
+{
+    public bool Success { get; init; }
+    public IReadOnlyList<string> Messages { get; init; } = Array.Empty<string>();
+}
+
+public sealed class MigrationService
+{
+    private readonly MigrationOptions _options;
+    private readonly List<string> _messages = new();
+
+    public MigrationService(MigrationOptions options)
+    {
+        _options = options;
+        Detect();
+    }
+
+    public string TargetProfile => Path.Combine(_options.RoamingRoot, "Vellum");
+    public string? LegacyProfile { get; private set; }
+    public string? LegacyUninstaller { get; private set; }
+    public string? VellumExecutable { get; private set; }
+    public string? VellumInstaller { get; private set; }
+
+    public void Detect()
+    {
+        LegacyProfile = new[] { "Nexora", "GameVault" }
+            .Select(name => Path.Combine(_options.RoamingRoot, name))
+            .FirstOrDefault(Directory.Exists);
+
+        LegacyUninstaller = FindLegacyUninstaller();
+        VellumExecutable = FindVellumExecutable();
+        VellumInstaller = FindInstallerNearby();
+    }
+
+    public MigrationResult Run(Action<string>? report = null)
+    {
+        Detect();
+        _messages.Clear();
+        var success = true;
+
+        try
+        {
+            Report($"Профиль Nexora: {LegacyProfile ?? "не найден"}", report);
+            Report($"Профиль Vellum: {TargetProfile}", report);
+            Report($"Старая версия: {LegacyUninstaller ?? "не установлена"}", report);
+            Report($"Новая версия: {VellumExecutable ?? VellumInstaller ?? "не найдена"}", report);
+
+            if (_options.DryRun)
+                Report("Режим проверки: изменения не вносятся.", report);
+
+            if (_options.MigrateProfile)
+                success &= MigrateProfile(report);
+
+            if (_options.UninstallOld)
+                success &= UninstallLegacy(report);
+
+            if (_options.LaunchVellum)
+                success &= LaunchVellum(report);
+
+            Report(success ? "Готово." : "Завершено с ошибками.", report);
+        }
+        catch (Exception ex)
+        {
+            success = false;
+            Report($"Ошибка: {ex.Message}", report);
+        }
+        finally
+        {
+            WriteLog();
+        }
+
+        return new MigrationResult { Success = success, Messages = _messages.ToArray() };
+    }
+
+    private bool MigrateProfile(Action<string>? report)
+    {
+        if (LegacyProfile is null)
+        {
+            Report("Старый профиль Nexora не найден — переносить нечего.", report);
+            return true;
+        }
+
+        var targetExisted = Directory.Exists(TargetProfile);
+        if (_options.DryRun)
+        {
+            Report($"Будет перенесён профиль: {LegacyProfile} -> {TargetProfile}", report);
+            return true;
+        }
+
+        var copied = CopyMissingFiles(LegacyProfile, TargetProfile);
+        Report($"Профиль: {LegacyProfile} -> {TargetProfile}", report);
+        Report($"Скопировано файлов: {copied}.", report);
+        if (!targetExisted)
+            Report("Создан профиль Vellum.", report);
+
+        return true;
+    }
+
+    private bool UninstallLegacy(Action<string>? report)
+    {
+        if (LegacyUninstaller is null)
+        {
+            Report("Установленная Nexora не найдена — удалять нечего.", report);
+            return true;
+        }
+
+        if (_options.DryRun)
+        {
+            Report($"Будет запущен деинсталлятор: {LegacyUninstaller}", report);
+            return true;
+        }
+
+        Report("Удаление старой версии Nexora (может потребоваться подтверждение UAC)...", report);
+        var startInfo = new ProcessStartInfo(LegacyUninstaller, "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART")
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WorkingDirectory = Path.GetDirectoryName(LegacyUninstaller) ?? string.Empty
+        };
+
+        using var process = Process.Start(startInfo);
+        if (process is null)
+        {
+            Report("Не удалось запустить деинсталлятор.", report);
+            return false;
+        }
+
+        if (!process.WaitForExit(180_000))
+        {
+            Report("Деинсталлятор не завершился за 3 минуты.", report);
+            return false;
+        }
+
+        Report($"Деинсталлятор завершён с кодом {process.ExitCode}.", report);
+        return process.ExitCode == 0;
+    }
+
+    private bool LaunchVellum(Action<string>? report)
+    {
+        var target = VellumExecutable ?? VellumInstaller;
+        if (target is null)
+        {
+            Report("Vellum не найден. Установи Vellum-Setup и запусти его вручную.", report);
+            return true;
+        }
+
+        if (_options.DryRun)
+        {
+            Report($"Будет запущено: {target}", report);
+            return true;
+        }
+
+        try
+        {
+            Process.Start(new ProcessStartInfo(target)
+            {
+                UseShellExecute = true,
+                WorkingDirectory = Path.GetDirectoryName(target) ?? string.Empty
+            });
+            Report($"Запущено: {target}", report);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Report($"Не удалось запустить {target}: {ex.Message}", report);
+            return false;
+        }
+    }
+
+    private static int CopyMissingFiles(string source, string target)
+    {
+        Directory.CreateDirectory(target);
+        var copied = 0;
+
+        foreach (var file in Directory.EnumerateFiles(source))
+        {
+            var destination = Path.Combine(target, Path.GetFileName(file));
+            if (File.Exists(destination))
+                continue;
+
+            File.Copy(file, destination);
+            copied++;
+        }
+
+        foreach (var directory in Directory.EnumerateDirectories(source))
+            copied += CopyMissingFiles(directory, Path.Combine(target, Path.GetFileName(directory)));
+
+        return copied;
+    }
+
+    private string? FindLegacyUninstaller()
+    {
+        var standard = Path.Combine(_options.InstallRoot, "Nexora", "unins000.exe");
+        if (File.Exists(standard))
+            return standard;
+
+        return FindUninstallerByDisplayName("Nexora");
+    }
+
+    private string? FindUninstallerByDisplayName(string displayNamePrefix)
+    {
+        foreach (var hive in new[] { Registry.CurrentUser, Registry.LocalMachine })
+        {
+            foreach (var path in new[]
+                     {
+                         @"Software\Microsoft\Windows\CurrentVersion\Uninstall",
+                         @"Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+                     })
+            {
+                try
+                {
+                    using var key = hive.OpenSubKey(path);
+                    if (key is null)
+                        continue;
+
+                    foreach (var name in key.GetSubKeyNames())
+                    {
+                        using var entry = key.OpenSubKey(name);
+                        var displayName = entry?.GetValue("DisplayName") as string;
+                        if (displayName is null
+                            || !displayName.StartsWith(displayNamePrefix, StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        var uninstall = (entry?.GetValue("UninstallString") as string)?.Trim();
+                        var executable = ExtractExecutable(uninstall);
+                        if (executable is not null && File.Exists(executable))
+                            return executable;
+                    }
+                }
+                catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or System.Security.SecurityException)
+                {
+                    // A locked-down registry hive must not stop the migration.
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static string? ExtractExecutable(string? command)
+    {
+        if (string.IsNullOrWhiteSpace(command))
+            return null;
+
+        if (command[0] == '"')
+        {
+            var end = command.IndexOf('"', 1);
+            return end > 1 ? command[1..end] : null;
+        }
+
+        var separator = command.IndexOf(" /", StringComparison.Ordinal);
+        return separator > 0 ? command[..separator] : command;
+    }
+
+    private string? FindVellumExecutable()
+    {
+        var standard = Path.Combine(_options.InstallRoot, "Vellum", "Vellum.exe");
+        return File.Exists(standard) ? standard : null;
+    }
+
+    private string? FindInstallerNearby()
+    {
+        var directory = Path.GetDirectoryName(Environment.ProcessPath);
+        if (string.IsNullOrWhiteSpace(directory) || !Directory.Exists(directory))
+            directory = AppContext.BaseDirectory;
+
+        try
+        {
+            return Directory
+                .EnumerateFiles(directory, "Vellum-Setup-*.exe")
+                .OrderByDescending(File.GetLastWriteTimeUtc)
+                .FirstOrDefault();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    private void Report(string message, Action<string>? report)
+    {
+        var line = $"[{DateTime.Now:HH:mm:ss}] {message}";
+        _messages.Add(line);
+        report?.Invoke(line);
+    }
+
+    private void WriteLog()
+    {
+        try
+        {
+            var directory = Path.GetDirectoryName(_options.LogPath);
+            if (!string.IsNullOrWhiteSpace(directory))
+                Directory.CreateDirectory(directory);
+
+            var builder = new StringBuilder();
+            builder.AppendLine($"Vellum Migrator {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            builder.AppendLine($"Профиль: {TargetProfile}");
+            foreach (var message in _messages)
+                builder.AppendLine(message);
+
+            File.WriteAllText(_options.LogPath, builder.ToString(), Encoding.UTF8);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Logging must never hide the migration result.
+        }
+    }
+}
