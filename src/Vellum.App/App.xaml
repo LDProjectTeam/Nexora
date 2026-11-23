@@ -9,8 +9,6 @@
             </ResourceDictionary.MergedDictionaries>
             <BitmapImage x:Key="VellumAppIcon"
                          UriSource="pack://application:,,,/Vellum;component/Assets/VELLUM_icon_light.ico" />
-            <BitmapImage x:Key="VellumCoreLogo"
-                         UriSource="pack://application:,,,/Vellum;component/Assets/VellumCore.png" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>
