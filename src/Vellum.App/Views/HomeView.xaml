@@ -70,7 +70,7 @@
                                     <GradientStop Color="#0F1216" Offset="1" />
                                 </LinearGradientBrush>
                             </Grid.Background>
-                            <Image Source="/Assets/VELLUM_icon_light.ico" Width="230" Height="230"
+                            <Image Source="{StaticResource VellumCoreLogo}" Width="230" Height="230"
                                    HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,96,0"
                                    Stretch="Uniform" Opacity="0.055" />
                         </Grid>

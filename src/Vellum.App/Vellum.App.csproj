@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <Resource Include="Assets\VELLUM_icon_light.ico" />
+    <Resource Include="Assets\VellumCore.png" />
   </ItemGroup>
 
   <ItemGroup>

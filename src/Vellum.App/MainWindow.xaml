@@ -69,7 +69,7 @@
                             WindowChrome.IsHitTestVisibleInChrome="True"
                             MouseLeftButtonDown="WindowDrag_MouseLeftButtonDown">
                     <Border Width="36" Height="36" CornerRadius="8" Margin="0,0,12,0" ClipToBounds="True">
-                        <Image Source="{StaticResource VellumAppIcon}" Stretch="UniformToFill" />
+                        <Image Source="{StaticResource VellumCoreLogo}" Stretch="UniformToFill" />
                     </Border>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="Vellum"
