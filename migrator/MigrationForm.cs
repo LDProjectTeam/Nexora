@@ -1,4 +1,5 @@
-﻿using System.Windows.Forms;
+﻿using System.Diagnostics;
+using System.Windows.Forms;
 
 namespace Vellum.Migrator;
 
@@ -14,6 +15,7 @@ public sealed class MigrationForm : Form
     private readonly TextBox _installDir = new();
     private readonly Button _browse = new();
     private readonly Button _choose = new();
+    private readonly Button _download = new();
     private readonly TextBox _log = new();
     private readonly Button _migrate = new();
     private readonly Button _close = new();
@@ -62,6 +64,11 @@ public sealed class MigrationForm : Form
         _choose.Location = new Point(452, 148);
         _choose.Size = new Size(186, 26);
         _choose.Click += (_, _) => ChooseInstaller();
+
+        _download.Text = "Скачать…";
+        _download.Location = new Point(340, 148);
+        _download.Size = new Size(104, 26);
+        _download.Click += (_, _) => OpenDownloadPage();
 
         var installLabel = new Label
         {
@@ -132,7 +139,7 @@ public sealed class MigrationForm : Form
 
         Controls.AddRange(new Control[]
         {
-            title, subtitle, _info, _choose, installLabel, _installDir, _browse, _replace,
+            title, subtitle, _info, _choose, _download, installLabel, _installDir, _browse, _replace,
             _profile, _uninstall, _launch, logLabel, _log, _status, _migrate, _close
         });
     }
@@ -186,6 +193,21 @@ public sealed class MigrationForm : Form
         }
     }
 
+    private void OpenDownloadPage()
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo("https://github.com/LDProjectTeam/Vellum/releases/latest")
+            {
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            _status.Text = "Не удалось открыть браузер: " + ex.Message;
+        }
+    }
+
     private bool ChooseInstaller()
     {
         using var dialog = new OpenFileDialog
@@ -200,6 +222,21 @@ public sealed class MigrationForm : Form
 
         _options.VellumInstallerPath = dialog.FileName;
         LoadDetection();
+
+        var service = new MigrationService(_options);
+        if (service.VellumInstaller is null)
+        {
+            MessageBox.Show(
+                this,
+                "Файл не похож на установщик Vellum. Ожидается Vellum-Setup-<версия>-win-x64.exe.",
+                "Vellum Migrator",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+            _options.VellumInstallerPath = null;
+            LoadDetection();
+            return false;
+        }
+
         return true;
     }
 

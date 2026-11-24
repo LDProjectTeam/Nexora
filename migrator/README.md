@@ -47,6 +47,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\migrator\Build-Migrator.ps
 | `--no-profile` | не переносить профиль |
 | `--uninstall-old` | удалить старую версию Nexora |
 | `--no-launch` | не запускать Vellum после переноса |
+| `--installer <path>` | явно указать `Vellum-Setup-*.exe` |
 | `--install-dir <path>` | куда установить Vellum (передаётся setup как `/DIR`) |
 | `--roaming <path>` | другой каталог профилей (для проверки) |
 | `--install-root <path>` | другой каталог установки (для проверки) |

@@ -6,7 +6,7 @@
 
 **Игровой лаунчер для Windows: каталог, загрузки и библиотека в одном окне**
 
-[![Version](https://img.shields.io/badge/version-1.0.68-3ddc97?style=for-the-badge)](https://github.com/LDProjectTeam/Vellum/releases/latest)
+[![Version](https://img.shields.io/badge/version-1.0.69-3ddc97?style=for-the-badge)](https://github.com/LDProjectTeam/Vellum/releases/latest)
 [![Platform](https://img.shields.io/badge/platform-Windows-0078D6?style=for-the-badge&logo=windows)](https://github.com/LDProjectTeam/Vellum/releases/latest)
 [![.NET](https://img.shields.io/badge/.NET-8-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/license-Proprietary-darkred?style=for-the-badge)](LICENSE)
@@ -49,8 +49,13 @@
 ### 🚀 Установка
 
 1. Открой [**Releases**](https://github.com/LDProjectTeam/Vellum/releases/latest)
-2. Скачай `Vellum-Setup-1.0.68-win-x64.exe`
+2. Скачай `Vellum-Setup-1.0.69-win-x64.exe`
 3. Запусти установщик и выбери папку библиотеки при первом старте
+
+Другие варианты:
+- `Vellum-Portable-1.0.69-win-x64.zip` — портативная сборка: распакуй и запусти `Vellum.exe`.
+- `Vellum-1.0.69-win-x64.msi` — установка через Windows Installer.
+- `Vellum-Migrator.exe` — перенос профиля и переход с Nexora.
 
 Установка идёт в профиль пользователя, права администратора не нужны. `.NET` ставить отдельно не требуется: сборка self-contained.
 
@@ -58,7 +63,7 @@
 
 ### 🔧 Сборка из исходников
 
-Нужны .NET 8 SDK, PowerShell и [Inno Setup 6](https://jrsoftware.org/isinfo.php).
+Нужны .NET 8 SDK, PowerShell, [Inno Setup 6](https://jrsoftware.org/isinfo.php) и WiX Toolset 3 (для `.msi`).
 
 ```powershell
 dotnet restore Vellum.sln
@@ -70,6 +75,9 @@ dotnet test tests/Vellum.Tests/Vellum.Tests.csproj -c Release
 
 # установщик в artifacts\installer
 .\installer\Build-Installer.ps1
+
+# всё сразу: setup, portable zip, msi и мигратор
+.\installer\Build-All.ps1
 
 # статический сайт в website\dist
 .\website\Build-Website.ps1
@@ -123,8 +131,13 @@ Vellum/
 ### 🚀 Встановлення
 
 1. Відкрий [**Releases**](https://github.com/LDProjectTeam/Vellum/releases/latest)
-2. Завантаж `Vellum-Setup-1.0.68-win-x64.exe`
+2. Завантаж `Vellum-Setup-1.0.69-win-x64.exe`
 3. Запусти інсталятор і вибери папку бібліотеки під час першого запуску
+
+Інші варіанти:
+- `Vellum-Portable-1.0.69-win-x64.zip` — портативна збірка: розпакуй і запусти `Vellum.exe`.
+- `Vellum-1.0.69-win-x64.msi` — встановлення через Windows Installer.
+- `Vellum-Migrator.exe` — перенесення профілю та перехід з Nexora.
 
 Встановлення відбувається в профіль користувача, права адміністратора не потрібні. `.NET` встановлювати окремо не потрібно: збірка self-contained.
 
@@ -132,7 +145,7 @@ Vellum/
 
 ### 🔧 Збирання з вихідного коду
 
-Потрібні .NET 8 SDK, PowerShell і [Inno Setup 6](https://jrsoftware.org/isinfo.php).
+Потрібні .NET 8 SDK, PowerShell, [Inno Setup 6](https://jrsoftware.org/isinfo.php) і WiX Toolset 3 (для `.msi`).
 
 ```powershell
 dotnet restore Vellum.sln
@@ -144,6 +157,9 @@ dotnet test tests/Vellum.Tests/Vellum.Tests.csproj -c Release
 
 # інсталятор у artifacts\installer
 .\installer\Build-Installer.ps1
+
+# усе одразу: setup, portable zip, msi і мігратор
+.\installer\Build-All.ps1
 
 # статичний сайт у website\dist
 .\website\Build-Website.ps1
@@ -182,8 +198,13 @@ dotnet test tests/Vellum.Tests/Vellum.Tests.csproj -c Release
 ### 🚀 Installation
 
 1. Open [**Releases**](https://github.com/LDProjectTeam/Vellum/releases/latest)
-2. Download `Vellum-Setup-1.0.68-win-x64.exe`
+2. Download `Vellum-Setup-1.0.69-win-x64.exe`
 3. Run the installer and choose a library folder on first launch
+
+Other options:
+- `Vellum-Portable-1.0.69-win-x64.zip` — portable build: extract and run `Vellum.exe`.
+- `Vellum-1.0.69-win-x64.msi` — Windows Installer package.
+- `Vellum-Migrator.exe` — migrate the profile and switch from Nexora.
 
 The app installs into your user profile and does not need administrator rights. .NET is included in the self-contained build.
 
@@ -191,7 +212,7 @@ The app installs into your user profile and does not need administrator rights. 
 
 ### 🔧 Building from Source
 
-You need the .NET 8 SDK, PowerShell, and [Inno Setup 6](https://jrsoftware.org/isinfo.php).
+You need the .NET 8 SDK, PowerShell, [Inno Setup 6](https://jrsoftware.org/isinfo.php), and WiX Toolset 3 (for `.msi`).
 
 ```powershell
 dotnet restore Vellum.sln
@@ -203,6 +224,9 @@ dotnet test tests/Vellum.Tests/Vellum.Tests.csproj -c Release
 
 # installer in artifacts\installer
 .\installer\Build-Installer.ps1
+
+# everything: setup, portable zip, MSI, and migrator
+.\installer\Build-All.ps1
 
 # static site in website\dist
 .\website\Build-Website.ps1

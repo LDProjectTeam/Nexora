@@ -68,6 +68,11 @@ public sealed class MigrationOptions
                     if (i + 1 < args.Length)
                         options.InstallDirectory = args[++i];
                     break;
+                case "--installer":
+                case "--setup":
+                    if (i + 1 < args.Length)
+                        options.VellumInstallerPath = Path.GetFullPath(args[++i]);
+                    break;
                 case "--log":
                     if (i + 1 < args.Length)
                         options.LogPath = Path.GetFullPath(args[++i]);

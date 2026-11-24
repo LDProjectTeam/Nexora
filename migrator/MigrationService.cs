@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.Win32;
 
 namespace Vellum.Migrator;
@@ -107,7 +108,57 @@ public sealed class MigrationService
     private string? ResolveInstallerOverride()
     {
         var path = _options.VellumInstallerPath;
-        return !string.IsNullOrWhiteSpace(path) && File.Exists(path) ? path : null;
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            return null;
+        return IsVellumInstaller(path) ? path : null;
+    }
+
+    private static bool IsVellumInstaller(string path)
+    {
+        if (!File.Exists(path))
+            return false;
+
+        var name = Path.GetFileName(path);
+        if (!name.StartsWith("Vellum-Setup-", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        try
+        {
+            var info = FileVersionInfo.GetVersionInfo(path);
+            if (!string.IsNullOrWhiteSpace(info.ProductName)
+                && info.ProductName.Contains("Vellum", StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (!string.IsNullOrWhiteSpace(info.FileDescription)
+                && info.FileDescription.Contains("Vellum", StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+
+        // Older setup builds may not carry version info; the file name is authoritative.
+        return true;
+    }
+
+    private static string? GetInstallerVersion(string path)
+    {
+        try
+        {
+            var version = FileVersionInfo.GetVersionInfo(path).FileVersion;
+            if (!string.IsNullOrWhiteSpace(version))
+                return version;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Fall back to the file name below.
+        }
+
+        var match = Regex.Match(
+            Path.GetFileName(path),
+            @"Vellum-Setup-(\d+\.\d+\.\d+)-win-x64\.exe",
+            RegexOptions.IgnoreCase);
+        return match.Success ? match.Groups[1].Value : null;
     }
 
     public MigrationResult Run(Action<string>? report = null)
@@ -122,6 +173,16 @@ public sealed class MigrationService
             Report($"Профиль Vellum: {TargetProfile}", report);
             Report($"Старая версия: {DescribeLegacyInstall()}", report);
             Report($"Новая версия: {VellumExecutable ?? VellumInstaller ?? "не найдена"}", report);
+            if (VellumInstaller is not null)
+            {
+                var installerVersion = GetInstallerVersion(VellumInstaller);
+                Report($"Установщик Vellum: {VellumInstaller}" +
+                       (installerVersion is null ? string.Empty : $" (версия {installerVersion})"), report);
+            }
+            else if (!string.IsNullOrWhiteSpace(_options.VellumInstallerPath))
+            {
+                Report($"Указанный установщик не подходит: {_options.VellumInstallerPath}", report);
+            }
 
             if (_options.DryRun)
                 Report("Режим проверки: изменения не вносятся.", report);
@@ -398,6 +459,14 @@ public sealed class MigrationService
         var downloads = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
         candidates.Add(downloads);
+        candidates.Add(Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Desktop"));
+
+        foreach (var drive in DriveInfo.GetDrives())
+        {
+            if (drive.IsReady && drive.DriveType is DriveType.Fixed or DriveType.Removable)
+                candidates.Add(drive.RootDirectory.FullName);
+        }
 
         foreach (var directory in candidates.Distinct(StringComparer.OrdinalIgnoreCase))
         {
@@ -408,6 +477,7 @@ public sealed class MigrationService
 
                 var found = Directory
                     .EnumerateFiles(directory, "Vellum-Setup-*.exe")
+                    .Where(IsVellumInstaller)
                     .OrderByDescending(File.GetLastWriteTimeUtc)
                     .FirstOrDefault();
 
