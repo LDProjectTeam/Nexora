@@ -114,10 +114,15 @@ public sealed class MigrationForm : Form
     private void LoadDetection()
     {
         var service = new MigrationService(_options);
+        var legacy = service.LegacyUninstaller
+            ?? (service.LegacyExecutable is null
+                ? "не установлена"
+                : service.LegacyExecutable + " (портативная)");
+
         _info.Text =
             $"Профиль Nexora: {service.LegacyProfile ?? "не найден"}{Environment.NewLine}" +
             $"Профиль Vellum: {service.TargetProfile}{Environment.NewLine}" +
-            $"Старая версия: {service.LegacyUninstaller ?? "не установлена"}{Environment.NewLine}" +
+            $"Старая версия: {legacy}{Environment.NewLine}" +
             $"Новая версия: {service.VellumExecutable ?? service.VellumInstaller ?? "не найдена"}";
 
         _profile.Enabled = service.LegacyProfile is not null;

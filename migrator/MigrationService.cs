@@ -23,6 +23,7 @@ public sealed class MigrationService
 
     public string TargetProfile => Path.Combine(_options.RoamingRoot, "Vellum");
     public string? LegacyProfile { get; private set; }
+    public string? LegacyExecutable { get; private set; }
     public string? LegacyUninstaller { get; private set; }
     public string? VellumExecutable { get; private set; }
     public string? VellumInstaller { get; private set; }
@@ -33,9 +34,74 @@ public sealed class MigrationService
             .Select(name => Path.Combine(_options.RoamingRoot, name))
             .FirstOrDefault(Directory.Exists);
 
-        LegacyUninstaller = FindLegacyUninstaller();
+        DetectLegacyInstall();
         VellumExecutable = FindVellumExecutable();
         VellumInstaller = ResolveInstallerOverride() ?? FindInstallerNearby();
+    }
+
+    private void DetectLegacyInstall()
+    {
+        LegacyExecutable = null;
+        LegacyUninstaller = null;
+
+        foreach (var directory in EnumerateLegacyInstallDirectories())
+        {
+            var executable = Path.Combine(directory, "Nexora.exe");
+            if (!File.Exists(executable))
+                continue;
+
+            LegacyExecutable = executable;
+            var uninstaller = Path.Combine(directory, "unins000.exe");
+            if (File.Exists(uninstaller))
+                LegacyUninstaller = uninstaller;
+            break;
+        }
+
+        if (LegacyUninstaller is not null)
+            return;
+
+        var fromRegistry = FindUninstallerByDisplayName("Nexora");
+        if (fromRegistry is null)
+            return;
+
+        LegacyUninstaller = fromRegistry;
+        var installDirectory = Path.GetDirectoryName(fromRegistry);
+        if (installDirectory is not null && LegacyExecutable is null)
+        {
+            var executable = Path.Combine(installDirectory, "Nexora.exe");
+            if (File.Exists(executable))
+                LegacyExecutable = executable;
+        }
+    }
+
+    private IEnumerable<string> EnumerateLegacyInstallDirectories()
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        var candidates = new List<string>
+        {
+            Path.Combine(_options.InstallRoot, "Nexora"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Nexora"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Nexora"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Nexora")
+        };
+
+        foreach (var drive in DriveInfo.GetDrives())
+        {
+            if (!drive.IsReady)
+                continue;
+            if (drive.DriveType is not (DriveType.Fixed or DriveType.Removable))
+                continue;
+
+            candidates.Add(Path.Combine(drive.RootDirectory.FullName, "Nexora"));
+            candidates.Add(Path.Combine(drive.RootDirectory.FullName, "Programs", "Nexora"));
+        }
+
+        foreach (var candidate in candidates)
+        {
+            if (seen.Add(candidate))
+                yield return candidate;
+        }
     }
 
     private string? ResolveInstallerOverride()
@@ -54,7 +120,7 @@ public sealed class MigrationService
         {
             Report($"Профиль Nexora: {LegacyProfile ?? "не найден"}", report);
             Report($"Профиль Vellum: {TargetProfile}", report);
-            Report($"Старая версия: {LegacyUninstaller ?? "не установлена"}", report);
+            Report($"Старая версия: {DescribeLegacyInstall()}", report);
             Report($"Новая версия: {VellumExecutable ?? VellumInstaller ?? "не найдена"}", report);
 
             if (_options.DryRun)
@@ -112,6 +178,13 @@ public sealed class MigrationService
     {
         if (LegacyUninstaller is null)
         {
+            if (LegacyExecutable is not null)
+            {
+                Report($"Портативная версия Nexora: {LegacyExecutable}", report);
+                Report("Автоматическое удаление недоступно — удали папку вручную после проверки.", report);
+                return true;
+            }
+
             Report("Установленная Nexora не найдена — удалять нечего.", report);
             return true;
         }
@@ -200,13 +273,13 @@ public sealed class MigrationService
         return copied;
     }
 
-    private string? FindLegacyUninstaller()
+    private string DescribeLegacyInstall()
     {
-        var standard = Path.Combine(_options.InstallRoot, "Nexora", "unins000.exe");
-        if (File.Exists(standard))
-            return standard;
-
-        return FindUninstallerByDisplayName("Nexora");
+        if (LegacyUninstaller is not null)
+            return LegacyUninstaller;
+        if (LegacyExecutable is not null)
+            return $"{LegacyExecutable} (портативная)";
+        return "не установлена";
     }
 
     private string? FindUninstallerByDisplayName(string displayName, bool exact = false)
