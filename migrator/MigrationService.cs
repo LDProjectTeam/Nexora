@@ -229,19 +229,33 @@ public sealed class MigrationService
             return true;
         }
 
+        var installDirectory = VellumExecutable is null && !string.IsNullOrWhiteSpace(_options.InstallDirectory)
+            ? NormalizeDirectory(_options.InstallDirectory)
+            : null;
+
         if (_options.DryRun)
         {
+            if (installDirectory is not null)
+                Report($"Каталог установки: {installDirectory}", report);
             Report($"Будет запущено: {target}", report);
             return true;
         }
 
         try
         {
-            Process.Start(new ProcessStartInfo(target)
+            var startInfo = new ProcessStartInfo(target)
             {
                 UseShellExecute = true,
                 WorkingDirectory = Path.GetDirectoryName(target) ?? string.Empty
-            });
+            };
+
+            if (installDirectory is not null)
+            {
+                startInfo.Arguments = $"/DIR=\"{installDirectory}\"";
+                Report($"Каталог установки: {installDirectory}", report);
+            }
+
+            Process.Start(startInfo);
             Report($"Запущено: {target}", report);
             return true;
         }
@@ -250,6 +264,12 @@ public sealed class MigrationService
             Report($"Не удалось запустить {target}: {ex.Message}", report);
             return false;
         }
+    }
+
+    private static string NormalizeDirectory(string path)
+    {
+        var trimmed = path.Trim().Trim('"');
+        return trimmed.Length > 3 ? trimmed.TrimEnd('\\', '/') : trimmed;
     }
 
     private static int CopyMissingFiles(string source, string target)

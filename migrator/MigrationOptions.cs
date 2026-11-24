@@ -20,6 +20,8 @@ public sealed class MigrationOptions
 
     public string? VellumInstallerPath { get; set; }
 
+    public string? InstallDirectory { get; set; }
+
     public static MigrationOptions Parse(string[] args)
     {
         var options = new MigrationOptions();
@@ -61,6 +63,10 @@ public sealed class MigrationOptions
                 case "--install-root":
                     if (i + 1 < args.Length)
                         options.InstallRoot = Path.GetFullPath(args[++i]);
+                    break;
+                case "--install-dir":
+                    if (i + 1 < args.Length)
+                        options.InstallDirectory = args[++i];
                     break;
                 case "--log":
                     if (i + 1 < args.Length)
