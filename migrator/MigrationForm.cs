@@ -10,6 +10,7 @@ public sealed class MigrationForm : Form
     private readonly CheckBox _profile = new();
     private readonly CheckBox _uninstall = new();
     private readonly CheckBox _launch = new();
+    private readonly Button _choose = new();
     private readonly TextBox _log = new();
     private readonly Button _migrate = new();
     private readonly Button _close = new();
@@ -49,32 +50,37 @@ public sealed class MigrationForm : Form
         };
 
         _info.Location = new Point(22, 84);
-        _info.Size = new Size(616, 80);
+        _info.Size = new Size(616, 64);
         _info.AutoEllipsis = true;
+
+        _choose.Text = "Выбрать Vellum-Setup…";
+        _choose.Location = new Point(452, 148);
+        _choose.Size = new Size(186, 26);
+        _choose.Click += (_, _) => ChooseInstaller();
 
         _profile.Text = "Перенести профиль и настройки";
         _profile.Checked = true;
-        _profile.Location = new Point(22, 176);
+        _profile.Location = new Point(22, 184);
         _profile.AutoSize = true;
 
         _uninstall.Text = "Удалить старую версию Nexora (может потребоваться UAC)";
-        _uninstall.Location = new Point(22, 202);
+        _uninstall.Location = new Point(22, 210);
         _uninstall.AutoSize = true;
 
         _launch.Text = "Запустить Vellum после переноса";
         _launch.Checked = true;
-        _launch.Location = new Point(22, 228);
+        _launch.Location = new Point(22, 236);
         _launch.AutoSize = true;
 
         var logLabel = new Label
         {
             Text = "Журнал:",
             AutoSize = true,
-            Location = new Point(22, 264)
+            Location = new Point(22, 268)
         };
 
-        _log.Location = new Point(22, 284);
-        _log.Size = new Size(616, 140);
+        _log.Location = new Point(22, 288);
+        _log.Size = new Size(616, 136);
         _log.Multiline = true;
         _log.ReadOnly = true;
         _log.ScrollBars = ScrollBars.Vertical;
@@ -100,7 +106,7 @@ public sealed class MigrationForm : Form
 
         Controls.AddRange(new Control[]
         {
-            title, subtitle, _info, _profile, _uninstall, _launch,
+            title, subtitle, _info, _choose, _profile, _uninstall, _launch,
             logLabel, _log, _status, _migrate, _close
         });
     }
@@ -119,10 +125,40 @@ public sealed class MigrationForm : Form
         _uninstall.Enabled = service.LegacyUninstaller is not null;
         _launch.Enabled = service.VellumExecutable is not null || service.VellumInstaller is not null;
         _launch.Checked = _launch.Enabled;
+
+        if (service.LegacyProfile is null && Directory.Exists(service.TargetProfile))
+            _status.Text = "Профиль Nexora не найден — возможно, переход уже выполнен.";
+    }
+
+    private bool ChooseInstaller()
+    {
+        using var dialog = new OpenFileDialog
+        {
+            Title = "Выберите установщик Vellum",
+            Filter = "Установщик Vellum (Vellum-Setup-*.exe)|Vellum-Setup-*.exe|Программы (*.exe)|*.exe",
+            CheckFileExists = true
+        };
+
+        if (dialog.ShowDialog(this) != DialogResult.OK)
+            return false;
+
+        _options.VellumInstallerPath = dialog.FileName;
+        LoadDetection();
+        return true;
     }
 
     private async void OnMigrate(object? sender, EventArgs e)
     {
+        if (_launch.Checked)
+        {
+            var current = new MigrationService(_options);
+            if (current.VellumExecutable is null && current.VellumInstaller is null && !ChooseInstaller())
+            {
+                _status.Text = "Vellum не найден: выбери установщик.";
+                return;
+            }
+        }
+
         _migrate.Enabled = false;
         _close.Enabled = false;
         _status.Text = "Перенос…";

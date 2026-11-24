@@ -35,7 +35,13 @@ public sealed class MigrationService
 
         LegacyUninstaller = FindLegacyUninstaller();
         VellumExecutable = FindVellumExecutable();
-        VellumInstaller = FindInstallerNearby();
+        VellumInstaller = ResolveInstallerOverride() ?? FindInstallerNearby();
+    }
+
+    private string? ResolveInstallerOverride()
+    {
+        var path = _options.VellumInstallerPath;
+        return !string.IsNullOrWhiteSpace(path) && File.Exists(path) ? path : null;
     }
 
     public MigrationResult Run(Action<string>? report = null)
@@ -203,7 +209,7 @@ public sealed class MigrationService
         return FindUninstallerByDisplayName("Nexora");
     }
 
-    private string? FindUninstallerByDisplayName(string displayNamePrefix)
+    private string? FindUninstallerByDisplayName(string displayName, bool exact = false)
     {
         foreach (var hive in new[] { Registry.CurrentUser, Registry.LocalMachine })
         {
@@ -222,9 +228,14 @@ public sealed class MigrationService
                     foreach (var name in key.GetSubKeyNames())
                     {
                         using var entry = key.OpenSubKey(name);
-                        var displayName = entry?.GetValue("DisplayName") as string;
-                        if (displayName is null
-                            || !displayName.StartsWith(displayNamePrefix, StringComparison.OrdinalIgnoreCase))
+                        var current = entry?.GetValue("DisplayName") as string;
+                        if (current is null)
+                            continue;
+
+                        var matches = exact
+                            ? string.Equals(current, displayName, StringComparison.OrdinalIgnoreCase)
+                            : current.StartsWith(displayName, StringComparison.OrdinalIgnoreCase);
+                        if (!matches)
                             continue;
 
                         var uninstall = (entry?.GetValue("UninstallString") as string)?.Trim();
@@ -261,26 +272,62 @@ public sealed class MigrationService
     private string? FindVellumExecutable()
     {
         var standard = Path.Combine(_options.InstallRoot, "Vellum", "Vellum.exe");
-        return File.Exists(standard) ? standard : null;
+        if (File.Exists(standard))
+            return standard;
+
+        var uninstaller = FindUninstallerByDisplayName("Vellum", exact: true);
+        var directory = Path.GetDirectoryName(uninstaller);
+        if (directory is null)
+            return null;
+
+        var executable = Path.Combine(directory, "Vellum.exe");
+        return File.Exists(executable) ? executable : null;
     }
 
     private string? FindInstallerNearby()
     {
-        var directory = Path.GetDirectoryName(Environment.ProcessPath);
-        if (string.IsNullOrWhiteSpace(directory) || !Directory.Exists(directory))
-            directory = AppContext.BaseDirectory;
+        var baseDirectory = Path.GetDirectoryName(Environment.ProcessPath);
+        if (string.IsNullOrWhiteSpace(baseDirectory) || !Directory.Exists(baseDirectory))
+            baseDirectory = AppContext.BaseDirectory;
 
-        try
+        var candidates = new List<string> { baseDirectory };
+        var parent = Path.GetDirectoryName(baseDirectory);
+        if (!string.IsNullOrWhiteSpace(parent))
         {
-            return Directory
-                .EnumerateFiles(directory, "Vellum-Setup-*.exe")
-                .OrderByDescending(File.GetLastWriteTimeUtc)
-                .FirstOrDefault();
+            candidates.Add(parent);
+            candidates.Add(Path.Combine(parent, "installer"));
+
+            var grandParent = Path.GetDirectoryName(parent);
+            if (!string.IsNullOrWhiteSpace(grandParent))
+                candidates.Add(Path.Combine(grandParent, "installer"));
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+
+        var downloads = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+        candidates.Add(downloads);
+
+        foreach (var directory in candidates.Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            return null;
+            try
+            {
+                if (!Directory.Exists(directory))
+                    continue;
+
+                var found = Directory
+                    .EnumerateFiles(directory, "Vellum-Setup-*.exe")
+                    .OrderByDescending(File.GetLastWriteTimeUtc)
+                    .FirstOrDefault();
+
+                if (found is not null)
+                    return found;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Keep looking in other known locations.
+            }
         }
+
+        return null;
     }
 
     private void Report(string message, Action<string>? report)

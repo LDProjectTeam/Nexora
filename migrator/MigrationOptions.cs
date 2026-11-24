@@ -18,6 +18,8 @@ public sealed class MigrationOptions
     public string LogPath { get; private set; } =
         Path.Combine(Path.GetTempPath(), "Vellum-Migrator.log");
 
+    public string? VellumInstallerPath { get; set; }
+
     public static MigrationOptions Parse(string[] args)
     {
         var options = new MigrationOptions();
