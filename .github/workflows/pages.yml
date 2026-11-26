@@ -46,9 +46,21 @@ jobs:
           $manifestPath = Join-Path $site 'releases.json'
           $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
           $manifest.current.installer = "https://github.com/$env:GITHUB_REPOSITORY/releases/latest"
-          $releaseJson = gh api "repos/$env:GITHUB_REPOSITORY/releases/latest" 2>$null
-          if ($LASTEXITCODE -eq 0 -and $releaseJson) {
-            $release = $releaseJson | ConvertFrom-Json
+
+          # releases/latest can briefly point at the previous release right after a
+          # new one is published, so the release event payload is authoritative.
+          $release = $null
+          if ($env:GITHUB_EVENT_NAME -eq 'release' -and $env:GITHUB_EVENT_PATH) {
+            $event = Get-Content -LiteralPath $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json
+            $release = $event.release
+          } else {
+            $releaseJson = gh api "repos/$env:GITHUB_REPOSITORY/releases/latest" 2>$null
+            if ($LASTEXITCODE -eq 0 -and $releaseJson) {
+              $release = $releaseJson | ConvertFrom-Json
+            }
+          }
+
+          if ($release) {
             $asset = $release.assets | Where-Object { $_.name -like 'Vellum-Setup-*-win-x64.exe' } | Select-Object -First 1
             if ($asset) {
               $manifest.current.installer = $asset.browser_download_url
