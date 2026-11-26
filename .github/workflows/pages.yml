@@ -60,6 +60,25 @@ jobs:
                 $manifest.current.version = $Matches[1]
               }
             }
+            $downloadPatterns = [ordered]@{
+              installer = 'Vellum-Setup-*-win-x64.exe'
+              msi = 'Vellum-*-win-x64.msi'
+              portable = 'Vellum-Portable-*-win-x64.zip'
+              migrator = 'Vellum-Migrator.exe'
+              checksums = 'SHA256SUMS.txt'
+            }
+            $downloads = [ordered]@{}
+            foreach ($key in $downloadPatterns.Keys) {
+              $matchedAsset = $release.assets | Where-Object { $_.name -like $downloadPatterns[$key] } | Select-Object -First 1
+              if ($matchedAsset) {
+                $downloads[$key] = [pscustomobject]@{
+                  filename = $matchedAsset.name
+                  sizeBytes = $matchedAsset.size
+                  url = $matchedAsset.browser_download_url
+                }
+              }
+            }
+            $manifest.current | Add-Member -NotePropertyName downloads -NotePropertyValue $downloads -Force
           }
           $manifest | ConvertTo-Json -Depth 6 | Set-Content $manifestPath -Encoding utf8
 

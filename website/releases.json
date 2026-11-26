@@ -8,7 +8,34 @@
                     "fileModifiedUtc":  "2026-11-26T17:40:20Z",
                     "releaseDate":  null,
                     "architecture":  "x64",
-                    "os":  "Windows 10 build 18362 or later; Windows 11"
+                    "os":  "Windows 10 build 18362 or later; Windows 11",
+                    "downloads":  {
+                                      "installer":  {
+                                                        "filename":  "Vellum-Setup-1.0.70-win-x64.exe",
+                                                        "sizeBytes":  63689019,
+                                                        "url":  "downloads/Vellum-Setup-1.0.70-win-x64.exe"
+                                                    },
+                                      "msi":  {
+                                                  "filename":  "Vellum-1.0.70-win-x64.msi",
+                                                  "sizeBytes":  72795112,
+                                                  "url":  "downloads/Vellum-1.0.70-win-x64.msi"
+                                              },
+                                      "portable":  {
+                                                       "filename":  "Vellum-Portable-1.0.70-win-x64.zip",
+                                                       "sizeBytes":  88616871,
+                                                       "url":  "downloads/Vellum-Portable-1.0.70-win-x64.zip"
+                                                   },
+                                      "migrator":  {
+                                                       "filename":  "Vellum-Migrator.exe",
+                                                       "sizeBytes":  71878423,
+                                                       "url":  "downloads/Vellum-Migrator.exe"
+                                                   },
+                                      "checksums":  {
+                                                        "filename":  "SHA256SUMS.txt",
+                                                        "sizeBytes":  381,
+                                                        "url":  "downloads/SHA256SUMS.txt"
+                                                    }
+                                  }
                 },
     "history":  [
                     {

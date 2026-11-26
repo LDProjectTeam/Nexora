@@ -355,3 +355,49 @@ html.motion-enabled .hero-preview { animation: hero-enter 460ms 40ms var(--ease)
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
   .reveal { opacity: 1; transform: none; }
 }
+
+/* Download chooser */
+.download-options-hint { margin: 8px 0 0; color: var(--muted); font-size: 12px; text-align: center; letter-spacing: .02em; }
+body.download-dialog-open { overflow: hidden; }
+.download-dialog { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 24px; }
+.download-dialog[hidden] { display: none; }
+.download-dialog-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, .72); backdrop-filter: blur(8px); }
+.download-dialog-panel { position: relative; width: min(640px, 100%); max-height: min(780px, calc(100vh - 48px)); overflow: auto; padding: 28px; border: 1px solid rgba(237, 237, 237, .14); border-radius: 18px; background: var(--surface); box-shadow: 0 30px 80px rgba(0, 0, 0, .55); animation: download-dialog-enter 180ms var(--ease) both; }
+@keyframes download-dialog-enter { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
+.download-dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.download-dialog-head .eyebrow { margin-bottom: 6px; }
+.download-dialog-head h2 { margin: 0; color: var(--text); font-size: 28px; font-weight: 500; letter-spacing: -.5px; }
+.download-dialog-close { width: 40px; height: 40px; flex: 0 0 auto; display: grid; place-items: center; padding: 0; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--secondary); cursor: pointer; transition: background-color 160ms var(--ease), color 160ms var(--ease); }
+.download-dialog-close:hover { background: var(--raised); color: var(--text); }
+.download-dialog-close svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.download-dialog-lede { margin: 12px 0 20px; color: var(--secondary); font-size: 14px; }
+.download-options { display: grid; gap: 8px; }
+.download-option { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto 20px; align-items: center; gap: 14px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--raised); color: var(--text); text-decoration: none; transition: background-color 160ms var(--ease), border-color 160ms var(--ease), transform 160ms var(--ease); }
+.download-option:hover { background: #2a2a2c; border-color: rgba(237, 237, 237, .18); }
+.download-option:active { transform: scale(.995); }
+.download-option.is-primary { border-color: rgba(237, 237, 237, .24); background: #29292b; }
+.download-option-icon { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 10px; background: rgba(237, 237, 237, .06); color: var(--text); }
+.download-option-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.download-option-body { min-width: 0; display: grid; gap: 3px; }
+.download-option-title { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
+.download-option-badge { padding: 2px 7px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: 10px; font-weight: 700; line-height: 1.4; text-transform: uppercase; letter-spacing: .04em; }
+.download-option-note { color: var(--secondary); font-size: 12px; }
+.download-option-file { overflow: hidden; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.download-option-size { color: var(--secondary); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.download-option-arrow { color: var(--muted); }
+.download-option-arrow svg { width: 16px; height: 16px; display: block; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.download-dialog-footnote { margin: 16px 0 0; color: var(--muted); font-size: 12px; }
+.download-checksum { display: inline-flex; margin-top: 8px; color: var(--secondary); font-size: 12px; text-decoration: underline; text-decoration-color: rgba(161, 161, 166, .35); text-underline-offset: 4px; }
+.download-checksum:hover { color: var(--text); }
+.download-checksum[hidden] { display: none; }
+.download-options-loading, .download-options-error { margin: 0; padding: 28px 20px; border: 1px dashed var(--line); border-radius: 12px; color: var(--secondary); font-size: 13px; text-align: center; }
+.download-options-error a { color: var(--text); }
+@media (max-width: 640px) {
+  .download-dialog { padding: 12px; }
+  .download-dialog-panel { padding: 20px; border-radius: 14px; }
+  .download-dialog-head h2 { font-size: 23px; }
+  .download-option { grid-template-columns: 36px minmax(0, 1fr) auto; gap: 10px; padding: 12px; }
+  .download-option-icon { width: 36px; height: 36px; }
+  .download-option-arrow { display: none; }
+  .download-option-size { display: none; }
+}

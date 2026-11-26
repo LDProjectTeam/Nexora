@@ -32,6 +32,25 @@ $history = @(Get-ChildItem -LiteralPath $installerDir -File -Filter 'Vellum-Setu
     }
 })
 
+$artifactSpecs = @(
+    [pscustomobject]@{ Key = 'installer'; Name = $installerName; Path = $installerPath },
+    [pscustomobject]@{ Key = 'msi'; Name = "Vellum-$version-win-x64.msi"; Path = (Join-Path $projectRoot "artifacts/msi/Vellum-$version-win-x64.msi") },
+    [pscustomobject]@{ Key = 'portable'; Name = "Vellum-Portable-$version-win-x64.zip"; Path = (Join-Path $projectRoot "artifacts/portable/Vellum-Portable-$version-win-x64.zip") },
+    [pscustomobject]@{ Key = 'migrator'; Name = 'Vellum-Migrator.exe'; Path = (Join-Path $projectRoot 'artifacts/migrator/Vellum-Migrator.exe') },
+    [pscustomobject]@{ Key = 'checksums'; Name = 'SHA256SUMS.txt'; Path = (Join-Path $projectRoot 'artifacts/SHA256SUMS.txt') }
+)
+$downloads = [ordered]@{}
+foreach ($spec in $artifactSpecs) {
+    if (Test-Path -LiteralPath $spec.Path) {
+        $artifact = Get-Item -LiteralPath $spec.Path
+        $downloads[$spec.Key] = [pscustomobject]@{
+            filename = $spec.Name
+            sizeBytes = $artifact.Length
+            url = "downloads/$($spec.Name)"
+        }
+    }
+}
+
 $current = [pscustomobject]@{
     version = $version
     installer = "downloads/$installerName"
@@ -41,6 +60,7 @@ $current = [pscustomobject]@{
     releaseDate = $null
     architecture = 'x64'
     os = 'Windows 10 build 18362 or later; Windows 11'
+    downloads = $downloads
 }
 $manifest = [pscustomobject]@{
     generatedFrom = 'src/Vellum.App/Vellum.App.csproj and artifacts/installer'
@@ -70,7 +90,11 @@ foreach ($sourceFile in $siteFiles) {
 }
 $downloadsPath = Join-Path $distPath 'downloads'
 New-Item -ItemType Directory -Path $downloadsPath | Out-Null
-Copy-Item -LiteralPath $installerPath -Destination (Join-Path $downloadsPath $installerName)
+foreach ($spec in $artifactSpecs) {
+    if (Test-Path -LiteralPath $spec.Path) {
+        Copy-Item -LiteralPath $spec.Path -Destination (Join-Path $downloadsPath $spec.Name) -Force
+    }
+}
 $distManifestPath = Join-Path $distPath 'releases.json'
 $distManifest = Get-Content -LiteralPath $distManifestPath -Raw | ConvertFrom-Json
 $distManifest.current.installer = "downloads/$installerName"
@@ -80,6 +104,15 @@ $distManifest = Get-Content -LiteralPath $distManifestPath -Raw | ConvertFrom-Js
 $builtInstaller = Get-Item -LiteralPath (Join-Path $downloadsPath $installerName)
 if ($distManifest.current.version -ne $version -or $builtInstaller.Length -ne $installer.Length) {
     throw 'Production output verification failed.'
+}
+foreach ($entry in $downloads.Values) {
+    $downloaded = Join-Path $downloadsPath $entry.filename
+    if (-not (Test-Path -LiteralPath $downloaded)) {
+        throw "Missing download in production output: $($entry.filename)"
+    }
+    if ((Get-Item -LiteralPath $downloaded).Length -ne $entry.sizeBytes) {
+        throw "Size mismatch in production output: $($entry.filename)"
+    }
 }
 Write-Host "Website built to $distPath"
 Write-Host "Vellum $version installer: $([math]::Round($installer.Length / 1MB, 1)) MiB"
