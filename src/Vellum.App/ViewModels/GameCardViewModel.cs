@@ -42,6 +42,7 @@ namespace Vellum.App.ViewModels
         private Task? _artworkLoadTask;
         private DateTime _nextArtworkRetryUtc;
         private bool _isTaskDetailsExpanded;
+        private bool _wasActiveThisSession;
 
         public GameReleaseCandidate? ReleaseCandidate { get; set; }
 
@@ -1002,6 +1003,121 @@ namespace Vellum.App.ViewModels
             }
             set { }
         }
+
+        /// <summary>
+        /// Builds a loader-agnostic snapshot for the taskbar progress service.
+        /// Returns false for cards that are not an active queue operation. Only real
+        /// byte or phase fractions are exposed; unknown phases stay indeterminate.
+        /// </summary>
+        public bool TryCreateTaskbarOperation(out OperationProgressSnapshot operation)
+        {
+            operation = default;
+
+            var phaseKey = CurrentPhaseKey;
+            var isVerifyingInstalledGame = State is InstallState.Installed or InstallState.UpdateAvailable
+                && _progress != null
+                && phaseKey is DownloadPhases.Verifying or DownloadPhases.CheckingIntegrity;
+
+            if (IsQueued || (!IsDownloadQueueItem && !isVerifyingInstalledGame)
+                || (IsCompletedDownload && !isVerifyingInstalledGame))
+            {
+                return false;
+            }
+
+            // A download that finished and is only waiting for a paused install has
+            // no meaningful taskbar progress. Showing 100% (or worse, aggregating it
+            // with another download) is exactly the "bar at half" bug.
+            if (State == InstallState.Paused && _installation?.DownloadCompleted == true)
+                return false;
+
+            // Restored paused/error cards are not active: do not paint the taskbar
+            // yellow/red on every launch. Only operations started in this session
+            // can surface their paused or failed state.
+            if (State is InstallState.Paused or InstallState.Error && !_wasActiveThisSession)
+                return false;
+
+            var activity = State switch
+            {
+                InstallState.Error => OperationActivityState.Error,
+                InstallState.Paused => OperationActivityState.Paused,
+                _ => OperationActivityState.Running
+            };
+
+            var hasMeasurablePhase = DownloadPhases.ReportsDeterminateProgress(phaseKey);
+            var isSettled = activity != OperationActivityState.Running;
+            var isDeterminate = false;
+            long completed = 0;
+            long total = 0;
+
+            if (hasMeasurablePhase || isSettled)
+            {
+                if (_progress is { TotalBytes: > 0 })
+                {
+                    // Downloaders report exact bytes. When bytes lag behind the first
+                    // tick, derive the value from the same real fraction instead of
+                    // showing an artificial zero.
+                    total = _progress.TotalBytes;
+                    completed = _progress.BytesDownloaded > 0
+                        ? _progress.BytesDownloaded
+                        : (long)Math.Round(Math.Clamp(_progress.Fraction, 0.0, 1.0) * total);
+                    isDeterminate = true;
+                }
+                else if (_progress is { Fraction: > 0 })
+                {
+                    // Installers and the file verifier report a fraction of completed
+                    // files/bytes without a byte total. Scale the real fraction into a
+                    // fixed-point unit so it can be aggregated with byte-based tasks.
+                    total = TaskbarFractionUnit;
+                    completed = (long)Math.Round(Math.Clamp(_progress.Fraction, 0.0, 1.0) * total);
+                    isDeterminate = true;
+                }
+                else if (isSettled)
+                {
+                    // Paused/error cards may only have persisted progress (no live
+                    // reporter). Those bytes are still real and worth showing.
+                    var persistedTotal = EffectiveTotalBytes;
+                    var persistedCompleted = EffectiveDownloadedBytes;
+                    if (persistedTotal > 0 && persistedCompleted > 0)
+                    {
+                        total = persistedTotal;
+                        completed = persistedCompleted;
+                        isDeterminate = true;
+                    }
+                }
+            }
+
+            if (!isDeterminate || total <= 0)
+            {
+                completed = 0;
+                total = 0;
+                isDeterminate = false;
+            }
+            else
+            {
+                completed = Math.Clamp(completed, 0, total);
+            }
+
+            operation = new OperationProgressSnapshot(
+                Id,
+                activity,
+                isDeterminate,
+                completed,
+                total,
+                GetTaskbarPriority(isVerifyingInstalledGame));
+            return true;
+        }
+
+        private int GetTaskbarPriority(bool isVerifyingInstalledGame)
+        {
+            // Manual verification is user-initiated but must not hide a real download.
+            if (isVerifyingInstalledGame)
+                return int.MaxValue;
+
+            var queueOrder = _installation?.QueueOrder ?? 0;
+            return queueOrder > 0 ? queueOrder : int.MaxValue;
+        }
+
+        private const long TaskbarFractionUnit = 1_000_000;
         public string PhaseText => LocalizeRawPhase(_progress?.Phase, DownloadStatusText);
         public string ProgressText
         {
@@ -1182,6 +1298,7 @@ namespace Vellum.App.ViewModels
             }
 
             IsBusy = true;
+            _wasActiveThisSession = true;
             _cts = new CancellationTokenSource();
 
             var progressReporter = new Progress<DownloadProgress>(p =>
@@ -1227,9 +1344,10 @@ namespace Vellum.App.ViewModels
                         LocalizationManager.GetString("InstallCompleteTitle"),
                         LocalizationManager.GetString("ToastInstallDoneFormat", Name));
                 }
-                else if (isPaused || (_cts?.IsCancellationRequested ?? false))
+                else if (isPaused || result.CancelledByUser || (_cts?.IsCancellationRequested ?? false))
                 {
-                    // Deliberate pause: the card already shows "Paused" with Continue.
+                    // Deliberate pause or a declined installer: the card already shows
+                    // "Paused" with Continue, so no error dialog is needed.
                 }
                 else
                 {
@@ -1315,6 +1433,7 @@ namespace Vellum.App.ViewModels
         private async Task ResumeAsync()
         {
             IsBusy = true;
+            _wasActiveThisSession = true;
             _cts = new CancellationTokenSource();
             var progressReporter = new Progress<DownloadProgress>(p =>
             {
@@ -1351,8 +1470,9 @@ namespace Vellum.App.ViewModels
 
                     // A user pause cancels _cts (see PauseAsync), so this only fires for
                     // a genuine resume failure — surface the reason instead of failing
-                    // silently and leaving the card stuck on "Continue".
-                    if (!_cts.IsCancellationRequested)
+                    // silently and leaving the card stuck on "Continue". Declining the
+                    // installer is a deliberate cancellation, not a failure.
+                    if (!_cts.IsCancellationRequested && !result.CancelledByUser)
                     {
                         MessageBox.Show(LocalizationManager.GetString("InstallFailedFormat",
                                 result.ErrorMessage ?? LocalizationManager.GetString("InstallUnknown")),
@@ -1448,6 +1568,18 @@ namespace Vellum.App.ViewModels
         private async Task VerifyAsync()
         {
             IsBusy = true;
+            _wasActiveThisSession = true;
+            // Verification of an already installed game does not change InstallState,
+            // so publish a real phase snapshot for the taskbar. The first report is
+            // indeterminate, then FileVerifier sends one update per checked file.
+            Progress = new DownloadProgress
+            {
+                GameId = Id,
+                Phase = "Verifying",
+                PhaseKey = DownloadPhases.Verifying,
+                Fraction = 0
+            };
+
             try
             {
                 var progressReporter = new Progress<DownloadProgress>(p =>
@@ -1465,6 +1597,7 @@ namespace Vellum.App.ViewModels
             }
             finally
             {
+                Progress = null;
                 IsBusy = false;
             }
         }
@@ -1472,6 +1605,7 @@ namespace Vellum.App.ViewModels
         private async Task UpdateAsync()
         {
             IsBusy = true;
+            _wasActiveThisSession = true;
             _cts = new CancellationTokenSource();
             var progressReporter = new Progress<DownloadProgress>(p =>
             {

@@ -28,6 +28,7 @@ namespace Vellum.App.ViewModels
         private readonly IGameArtworkService _artworkService;
         private readonly ISteamFeaturedGamesService _steamFeaturedGamesService;
         private readonly NotificationService _notifications;
+        private readonly ITaskbarProgressService _taskbarProgress;
         private CancellationTokenSource? _featuredGamesLoadCts;
         private List<GameCardViewModel>? _steamFeaturedGames;
         private GameBrowseOrder? _activeBrowseOrder;
@@ -92,7 +93,8 @@ namespace Vellum.App.ViewModels
             IGameSearchAggregator searchAggregator,
             IGameArtworkService artworkService,
             ISteamFeaturedGamesService steamFeaturedGamesService,
-            NotificationService notifications)
+            NotificationService notifications,
+            ITaskbarProgressService taskbarProgress)
         {
             _catalog = catalog;
             _gameManager = gameManager;
@@ -102,6 +104,7 @@ namespace Vellum.App.ViewModels
             _artworkService = artworkService;
             _steamFeaturedGamesService = steamFeaturedGamesService;
             _notifications = notifications;
+            _taskbarProgress = taskbarProgress;
 
             SettingsVM = new SettingsViewModel(_settingsService, _catalog);
             LocalizationManager.LanguageChanged += (_, _) =>
@@ -274,41 +277,19 @@ namespace Vellum.App.ViewModels
         public bool HasActiveTorrentDownload => _activeTorrentDownload != null;
         public double TorrentDownloadProgressPercent => _activeTorrentDownload?.ProgressPercent ?? 0;
 
-        /// <summary>Aggregated torrent progress for the native Windows taskbar button.</summary>
-        public (bool HasProgress, bool IsPaused, bool IsError, ulong Completed, ulong Total) GetTaskbarTorrentProgress()
+        /// <summary>Aggregated progress for the native Windows taskbar button.</summary>
+        private void UpdateTaskbarProgress()
         {
-            var torrentCards = AllGameCards.Where(card => card.IsTorrentDownload && card.IsDownloadQueueItem).ToList();
-            var running = torrentCards.Where(card => card.IsDownloading && !card.IsQueued && !card.IsCompletedDownload).ToList();
-            var paused = torrentCards.Where(card => card.IsPaused).ToList();
-            var errors = torrentCards.Any(card => card.IsError);
-            var contributing = running.Concat(paused).Distinct().ToList();
-
-            if (contributing.Count == 0)
-                return errors ? (true, false, true, 0UL, 1UL) : (false, false, false, 0UL, 0UL);
-
-            ulong completed = 0;
-            ulong total = 0;
-            foreach (var card in contributing)
+            List<OperationProgressSnapshot>? operations = null;
+            foreach (var card in AllGameCards)
             {
-                var taskTotal = Math.Max(0, card.DownloadTotalBytes);
-                var taskCompleted = Math.Clamp(card.DownloadedBytes, 0, taskTotal);
-                if (taskTotal == 0)
-                {
-                    // Some torrent sources have no metadata size. Use the real reported
-                    // fraction in a common fixed-point unit until a byte total arrives.
-                    taskTotal = 1_000_000;
-                    taskCompleted = (long)Math.Round(taskTotal * Math.Clamp(card.ProgressPercent / 100.0, 0, 1));
-                }
-
-                completed = SaturatingAdd(completed, (ulong)taskCompleted);
-                total = SaturatingAdd(total, (ulong)taskTotal);
+                if (card.TryCreateTaskbarOperation(out var operation))
+                    (operations ??= new List<OperationProgressSnapshot>()).Add(operation);
             }
 
-            return (true, running.Count == 0 && paused.Count > 0, errors, Math.Min(completed, total), total);
+            _taskbarProgress.SetOperations(
+                operations ?? (IReadOnlyCollection<OperationProgressSnapshot>)Array.Empty<OperationProgressSnapshot>());
         }
-
-        private static ulong SaturatingAdd(ulong left, ulong right)
-            => ulong.MaxValue - left < right ? ulong.MaxValue : left + right;
 
         /// <summary>
         /// True only while a game is actually being unpacked (repack/installer) or
@@ -1079,11 +1060,19 @@ namespace Vellum.App.ViewModels
             }
 
             // Downloads resume only when the user explicitly clicks "Continue".
+            UpdateTaskbarProgress();
         }
 
         public async Task ShutdownAsync()
         {
-            await _gameManager.ShutdownAndSaveAllDownloadsAsync();
+            try
+            {
+                await _gameManager.ShutdownAndSaveAllDownloadsAsync();
+            }
+            finally
+            {
+                _taskbarProgress.Reset();
+            }
         }
 
         public async Task LoadGamesAsync()
@@ -1817,6 +1806,7 @@ namespace Vellum.App.ViewModels
                 OnPropertyChanged(nameof(HasActiveDownloadSpeed));
                 OnPropertyChanged(nameof(TotalDownloadSpeedText));
                 OnPropertyChanged(nameof(TotalUploadSpeedText));
+                UpdateTaskbarProgress();
             }
             else if (e.PropertyName is nameof(GameCardViewModel.State)
                 or nameof(GameCardViewModel.IsQueued)
@@ -1863,6 +1853,7 @@ namespace Vellum.App.ViewModels
             ResumeAllDownloadsCommand.RaiseCanExecuteChanged();
             ClearCompletedDownloadsCommand.RaiseCanExecuteChanged();
             NotifyLibrarySummaryChanged();
+            UpdateTaskbarProgress();
         }
 
         private void RefreshViews()

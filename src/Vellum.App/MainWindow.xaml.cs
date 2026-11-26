@@ -26,13 +26,15 @@ namespace Vellum.App
         private bool _isExiting;
         private bool _minimizedByGameLaunch;
         private bool _isShuttingDown;
-        private WindowsTaskbarProgress? _taskbarProgress;
+        private readonly ITaskbarProgressService _taskbarProgress;
+        private readonly WindowIconRefresher _windowIconRefresher = new();
         private long _lastActivationTicks;
 
         public MainWindow(
             MainViewModel viewModel,
             ISettingsService settingsService,
-            IGameLauncher gameLauncher)
+            IGameLauncher gameLauncher,
+            ITaskbarProgressService taskbarProgress)
         {
             InitializeComponent();
             TrayIcon.DoubleClickCommand = new RelayCommand(ShowFromTray);
@@ -40,25 +42,19 @@ namespace Vellum.App
             _viewModel = viewModel;
             _settingsService = settingsService;
             _gameLauncher = gameLauncher;
+            _taskbarProgress = taskbarProgress;
             DataContext = _viewModel;
             _viewModel.PropertyChanged += (_, args) =>
             {
                 if (args.PropertyName == nameof(MainViewModel.CurrentView))
                     AnimateCurrentPage();
-                if (args.PropertyName is nameof(MainViewModel.TorrentDownloadProgressPercent)
-                    or nameof(MainViewModel.HasActiveTorrentDownload)
-                    or nameof(MainViewModel.ActiveDownloadsCount)
-                    or nameof(MainViewModel.PausedDownloadsCount)
-                    or nameof(MainViewModel.ErrorDownloadsCount))
-                    UpdateTaskbarProgress();
             };
 
             SourceInitialized += (_, _) =>
             {
                 var handle = new WindowInteropHelper(this).Handle;
-                _taskbarProgress = new WindowsTaskbarProgress(handle);
+                _taskbarProgress.Attach(handle);
                 System.Windows.Interop.HwndSource.FromHwnd(handle)?.AddHook(WndProc);
-                UpdateTaskbarProgress();
             };
 
             _gameLauncher.GameLaunched += (s, e) =>
@@ -92,6 +88,14 @@ namespace Vellum.App
                     : "M5,5 H19 V19 H5 Z");
                 RootWindow.BorderThickness = WindowState == WindowState.Maximized
                     ? new Thickness(6) : new Thickness(0);
+            };
+
+            IsVisibleChanged += (_, _) =>
+            {
+                // Hiding to the tray removes the taskbar button; re-apply the progress
+                // once the button exists again instead of waiting for the next tick.
+                if (IsVisible)
+                    _taskbarProgress.Reapply();
             };
 
             Closing += async (s, e) =>
@@ -145,9 +149,9 @@ namespace Vellum.App
 
             Closed += (s, e) =>
             {
-                _taskbarProgress?.Update(TaskbarProgressState.NoProgress);
-                _taskbarProgress?.Dispose();
-                _taskbarProgress = null;
+                _taskbarProgress.Reset();
+                _taskbarProgress.Dispose();
+                _windowIconRefresher.Dispose();
                 TrayIcon.Visibility = Visibility.Collapsed;
                 Application.Current?.Shutdown();
             };
@@ -156,6 +160,10 @@ namespace Vellum.App
             {
                 try
                 {
+                    // Refresh the taskbar icon once the button exists: Windows may
+                    // otherwise keep the icon cached from before the update.
+                    _windowIconRefresher.Apply(this);
+
                     await _viewModel.InitializeAsync();
 
                     // Show first-run wizard if this is the first launch or library path is not set
@@ -181,26 +189,6 @@ namespace Vellum.App
                         ex);
                 }
             };
-        }
-
-        private void UpdateTaskbarProgress()
-        {
-            if (_taskbarProgress == null)
-                return;
-
-            var progress = _viewModel.GetTaskbarTorrentProgress();
-            if (!progress.HasProgress)
-            {
-                _taskbarProgress.Update(TaskbarProgressState.NoProgress);
-                return;
-            }
-
-            var state = progress.IsError
-                ? TaskbarProgressState.Error
-                : progress.IsPaused
-                    ? TaskbarProgressState.Paused
-                    : TaskbarProgressState.Normal;
-            _taskbarProgress.Update(state, progress.Completed, progress.Total);
         }
 
         private void BtnMinimize_Click(object sender, RoutedEventArgs e)

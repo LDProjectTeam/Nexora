@@ -254,6 +254,9 @@ namespace Vellum.App
             // Notifications
             services.AddSingleton<NotificationService>();
 
+            // Windows taskbar progress indicator (optional native integration)
+            services.AddSingleton<ITaskbarProgressService, TaskbarProgressService>();
+
             // ViewModels & Views
             services.AddSingleton<MainViewModel>();
             services.AddSingleton<MainWindow>();

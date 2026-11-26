@@ -37,5 +37,35 @@ namespace Vellum.Tests
             Assert.Null(DownloadPhases.FromLegacyText(null));
             Assert.Null(DownloadPhases.FromLegacyText("  "));
         }
+
+        [Theory]
+        [InlineData(DownloadPhases.Downloading)]
+        [InlineData(DownloadPhases.CopyingFiles)]
+        [InlineData(DownloadPhases.CheckingIntegrity)]
+        [InlineData(DownloadPhases.Verifying)]
+        [InlineData(DownloadPhases.Extracting)]
+        [InlineData(DownloadPhases.MovingFiles)]
+        public void ReportsDeterminateProgress_TrueForMeasurablePhases(string phaseKey)
+        {
+            Assert.True(DownloadPhases.ReportsDeterminateProgress(phaseKey));
+        }
+
+        [Theory]
+        [InlineData(DownloadPhases.Queued)]
+        [InlineData(DownloadPhases.Starting)]
+        [InlineData(DownloadPhases.FetchingMetadata)]
+        [InlineData(DownloadPhases.SearchingPeers)]
+        [InlineData(DownloadPhases.MountingIso)]
+        [InlineData(DownloadPhases.RunningInstaller)]
+        [InlineData(DownloadPhases.WaitingInstaller)]
+        [InlineData(DownloadPhases.Prerequisites)]
+        [InlineData(DownloadPhases.Installing)]
+        [InlineData(DownloadPhases.Paused)]
+        [InlineData(DownloadPhases.Complete)]
+        [InlineData(null)]
+        public void ReportsDeterminateProgress_FalseForUnknownPhases(string? phaseKey)
+        {
+            Assert.False(DownloadPhases.ReportsDeterminateProgress(phaseKey));
+        }
     }
 }

@@ -343,7 +343,7 @@
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
                           ScrollChanged="LibraryScrollViewer_ScrollChanged">
-                <ItemsControl ItemsSource="{Binding LibraryGames}" Margin="-8,0,0,12">
+                <ItemsControl ItemsSource="{Binding LibraryGames}" Margin="0,0,0,12">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <WrapPanel Orientation="Horizontal" />

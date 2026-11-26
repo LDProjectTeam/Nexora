@@ -69,9 +69,19 @@ namespace Vellum.Core.Models
         public Exception? Exception { get; set; }
         public string? InstallPath { get; set; }
 
+        /// <summary>
+        /// True when the operation stopped because the user deliberately declined or
+        /// cancelled it (installer consent, "Cancel" inside a setup window). Such a
+        /// result is not a failure: the launcher keeps the operation paused so the
+        /// user can continue later, and no error banner or dialog is shown.
+        /// </summary>
+        public bool CancelledByUser { get; set; }
+
         public static OperationResult Ok(string? installPath = null)
             => new() { Success = true, InstallPath = installPath };
         public static OperationResult Fail(string msg, Exception? ex = null)
             => new() { Success = false, ErrorMessage = msg, Exception = ex };
+        public static OperationResult Cancelled(string? msg = null)
+            => new() { Success = false, CancelledByUser = true, ErrorMessage = msg };
     }
 }

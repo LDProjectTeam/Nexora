@@ -170,8 +170,10 @@ namespace Vellum.Core.Services
             }
             catch (OperationCanceledException)
             {
+                // Pausing is an explicit user action: report it as a cancellation so the
+                // manager keeps the card paused instead of turning it into an error.
                 _logger.LogInformation("Installation of {GameId} cancelled.", gameId);
-                return OperationResult.Fail("Installation cancelled.");
+                return OperationResult.Cancelled("Installation cancelled.");
             }
             catch (Exception ex)
             {
@@ -465,7 +467,7 @@ namespace Vellum.Core.Services
             if (!EnsureInstallerConsent(gameId, setupExe, elevated: false, silent, "setup"))
             {
                 _logger.LogInformation("User declined to run the installer for {GameId}.", gameId);
-                return OperationResult.Fail(Localizer.T("InstallationCancelledByUser",
+                return OperationResult.Cancelled(Localizer.T("InstallationCancelledByUser",
                     "Установка отменена пользователем."));
             }
 
@@ -598,7 +600,7 @@ namespace Vellum.Core.Services
                         "Interactive installer for {GameId} was cancelled by the user (exit code {ExitCode}).",
                         gameId, exitCode);
                     TryCleanupAbandonedInstallTarget(fullTarget);
-                    return OperationResult.Fail(Localizer.T("InstallationCancelledByUser", "Установка отменена пользователем."));
+                    return OperationResult.Cancelled(Localizer.T("InstallationCancelledByUser", "Установка отменена пользователем."));
                 }
 
                 // 0xE06D7363 (-529697949) is the Windows SEH code for an unhandled C++ exception —
@@ -635,7 +637,7 @@ namespace Vellum.Core.Services
                             goto installerSucceeded;
 
                         if (interactiveResult == 1 || interactiveResult == 2 || interactiveResult == 3)
-                            return OperationResult.Fail(Localizer.T("InstallationCancelledByUser", "Установка отменена пользователем."));
+                            return OperationResult.Cancelled(Localizer.T("InstallationCancelledByUser", "Установка отменена пользователем."));
 
                         if (interactiveResult != CppSehExceptionCode)
                             return OperationResult.Fail($"Installer exited with code {interactiveResult}.");
@@ -653,7 +655,7 @@ namespace Vellum.Core.Services
                     if (!EnsureInstallerConsent(gameId, setupExe, elevated: true, silent: false, "elevation-retry"))
                     {
                         _logger.LogInformation("User declined the elevated installer retry for {GameId}.", gameId);
-                        return OperationResult.Fail(Localizer.T("InstallationCancelledByUser",
+                        return OperationResult.Cancelled(Localizer.T("InstallationCancelledByUser",
                             "Установка отменена пользователем."));
                     }
 
@@ -671,7 +673,7 @@ namespace Vellum.Core.Services
                         goto installerSucceeded;
 
                     if (elevatedResult == 1 || elevatedResult == 2 || elevatedResult == 3)
-                        return OperationResult.Fail(Localizer.T("InstallationCancelledByUser", "Установка отменена пользователем."));
+                        return OperationResult.Cancelled(Localizer.T("InstallationCancelledByUser", "Установка отменена пользователем."));
 
                     if (elevatedResult == CppSehExceptionCode)
                     {

@@ -124,6 +124,32 @@ public sealed class ResumeInstallationBoundaryTests
     }
 
     [Fact]
+    public async Task Declining_the_installer_leaves_the_card_paused_without_an_error()
+    {
+        var root = NewTempDirectory();
+        try
+        {
+            var download = new StubDownloadManager { Result = OperationResult.Ok() };
+            var installer = new StubInstaller { Result = OperationResult.Cancelled("cancelled by user") };
+            var manager = CreateManager(download, installer);
+            var release = TorrentRelease("declined-installer");
+            var staging = PathHelper.GetStagingPath(root, release.Id);
+            Directory.CreateDirectory(staging);
+            File.WriteAllBytes(Path.Combine(staging, "payload.bin"), new byte[(int)release.DownloadSizeBytes]);
+            var installation = PausedTorrent(release, root, 256, 1024);
+            manager.TrackInstallation(installation);
+
+            var result = await manager.ResumeAsync(release.Id);
+
+            Assert.False(result.Success);
+            Assert.True(result.CancelledByUser);
+            Assert.Equal(InstallState.Paused, installation.State);
+            Assert.Null(installation.LastErrorMessage);
+        }
+        finally { TryDelete(root); }
+    }
+
+    [Fact]
     public async Task Second_resume_while_download_is_active_is_rejected_without_starting_another_download()
     {
         var root = NewTempDirectory();
@@ -284,6 +310,7 @@ public sealed class ResumeInstallationBoundaryTests
     private sealed class StubInstaller : IInstaller
     {
         public int Calls { get; private set; }
+        public OperationResult? Result { get; set; }
         public GameInstallation? InstallationToCheck { get; set; }
         public InstallState StateWhenCalled { get; private set; }
         public bool DownloadCompletedWhenCalled { get; private set; }
@@ -292,6 +319,8 @@ public sealed class ResumeInstallationBoundaryTests
             Calls++;
             StateWhenCalled = InstallationToCheck?.State ?? InstallState.NotInstalled;
             DownloadCompletedWhenCalled = InstallationToCheck?.DownloadCompleted == true;
+            if (Result != null)
+                return Task.FromResult(Result);
             Directory.CreateDirectory(targetPath);
             File.WriteAllText(Path.Combine(targetPath, "installed.marker"), "ok");
             return Task.FromResult(OperationResult.Ok(targetPath));

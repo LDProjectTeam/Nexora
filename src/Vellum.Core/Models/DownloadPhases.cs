@@ -32,6 +32,20 @@ namespace Vellum.Core.Models
         public const string Complete = "complete";
 
         /// <summary>
+        /// True when <see cref="DownloadProgress.Fraction"/> for this phase is derived
+        /// from real work units (bytes copied, extracted, hashed, downloaded) and can be
+        /// shown as a determinate percentage. External installers, metadata lookups and
+        /// peer search have no measurable percentage and must stay indeterminate.
+        /// </summary>
+        public static bool ReportsDeterminateProgress(string? phaseKey) => phaseKey is
+            Downloading or
+            CopyingFiles or
+            CheckingIntegrity or
+            Verifying or
+            Extracting or
+            MovingFiles;
+
+        /// <summary>
         /// Best-effort mapping for progress reported without a <c>PhaseKey</c>
         /// (older call sites or third-party sources). The strings below are the
         /// internal English identifiers used by the Core services.

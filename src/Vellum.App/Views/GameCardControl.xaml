@@ -239,6 +239,7 @@
                         <Button Content="{DynamicResource DownloadResume}"
                                 Height="32"
                                 FontSize="12"
+                                Padding="0"
                                 Style="{StaticResource PrimaryButtonStyle}"
                                 Command="{Binding ResumeCommand}"
                                 Visibility="{Binding IsPaused, Converter={StaticResource BoolToVis}}"

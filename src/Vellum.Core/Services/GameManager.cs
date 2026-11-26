@@ -254,8 +254,19 @@ namespace Vellum.Core.Services
                 if (!installResult.Success)
                 {
                     installation.IsQueued = false;
-                    installation.LastErrorMessage = installResult.ErrorMessage;
-                    SetState(installation, InstallState.Error);
+                    if (installResult.CancelledByUser)
+                    {
+                        // Declining the installer (or cancelling it from its own window)
+                        // is a pause, not an installation failure. Keep the downloaded
+                        // payload so Continue can offer to run the setup again.
+                        installation.LastErrorMessage = null;
+                        SetState(installation, InstallState.Paused);
+                    }
+                    else
+                    {
+                        installation.LastErrorMessage = installResult.ErrorMessage;
+                        SetState(installation, InstallState.Error);
+                    }
                     await SaveLibraryAsync();
                     _activeCts.TryRemove(gameId, out _);
                     return installResult;
@@ -618,8 +629,19 @@ namespace Vellum.Core.Services
                     if (!installResult.Success)
                     {
                         installation.IsQueued = false;
-                        installation.LastErrorMessage = installResult.ErrorMessage;
-                        SetState(installation, InstallState.Error);
+                        if (installResult.CancelledByUser)
+                        {
+                            // Declining the installer (or cancelling it from its own window)
+                            // is a pause, not an installation failure. Keep the downloaded
+                            // payload so Continue can offer to run the setup again.
+                            installation.LastErrorMessage = null;
+                            SetState(installation, InstallState.Paused);
+                        }
+                        else
+                        {
+                            installation.LastErrorMessage = installResult.ErrorMessage;
+                            SetState(installation, InstallState.Error);
+                        }
                         await SaveLibraryAsync();
                         _activeCts.TryRemove(gameId, out _);
                         return installResult;
@@ -765,8 +787,10 @@ namespace Vellum.Core.Services
             }
 
             // A failed resume must not turn into a dead "Error" card: keep the partial
-            // download resumable so the user can press Continue again.
+            // download resumable so the user can press Continue again. A deliberate
+            // cancellation (declined installer, user pause) is not a failure at all.
             if (!result.Success
+                && !result.CancelledByUser
                 && !ct.IsCancellationRequested
                 && installation.State is not (InstallState.Installed or InstallState.UpdateAvailable))
             {
@@ -971,6 +995,26 @@ namespace Vellum.Core.Services
             await SaveLibraryAsync().ConfigureAwait(false);
 
             return OperationResult.Fail(message);
+        }
+
+        /// <summary>
+        /// True for the localized "installation cancelled by user" message written by
+        /// older versions into <see cref="GameInstallation.LastErrorMessage"/>. A
+        /// deliberately declined installer is a pause, not an error, so the stale
+        /// banner is cleared when such a library is loaded.
+        /// </summary>
+        private static bool IsInstallerCancellationMessage(string? message)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+                return false;
+
+            return string.Equals(
+                       message,
+                       Localizer.T("InstallationCancelledByUser", "Установка отменена пользователем."),
+                       StringComparison.Ordinal)
+                   || string.Equals(message, "Установка отменена пользователем.", StringComparison.Ordinal)
+                   || string.Equals(message, "Встановлення скасовано користувачем.", StringComparison.Ordinal)
+                   || string.Equals(message, "Installation cancelled by user.", StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -1184,6 +1228,16 @@ namespace Vellum.Core.Services
                         item.State = InstallState.Paused;
                         item.IsQueued = false;
                         item.WasDownloadingWhenClosed = true;
+                        repaired = true;
+                    }
+
+                    // Older builds stored a declined installer as a paused card WITH an
+                    // error message, which painted a red "installation error" banner.
+                    // User cancellation is not a failure; clear that stale message once.
+                    if (item.State == InstallState.Paused
+                        && IsInstallerCancellationMessage(item.LastErrorMessage))
+                    {
+                        item.LastErrorMessage = null;
                         repaired = true;
                     }
 

@@ -6,7 +6,7 @@
 
 **Игровой лаунчер для Windows: каталог, загрузки и библиотека в одном окне**
 
-[![Version](https://img.shields.io/badge/version-1.0.69-3ddc97?style=for-the-badge)](https://github.com/LDProjectTeam/Vellum/releases/latest)
+[![Version](https://img.shields.io/badge/version-1.0.70-3ddc97?style=for-the-badge)](https://github.com/LDProjectTeam/Vellum/releases/latest)
 [![Platform](https://img.shields.io/badge/platform-Windows-0078D6?style=for-the-badge&logo=windows)](https://github.com/LDProjectTeam/Vellum/releases/latest)
 [![.NET](https://img.shields.io/badge/.NET-8-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/license-Proprietary-darkred?style=for-the-badge)](LICENSE)
@@ -49,12 +49,12 @@
 ### 🚀 Установка
 
 1. Открой [**Releases**](https://github.com/LDProjectTeam/Vellum/releases/latest)
-2. Скачай `Vellum-Setup-1.0.69-win-x64.exe`
+2. Скачай `Vellum-Setup-1.0.70-win-x64.exe`
 3. Запусти установщик и выбери папку библиотеки при первом старте
 
 Другие варианты:
-- `Vellum-Portable-1.0.69-win-x64.zip` — портативная сборка: распакуй и запусти `Vellum.exe`.
-- `Vellum-1.0.69-win-x64.msi` — установка через Windows Installer.
+- `Vellum-Portable-1.0.70-win-x64.zip` — портативная сборка: распакуй и запусти `Vellum.exe`.
+- `Vellum-1.0.70-win-x64.msi` — установка через Windows Installer.
 - `Vellum-Migrator.exe` — перенос профиля и переход с Nexora.
 
 Установка идёт в профиль пользователя, права администратора не нужны. `.NET` ставить отдельно не требуется: сборка self-contained.
@@ -131,12 +131,12 @@ Vellum/
 ### 🚀 Встановлення
 
 1. Відкрий [**Releases**](https://github.com/LDProjectTeam/Vellum/releases/latest)
-2. Завантаж `Vellum-Setup-1.0.69-win-x64.exe`
+2. Завантаж `Vellum-Setup-1.0.70-win-x64.exe`
 3. Запусти інсталятор і вибери папку бібліотеки під час першого запуску
 
 Інші варіанти:
-- `Vellum-Portable-1.0.69-win-x64.zip` — портативна збірка: розпакуй і запусти `Vellum.exe`.
-- `Vellum-1.0.69-win-x64.msi` — встановлення через Windows Installer.
+- `Vellum-Portable-1.0.70-win-x64.zip` — портативна збірка: розпакуй і запусти `Vellum.exe`.
+- `Vellum-1.0.70-win-x64.msi` — встановлення через Windows Installer.
 - `Vellum-Migrator.exe` — перенесення профілю та перехід з Nexora.
 
 Встановлення відбувається в профіль користувача, права адміністратора не потрібні. `.NET` встановлювати окремо не потрібно: збірка self-contained.
@@ -198,12 +198,12 @@ dotnet test tests/Vellum.Tests/Vellum.Tests.csproj -c Release
 ### 🚀 Installation
 
 1. Open [**Releases**](https://github.com/LDProjectTeam/Vellum/releases/latest)
-2. Download `Vellum-Setup-1.0.69-win-x64.exe`
+2. Download `Vellum-Setup-1.0.70-win-x64.exe`
 3. Run the installer and choose a library folder on first launch
 
 Other options:
-- `Vellum-Portable-1.0.69-win-x64.zip` — portable build: extract and run `Vellum.exe`.
-- `Vellum-1.0.69-win-x64.msi` — Windows Installer package.
+- `Vellum-Portable-1.0.70-win-x64.zip` — portable build: extract and run `Vellum.exe`.
+- `Vellum-1.0.70-win-x64.msi` — Windows Installer package.
 - `Vellum-Migrator.exe` — migrate the profile and switch from Nexora.
 
 The app installs into your user profile and does not need administrator rights. .NET is included in the self-contained build.
