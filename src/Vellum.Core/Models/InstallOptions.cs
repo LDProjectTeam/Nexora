@@ -24,6 +24,9 @@ namespace Vellum.Core.Models
         /// Example: /S /D={DIR}</summary>
         public string? InstallerArgs { get; set; }
 
+        /// <summary>Human-readable game name shown in the installer consent dialog.</summary>
+        public string? GameTitle { get; set; }
+
         public static InstallOptions FromDefinition(GameDefinition definition)
         {
             var source = definition.DownloadSources
@@ -32,11 +35,12 @@ namespace Vellum.Core.Models
                                      || !string.IsNullOrWhiteSpace(s.InstallerMode));
 
             if (source == null)
-                return new InstallOptions();
+                return new InstallOptions { GameTitle = definition.Name };
 
             return new InstallOptions
             {
                 InstallerArgs = source.InstallerArgs,
+                GameTitle = definition.Name,
                 Mode = string.Equals(source.InstallerMode, "interactive", StringComparison.OrdinalIgnoreCase)
                         || string.Equals(source.InstallerMode, "repack", StringComparison.OrdinalIgnoreCase)
                     ? InstallerMode.Interactive

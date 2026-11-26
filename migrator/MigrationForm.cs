@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Windows.Forms;
+﻿using System.Windows.Forms;
 
 namespace Vellum.Migrator;
 
@@ -9,6 +8,7 @@ public sealed class MigrationForm : Form
     private readonly Label _info = new();
     private readonly Label _status = new();
     private readonly CheckBox _profile = new();
+    private readonly CheckBox _data = new();
     private readonly CheckBox _uninstall = new();
     private readonly CheckBox _launch = new();
     private readonly CheckBox _replace = new();
@@ -32,8 +32,8 @@ public sealed class MigrationForm : Form
     private void BuildLayout()
     {
         Text = "Vellum — переход с Nexora";
-        ClientSize = new Size(660, 555);
-        MinimumSize = new Size(660, 555);
+        ClientSize = new Size(660, 584);
+        MinimumSize = new Size(660, 584);
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedSingle;
         MaximizeBox = false;
@@ -50,87 +50,92 @@ public sealed class MigrationForm : Form
 
         var subtitle = new Label
         {
-            Text = "Перенесёт профиль Nexora в Vellum, при желании удалит старую версию и установит Vellum.",
+            Text = "Перенесёт профиль, библиотеку и данные Nexora в Vellum, при желании удалит старую версию и установит последнюю.",
             AutoSize = true,
             Location = new Point(22, 52),
             ForeColor = SystemColors.GrayText
         };
 
         _info.Location = new Point(22, 84);
-        _info.Size = new Size(616, 64);
+        _info.Size = new Size(616, 88);
         _info.AutoEllipsis = true;
 
-        _choose.Text = "Выбрать Vellum-Setup…";
-        _choose.Location = new Point(452, 148);
-        _choose.Size = new Size(186, 26);
-        _choose.Click += (_, _) => ChooseInstaller();
+        _download.Text = "Скачать последнюю версию";
+        _download.Location = new Point(248, 180);
+        _download.Size = new Size(192, 26);
+        _download.Click += OnDownloadLatest;
 
-        _download.Text = "Скачать…";
-        _download.Location = new Point(340, 148);
-        _download.Size = new Size(104, 26);
-        _download.Click += (_, _) => OpenDownloadPage();
+        _choose.Text = "Выбрать Vellum-Setup…";
+        _choose.Location = new Point(448, 180);
+        _choose.Size = new Size(190, 26);
+        _choose.Click += (_, _) => ChooseInstaller();
 
         var installLabel = new Label
         {
             Text = "Куда установить Vellum:",
             AutoSize = true,
-            Location = new Point(22, 188)
+            Location = new Point(22, 220)
         };
 
-        _installDir.Location = new Point(196, 184);
+        _installDir.Location = new Point(196, 216);
         _installDir.Size = new Size(300, 24);
         _installDir.Text = _options.InstallDirectory ?? _defaultInstallDir;
 
         _browse.Text = "Обзор…";
-        _browse.Location = new Point(504, 182);
+        _browse.Location = new Point(504, 214);
         _browse.Size = new Size(134, 26);
         _browse.Click += (_, _) => ChooseInstallDirectory();
 
         _replace.Text = "Установить в папку Nexora (заменить старую версию)";
-        _replace.Location = new Point(22, 218);
+        _replace.Location = new Point(22, 250);
         _replace.AutoSize = true;
         _replace.CheckedChanged += (_, _) => OnReplaceChanged();
 
         _profile.Text = "Перенести профиль и настройки";
         _profile.Checked = true;
-        _profile.Location = new Point(22, 248);
+        _profile.Location = new Point(22, 280);
         _profile.AutoSize = true;
 
+        _data.Text = "Перенести Library, data и tools из старой папки";
+        _data.Checked = true;
+        _data.Location = new Point(22, 306);
+        _data.AutoSize = true;
+
         _uninstall.Text = "Удалить старую версию Nexora (может потребоваться UAC)";
-        _uninstall.Location = new Point(22, 274);
+        _uninstall.Location = new Point(22, 332);
         _uninstall.AutoSize = true;
 
         _launch.Text = "Запустить Vellum после переноса";
         _launch.Checked = true;
-        _launch.Location = new Point(22, 300);
+        _launch.Location = new Point(22, 358);
         _launch.AutoSize = true;
 
         var logLabel = new Label
         {
             Text = "Журнал:",
             AutoSize = true,
-            Location = new Point(22, 332)
+            Location = new Point(22, 386)
         };
 
-        _log.Location = new Point(22, 352);
-        _log.Size = new Size(616, 140);
+        _log.Location = new Point(22, 406);
+        _log.Size = new Size(616, 128);
         _log.Multiline = true;
         _log.ReadOnly = true;
         _log.ScrollBars = ScrollBars.Vertical;
         _log.BackColor = SystemColors.Window;
         _log.Font = new Font("Consolas", 8.5f);
 
-        _status.Location = new Point(22, 506);
+        _status.Location = new Point(22, 548);
         _status.Size = new Size(400, 20);
         _status.ForeColor = SystemColors.GrayText;
 
         _migrate.Text = "Перейти на Vellum";
-        _migrate.Location = new Point(432, 500);
+        _migrate.Location = new Point(432, 542);
         _migrate.Size = new Size(124, 30);
         _migrate.Click += OnMigrate;
 
         _close.Text = "Закрыть";
-        _close.Location = new Point(564, 500);
+        _close.Location = new Point(564, 542);
         _close.Size = new Size(74, 30);
         _close.Click += (_, _) => Close();
 
@@ -140,7 +145,7 @@ public sealed class MigrationForm : Form
         Controls.AddRange(new Control[]
         {
             title, subtitle, _info, _choose, _download, installLabel, _installDir, _browse, _replace,
-            _profile, _uninstall, _launch, logLabel, _log, _status, _migrate, _close
+            _profile, _data, _uninstall, _launch, logLabel, _log, _status, _migrate, _close
         });
     }
 
@@ -153,23 +158,35 @@ public sealed class MigrationForm : Form
                 : service.LegacyExecutable + " (портативная)");
 
         _info.Text =
-            $"Профиль Nexora: {service.LegacyProfile ?? "не найден"}{Environment.NewLine}" +
-            $"Профиль Vellum: {service.TargetProfile}{Environment.NewLine}" +
-            $"Старая версия: {legacy}{Environment.NewLine}" +
-            $"Новая версия: {service.VellumExecutable ?? service.VellumInstaller ?? "не найдена"}";
+            $"Профиль Nexora: {service.LegacyProfile ?? "не найден (уже перенесён)"}{Environment.NewLine}" +
+            $"Старая папка: {service.LegacyInstallDirectory ?? "не найдена"}{Environment.NewLine}" +
+            $"Новая версия: {service.VellumExecutable ?? service.VellumInstallDirectory ?? "не установлена"}{Environment.NewLine}" +
+            $"Библиотека: {service.LegacyLibraryPath ?? "—"} -> {service.TargetLibraryPath ?? "—"}";
 
         _profile.Enabled = service.LegacyProfile is not null;
         _profile.Checked = _profile.Enabled;
+
+        _data.Enabled = service.LegacyInstallDirectory is not null
+                        && service.VellumInstallDirectory is not null
+                        && !string.Equals(
+                            Path.GetFullPath(service.LegacyInstallDirectory),
+                            Path.GetFullPath(service.VellumInstallDirectory),
+                            StringComparison.OrdinalIgnoreCase);
+        _data.Checked = _data.Enabled;
+
         _uninstall.Enabled = service.LegacyUninstaller is not null;
-        _launch.Enabled = service.VellumExecutable is not null || service.VellumInstaller is not null;
-        _launch.Checked = _launch.Enabled;
+        _launch.Enabled = true;
+        _launch.Checked = true;
 
         _replace.Enabled = service.LegacyUninstaller is not null && service.LegacyExecutable is not null;
         if (!_replace.Enabled)
             _replace.Checked = false;
 
-        if (service.LegacyProfile is null && Directory.Exists(service.TargetProfile))
-            _status.Text = "Профиль Nexora не найден — возможно, переход уже выполнен.";
+        if (service.LegacyProfile is null && service.LegacyInstallDirectory is null
+            && Directory.Exists(service.TargetProfile))
+        {
+            _status.Text = "Старая версия не найдена — возможно, переход уже выполнен.";
+        }
     }
 
     private void OnReplaceChanged()
@@ -193,19 +210,45 @@ public sealed class MigrationForm : Form
         }
     }
 
-    private void OpenDownloadPage()
+    private async void OnDownloadLatest(object? sender, EventArgs e)
     {
+        _download.Enabled = false;
+        _migrate.Enabled = false;
+        _status.Text = "Поиск последней версии Vellum…";
+
+        IProgress<string> progress = new Progress<string>(line => _status.Text = TrimStatus(line));
         try
         {
-            Process.Start(new ProcessStartInfo("https://github.com/LDProjectTeam/Vellum/releases/latest")
+            var service = new MigrationService(_options);
+            var path = await service.DownloadLatestInstallerAsync(line => progress.Report(line));
+
+            if (path is null)
             {
-                UseShellExecute = true
-            });
+                _status.Text = "Не удалось скачать установщик. Укажи его кнопкой «Выбрать».";
+                return;
+            }
+
+            _options.VellumInstallerPath = path;
+            LoadDetection();
+            _status.Text = "Скачан установщик: " + Path.GetFileName(path);
         }
         catch (Exception ex)
         {
-            _status.Text = "Не удалось открыть браузер: " + ex.Message;
+            _status.Text = "Ошибка скачивания: " + ex.Message;
         }
+        finally
+        {
+            _download.Enabled = true;
+            _migrate.Enabled = true;
+        }
+    }
+
+    private static string TrimStatus(string line)
+    {
+        var closing = line.IndexOf("] ", StringComparison.Ordinal);
+        var text = closing >= 0 ? line[(closing + 2)..] : line;
+        text = text.Replace(Environment.NewLine, " ");
+        return text.Length <= 64 ? text : text[..61] + "…";
     }
 
     private bool ChooseInstaller()
@@ -255,21 +298,14 @@ public sealed class MigrationForm : Form
 
     private async void OnMigrate(object? sender, EventArgs e)
     {
-        if (_launch.Checked)
-        {
-            var current = new MigrationService(_options);
-            if (current.VellumExecutable is null && current.VellumInstaller is null && !ChooseInstaller())
-            {
-                _status.Text = "Vellum не найден: выбери установщик.";
-                return;
-            }
-        }
-
         _migrate.Enabled = false;
         _close.Enabled = false;
         _status.Text = "Перенос…";
 
         _options.MigrateProfile = _profile.Checked;
+        _options.MigrateInstallData = _data.Checked;
+        _options.TransferLibrary = _data.Checked;
+        _options.MoveLibrary = true;
         _options.UninstallOld = _uninstall.Checked;
         _options.LaunchVellum = _launch.Checked;
         _options.InstallDirectory = string.IsNullOrWhiteSpace(_installDir.Text)

@@ -41,6 +41,10 @@ internal static class Program
 
             Параметры:
               --no-profile        не переносить профиль (%APPDATA%\Nexora -> %APPDATA%\Vellum)
+              --no-data           не переносить Library, data и tools из старой папки
+              --no-library        не переносить папку Library
+              --copy-library      скопировать Library вместо перемещения
+              --no-download       не скачивать установщик автоматически
               --uninstall-old     удалить старую версию Nexora
               --no-launch         не запускать Vellum после переноса
               --installer <path>  явно указать Vellum-Setup-*.exe

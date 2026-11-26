@@ -23,7 +23,7 @@ namespace Vellum.App.Services
             try
             {
                 message = string.Format(
-                    LocalizationManager.GetString("UnexpectedErrorFormat", "The operation failed: {0}"),
+                    LocalizationManager.GetStringOrFallback("UnexpectedErrorFormat", "The operation failed: {0}"),
                     exception.Message);
             }
             catch
@@ -68,7 +68,7 @@ namespace Vellum.App.Services
                         ? userMessage
                         : userMessage + Environment.NewLine + Environment.NewLine +
                           string.Format(
-                              LocalizationManager.GetString("ErrorLogLocationFormat", "Details were written to: {0}"),
+                              LocalizationManager.GetStringOrFallback("ErrorLogLocationFormat", "Details were written to: {0}"),
                               logPath);
 
                     MessageBox.Show(

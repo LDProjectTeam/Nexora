@@ -79,7 +79,34 @@ namespace Vellum.App.Services
         public static string GetString(string key, params object[] arguments)
         {
             var value = Application.Current?.TryFindResource(key)?.ToString() ?? key;
-            return arguments.Length == 0 ? value : string.Format(CultureInfo.CurrentCulture, value, arguments);
+            if (arguments.Length == 0)
+                return value;
+
+            try
+            {
+                return string.Format(CultureInfo.CurrentCulture, value, arguments);
+            }
+            catch (FormatException)
+            {
+                // A translation with a mismatched placeholder count must not take down
+                // the caller (an installer consent dialog used to disappear entirely).
+                AppLog.Warn("Localization", $"Resource '{key}' has an invalid format string.");
+                return value;
+            }
+        }
+
+        /// <summary>
+        /// Returns the localized value, or <paramref name="fallback"/> when the key is
+        /// missing. Use this for text that is later formatted separately: passing a
+        /// fallback through <see cref="GetString(string, object[])"/> would treat it as
+        /// a format argument and fail when the resource contains placeholders.
+        /// </summary>
+        public static string GetStringOrFallback(string key, string fallback)
+        {
+            var value = Application.Current?.TryFindResource(key)?.ToString();
+            return string.IsNullOrEmpty(value) || string.Equals(value, key, StringComparison.Ordinal)
+                ? fallback
+                : value;
         }
     }
 }

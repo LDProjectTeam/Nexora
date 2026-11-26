@@ -5,6 +5,10 @@ public sealed class MigrationOptions
     public bool Silent { get; private set; }
     public bool DryRun { get; private set; }
     public bool MigrateProfile { get; set; } = true;
+    public bool MigrateInstallData { get; set; } = true;
+    public bool TransferLibrary { get; set; } = true;
+    public bool MoveLibrary { get; set; } = true;
+    public bool DownloadLatest { get; set; } = true;
     public bool UninstallOld { get; set; }
     public bool LaunchVellum { get; set; } = true;
     public bool ShowHelp { get; private set; }
@@ -38,6 +42,25 @@ public sealed class MigrationOptions
                     break;
                 case "--no-profile":
                     options.MigrateProfile = false;
+                    break;
+                case "--no-data":
+                case "--no-install-data":
+                    options.MigrateInstallData = false;
+                    break;
+                case "--no-library":
+                    options.TransferLibrary = false;
+                    break;
+                case "--copy-library":
+                    options.MoveLibrary = false;
+                    break;
+                case "--move-library":
+                    options.MoveLibrary = true;
+                    break;
+                case "--download-latest":
+                    options.DownloadLatest = true;
+                    break;
+                case "--no-download":
+                    options.DownloadLatest = false;
                     break;
                 case "--uninstall-old":
                     options.UninstallOld = true;

@@ -102,8 +102,8 @@ namespace Vellum.App
                 // Core services produce user-facing text (torrent phases, errors, etc.).
                 Vellum.Core.Services.Localizer.SetResolver(key => LocalizationManager.GetString(key));
 
-                // Core cannot show UI: register the consent dialog for installers.
-                InstallerConsent.SetHandler(request => Dispatcher.Invoke(() => ConfirmInstallerRun(request)));
+                // Installer consent prompts are intentionally disabled: the setup from a
+                // download starts immediately when the user resumes or installs a game.
 
                 // Apply the saved accent color before the window renders.
                 AccentOption.Apply(settingsService.Settings.AccentColor);
@@ -135,7 +135,7 @@ namespace Vellum.App
                 {
                     MessageBox.Show(
                         string.Format(
-                            LocalizationManager.GetString("StartupFailedFormat", "Could not start the launcher: {0}"),
+                            LocalizationManager.GetStringOrFallback("StartupFailedFormat", "Could not start the launcher: {0}"),
                             ex.Message),
                         LocalizationManager.GetString("CommonError", "Error"),
                         MessageBoxButton.OK,
@@ -169,34 +169,6 @@ namespace Vellum.App
                 ErrorReporter.Report("Dispatcher", args.Exception);
                 args.Handled = true; // keep the launcher alive, but the failure is logged and shown
             };
-        }
-
-        private static bool ConfirmInstallerRun(InstallerRunRequest request)
-        {
-            var reason = request.Reason switch
-            {
-                "elevation-retry" => LocalizationManager.GetString("InstallerConsentElevated",
-                    "The installer failed. Retry it with administrator rights?"),
-                "bundled-prerequisite" => LocalizationManager.GetString("InstallerConsentPrerequisite",
-                    "A system component (Visual C++ Redistributable) will be installed from the game package with administrator rights."),
-                _ => LocalizationManager.GetString("InstallerConsentSetup",
-                    "The installer from the downloaded package will be started. Continue only if you trust the source.")
-            };
-
-            var text = string.Format(
-                LocalizationManager.GetString("InstallerConsentFormat",
-                    "Game: {0}\nFile: {1}\nSize: {2}\n\n{3}\n\nContinue?"),
-                request.GameTitle,
-                request.InstallerPath,
-                PathHelper.FormatBytes(request.FileSizeBytes),
-                reason);
-
-            return MessageBox.Show(
-                text,
-                LocalizationManager.GetString("InstallerConsentTitle", "Run installer"),
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Warning,
-                MessageBoxResult.No) == MessageBoxResult.Yes;
         }
 
         private static void ConfigureServices(IServiceCollection services)

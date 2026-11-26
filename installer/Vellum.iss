@@ -1,6 +1,6 @@
 #define AppName "Vellum"
 #ifndef AppVersion
-  #define AppVersion "1.0.70"
+  #define AppVersion "1.0.71"
 #endif
 #define AppExeName "Vellum.exe"
 #define FwRuleTCP "Vellum - BitTorrent TCP 4240-4249"

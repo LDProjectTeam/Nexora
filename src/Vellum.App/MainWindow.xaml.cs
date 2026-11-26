@@ -184,7 +184,7 @@ namespace Vellum.App
                     ErrorReporter.Report(
                         "MainWindow.Loaded",
                         string.Format(
-                            LocalizationManager.GetString("LoadFailedFormat", "Could not load the launcher data: {0}"),
+                            LocalizationManager.GetStringOrFallback("LoadFailedFormat", "Could not load the launcher data: {0}"),
                             ex.Message),
                         ex);
                 }

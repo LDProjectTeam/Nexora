@@ -464,7 +464,7 @@ namespace Vellum.Core.Services
 
             // Running an executable from a downloaded repack is a security boundary:
             // ask once, with the exact path/size/mode, before executing it.
-            if (!EnsureInstallerConsent(gameId, setupExe, elevated: false, silent, "setup"))
+            if (!EnsureInstallerConsent(gameId, options?.GameTitle, setupExe, elevated: false, silent, "setup"))
             {
                 _logger.LogInformation("User declined to run the installer for {GameId}.", gameId);
                 return OperationResult.Cancelled(Localizer.T("InstallationCancelledByUser",
@@ -475,7 +475,7 @@ namespace Vellum.Core.Services
 
             // Before running the main setup, silently install any bundled VCRedist prerequisites
             // that live in the Redist/ subfolder of the staging directory (common in repacks).
-            await InstallBundledRedistAsync(workingDirectory, progress, gameId, ct).ConfigureAwait(false);
+            await InstallBundledRedistAsync(workingDirectory, progress, gameId, options?.GameTitle, ct).ConfigureAwait(false);
 
             if (silent)
                 Report(progress, gameId, "Running installer", 0, Path.GetFileName(setupExe));
@@ -652,7 +652,7 @@ namespace Vellum.Core.Services
 
                     Report(progress, gameId, "Waiting for installer (as Administrator)", 0, $"Install to: {fullTarget}");
 
-                    if (!EnsureInstallerConsent(gameId, setupExe, elevated: true, silent: false, "elevation-retry"))
+                    if (!EnsureInstallerConsent(gameId, options?.GameTitle, setupExe, elevated: true, silent: false, "elevation-retry"))
                     {
                         _logger.LogInformation("User declined the elevated installer retry for {GameId}.", gameId);
                         return OperationResult.Cancelled(Localizer.T("InstallationCancelledByUser",
@@ -1126,7 +1126,7 @@ namespace Vellum.Core.Services
         /// message to the user afterward.
         /// </summary>
         private async Task InstallBundledRedistAsync(
-            string stagingDirectory, IProgress<DownloadProgress>? progress, string gameId, CancellationToken ct)
+            string stagingDirectory, IProgress<DownloadProgress>? progress, string gameId, string? gameTitle, CancellationToken ct)
         {
             // Look for vcredist_*.exe and vc_redist*.exe in a Redist (or redist) subfolder.
             var redistDir = Directory.EnumerateDirectories(stagingDirectory, "Redist", SearchOption.AllDirectories)
@@ -1161,7 +1161,7 @@ namespace Vellum.Core.Services
 
             foreach (var redistExe in candidates)
             {
-                if (!EnsureInstallerConsent(gameId, redistExe, elevated: true, silent: true, "bundled-prerequisite"))
+                if (!EnsureInstallerConsent(gameId, gameTitle, redistExe, elevated: true, silent: true, "bundled-prerequisite"))
                 {
                     _logger.LogWarning(
                         "Skipping bundled prerequisite {File}: user declined.",
@@ -1275,14 +1275,14 @@ namespace Vellum.Core.Services
 
         /// <summary>Asks the UI before executing an installer from a downloaded package.</summary>
         private static bool EnsureInstallerConsent(
-            string gameId, string installerPath, bool elevated, bool silent, string reason)
+            string gameId, string? gameTitle, string installerPath, bool elevated, bool silent, string reason)
         {
             long size = 0;
             try { size = new FileInfo(installerPath).Length; }
             catch { /* the file may disappear between discovery and the prompt */ }
 
             return InstallerConsent.Request(new InstallerRunRequest(
-                gameId, gameId, installerPath, size, elevated, silent, reason));
+                gameId, string.IsNullOrWhiteSpace(gameTitle) ? gameId : gameTitle!, installerPath, size, elevated, silent, reason));
         }
 
         private static void Report(IProgress<DownloadProgress>? progress, string gameId,
