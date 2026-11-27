@@ -56,32 +56,16 @@
                 Background="{StaticResource SidebarBgBrush}"
                 BorderBrush="{StaticResource BorderBrush}"
                 BorderThickness="0,0,1,0">
-            <Grid Margin="16,24,16,20">
+            <Grid Margin="16,16,16,20">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" /> <!-- Brand Logo -->
                     <RowDefinition Height="Auto" /> <!-- Local profile -->
                     <RowDefinition Height="*" />    <!-- Navigation Items -->
                     <RowDefinition Height="Auto" /> <!-- Time greeting -->
                 </Grid.RowDefinitions>
 
-                <!-- Brand / Logo -->
-                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="8,0,0,20"
-                            WindowChrome.IsHitTestVisibleInChrome="True"
-                            MouseLeftButtonDown="WindowDrag_MouseLeftButtonDown">
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="Vellum"
-                                   Foreground="{StaticResource TextPrimaryBrush}"
-                                   FontSize="20"
-                                   FontWeight="SemiBold" />
-                        <TextBlock Text="{DynamicResource AppBrandSubtitle}"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                   FontSize="11" />
-                    </StackPanel>
-                </StackPanel>
-
                 <!-- Local profile block keeps the game library on this device. -->
-                <Border Grid.Row="1" Background="#1E1E1E" BorderBrush="{StaticResource BorderBrush}"
-                        BorderThickness="0" CornerRadius="10" Padding="12,8" Margin="0,0,0,20">
+                <Border Grid.Row="0" Background="#1E1E1E" BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="0" CornerRadius="10" Padding="12,8" Margin="0,0,0,16">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="40" />
@@ -99,7 +83,7 @@
                 </Border>
 
                 <!-- Navigation Tabs -->
-                <StackPanel Grid.Row="2">
+                <StackPanel Grid.Row="1">
                     <!-- Home -->
                     <Button Command="{Binding NavigateHomeCommand}"
                             Margin="0,0,0,6">
@@ -400,7 +384,7 @@
                     </Border>
                 </StackPanel>
 
-                <TextBlock Grid.Row="3"
+                <TextBlock Grid.Row="2"
                            Text="{Binding TimeGreeting}"
                            Margin="8,0,0,2"
                            VerticalAlignment="Bottom"
