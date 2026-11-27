@@ -88,6 +88,43 @@ namespace Vellum.Core.Helpers
         public static string LegacyTempDir => Path.Combine(AppDataDir, "staging");
         public static string ArtworkCacheDir => Path.Combine(AppDataDir, "artwork");
         public static string SteamMetadataCacheDir => Path.Combine(AppDataDir, "steam-metadata");
+
+        // --- Manifest based updates ---
+        public static string UpdatesDir => Path.Combine(AppDataDir, "updates");
+        public static string UpdateStateFile => Path.Combine(UpdatesDir, "updates.json");
+        public static string UpdateManifestsDir => Path.Combine(UpdatesDir, "manifests");
+        public static string UpdateJournalsDir => Path.Combine(UpdatesDir, "journals");
+        public static string UpdateRollbackDir => Path.Combine(UpdatesDir, "rollback");
+        public static string UpdateLocksDir => Path.Combine(UpdatesDir, "locks");
+        public static string LauncherUpdateDir => Path.Combine(UpdatesDir, "launcher");
+        public static string LauncherUpdateResultFile => Path.Combine(LauncherUpdateDir, "bootstrapper-result.json");
+        public static string LauncherUpdateRequestFile => Path.Combine(LauncherUpdateDir, "bootstrapper-request.json");
+        public static string LauncherInstalledStateFile => Path.Combine(LauncherUpdateDir, "installed.json");
+        public static string LauncherBootstrapperSelfUpdateRequestFile => Path.Combine(LauncherUpdateDir, "bootstrapper-self-update.json");
+
+        /// <summary>
+        /// Per-game staging directory, deliberately outside the game install root so a
+        /// partial download can never be confused with installed files. It lives next to
+        /// the game folder (inside the library) when possible; otherwise AppData is used.
+        /// </summary>
+        public static string GetUpdateStagingPath(string installRoot, string gameId)
+        {
+            if (string.IsNullOrWhiteSpace(installRoot))
+                throw new ArgumentException("An install root is required.", nameof(installRoot));
+            var safeGameId = SanitizeFileName(gameId);
+            if (string.IsNullOrWhiteSpace(safeGameId))
+                throw new ArgumentException("A valid game id is required.", nameof(gameId));
+
+            var full = Path.GetFullPath(installRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var parent = Path.GetDirectoryName(full);
+            if (!string.IsNullOrWhiteSpace(parent)
+                && !string.Equals(parent.TrimEnd(Path.DirectorySeparatorChar), Path.GetPathRoot(parent)?.TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase))
+            {
+                return Path.Combine(parent, ".vellum-updates", safeGameId);
+            }
+
+            return Path.Combine(UpdatesDir, "staging", safeGameId);
+        }
         /// <summary>
         /// Default games library for first run. Kept outside the application folder so
         /// updates/uninstall never touch game files; existing settings still win.

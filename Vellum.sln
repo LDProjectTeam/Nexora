@@ -13,6 +13,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{30AE9CA3
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vellum.Tests", "tests\Vellum.Tests\Vellum.Tests.csproj", "{EE971A3B-9BB2-48C5-86A3-321A3C0CBDEE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vellum.Bootstrapper", "src\Vellum.Bootstrapper\Vellum.Bootstrapper.csproj", "{14FB4D31-F12F-423F-B089-310F22239F48}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,10 +36,15 @@ Global
 		{EE971A3B-9BB2-48C5-86A3-321A3C0CBDEE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EE971A3B-9BB2-48C5-86A3-321A3C0CBDEE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EE971A3B-9BB2-48C5-86A3-321A3C0CBDEE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{14FB4D31-F12F-423F-B089-310F22239F48}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{14FB4D31-F12F-423F-B089-310F22239F48}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{14FB4D31-F12F-423F-B089-310F22239F48}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{14FB4D31-F12F-423F-B089-310F22239F48}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{09738B9F-B3F1-40BA-89AC-3F84B6AA949A} = {A52580D9-C5D6-48AE-9DFC-FB1333600517}
 		{988B8369-DF8E-41D0-8059-3295CB0F4824} = {A52580D9-C5D6-48AE-9DFC-FB1333600517}
 		{EE971A3B-9BB2-48C5-86A3-321A3C0CBDEE} = {30AE9CA3-3525-4F32-8107-A5483C8AB3A8}
+		{14FB4D31-F12F-423F-B089-310F22239F48} = {A52580D9-C5D6-48AE-9DFC-FB1333600517}
 	EndGlobalSection
 EndGlobal

@@ -1,0 +1,54 @@
+<Application x:Class="Vellum.Bootstrapper.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ShutdownMode="OnExplicitShutdown">
+    <Application.Resources>
+        <SolidColorBrush x:Key="BootBgBrush" Color="#0B0B0C" />
+        <SolidColorBrush x:Key="BootCardBrush" Color="#121214" />
+        <SolidColorBrush x:Key="BootBorderBrush" Color="#26262A" />
+        <SolidColorBrush x:Key="BootTextBrush" Color="#F5F5F6" />
+        <SolidColorBrush x:Key="BootMutedBrush" Color="#9A9AA2" />
+        <SolidColorBrush x:Key="BootAccentBrush" Color="#E9E9EC" />
+        <SolidColorBrush x:Key="BootDangerBrush" Color="#E05A63" />
+        <Style x:Key="BootPrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource BootAccentBrush}" />
+            <Setter Property="Foreground" Value="#0B0B0C" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="18,9" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="BootGhostButton" TargetType="Button">
+            <Setter Property="Background" Value="#17171A" />
+            <Setter Property="Foreground" Value="{StaticResource BootTextBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BootBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="16,8" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Application.Resources>
+</Application>

@@ -1,5 +1,7 @@
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net;
 using System.Text;
@@ -46,6 +48,56 @@ namespace Vellum.App
         protected override void OnStartup(StartupEventArgs e)
         {
             InstallGlobalExceptionHandlers();
+
+            // A normal Bootstrapper launch proves itself with a one-time token over the
+            // inherited standard-input pipe. Arguments and environment variables are
+            // deliberately not trusted.
+            var ipcToken = BootstrapperHandshake.TryReadFromStandardInput(TimeSpan.FromSeconds(5));
+            var trustedLaunch = BootstrapperLaunchPolicy.IsTrustedLaunch(ipcToken, e.Args,
+                Environment.GetEnvironmentVariable("VELLUM_BOOTSTRAPPED"));
+
+#if DEBUG
+            if (e.Args.Any(arg => string.Equals(arg, "--allow-direct", StringComparison.OrdinalIgnoreCase))
+                || Debugger.IsAttached)
+            {
+                trustedLaunch = true;
+            }
+#endif
+
+            if (!trustedLaunch)
+            {
+                var childOfBootstrapper = e.Args.Any(arg =>
+                    string.Equals(arg, BootstrapperLaunchPolicy.ChildMarkerArgument,
+                        StringComparison.OrdinalIgnoreCase));
+                if (childOfBootstrapper)
+                {
+                    var choice = MessageBox.Show(
+                        "Vellum Bootstrapper started this process, but its one-time launch " +
+                        "confirmation was not received.\n\n" +
+                        "Yes — start Vellum directly\nNo — close",
+                        "Vellum launch error", MessageBoxButton.YesNo, MessageBoxImage.Error);
+                    if (choice != MessageBoxResult.Yes)
+                    {
+                        Shutdown();
+                        return;
+                    }
+                    AppLog.Warn("Startup",
+                        "User explicitly started Vellum after a failed bootstrapper handshake.");
+                }
+                else
+                {
+                    var outcome = RunBootstrapperFallback(e.Args);
+                    if (outcome is BootstrapperFallbackOutcome.ExitToBootstrapper
+                        or BootstrapperFallbackOutcome.Close)
+                    {
+                        Shutdown();
+                        return;
+                    }
+
+                    AppLog.Warn("Startup",
+                        "User explicitly chose a direct Vellum start after the bootstrapper failed.");
+                }
+            }
 
             try
             {
@@ -151,6 +203,104 @@ namespace Vellum.App
         }
 
         /// <summary>
+        /// Fallback for launches that bypass the Bootstrapper shortcut. The main app
+        /// hands control to Vellum.Bootstrapper.exe and exits before creating a window.
+        /// </summary>
+        private static BootstrapperFallbackOutcome RunBootstrapperFallback(string[] args)
+        {
+            var baseDir = AppContext.BaseDirectory;
+            var bootstrapper = Path.Combine(baseDir, "Bootstrapper", "Vellum.Bootstrapper.exe");
+            if (!File.Exists(bootstrapper))
+                bootstrapper = Path.Combine(baseDir, "Vellum.Bootstrapper.exe");
+
+            return BootstrapperFallbackCoordinator.Run(
+                () =>
+                {
+                    if (!File.Exists(bootstrapper))
+                    {
+                        return new BootstrapperFallbackAttempt
+                        {
+                            Started = false,
+                            ErrorMessage = "Vellum.Bootstrapper.exe was not found next to Vellum.exe."
+                        };
+                    }
+
+                    var health = Path.Combine(Path.GetTempPath(),
+                        "vellum-bootstrapper-" + Guid.NewGuid().ToString("N") + ".health");
+                    Process? process = null;
+                    try
+                    {
+                        var startInfo = new ProcessStartInfo
+                        {
+                            FileName = bootstrapper,
+                            WorkingDirectory = baseDir,
+                            UseShellExecute = false
+                        };
+                        foreach (var arg in args)
+                        {
+                            if (string.Equals(arg, "--allow-direct", StringComparison.OrdinalIgnoreCase)
+                                || string.Equals(arg, BootstrapperLaunchPolicy.ChildMarkerArgument,
+                                    StringComparison.OrdinalIgnoreCase)
+                                || string.Equals(arg, BootstrapperLaunchPolicy.LegacyMarkerArgument,
+                                    StringComparison.OrdinalIgnoreCase))
+                                continue;
+                            startInfo.ArgumentList.Add(arg);
+                        }
+                        startInfo.ArgumentList.Add("--bootstrapper-health");
+                        startInfo.ArgumentList.Add(health);
+
+                        process = Process.Start(startInfo);
+                        if (process == null)
+                        {
+                            return new BootstrapperFallbackAttempt
+                            {
+                                Started = false,
+                                ErrorMessage = "Vellum.Bootstrapper.exe did not start."
+                            };
+                        }
+
+                        return new BootstrapperFallbackAttempt
+                        {
+                            Started = true,
+                            HealthFile = health,
+                            HasExited = () => process.HasExited,
+                            Kill = () =>
+                            {
+                                try { if (!process.HasExited) process.Kill(); } catch { }
+                            }
+                        };
+                    }
+                    catch (Exception ex)
+                    {
+                        process?.Dispose();
+                        return new BootstrapperFallbackAttempt
+                        {
+                            Started = false,
+                            ErrorMessage = "Could not start Vellum.Bootstrapper.exe: " + ex.Message
+                        };
+                    }
+                },
+                BootstrapperFallbackCoordinator.DefaultHealthTimeout,
+                message =>
+                {
+                    var choice = MessageBox.Show(
+                        message + "\n\n" +
+                        "Yes — retry the bootstrapper\n" +
+                        "No — start Vellum directly\n" +
+                        "Cancel — close",
+                        "Vellum Bootstrapper error",
+                        MessageBoxButton.YesNoCancel,
+                        MessageBoxImage.Error);
+                    return choice switch
+                    {
+                        MessageBoxResult.Yes => BootstrapperFallbackChoice.Retry,
+                        MessageBoxResult.No => BootstrapperFallbackChoice.StartDirectly,
+                        _ => BootstrapperFallbackChoice.Close
+                    };
+                });
+        }
+
+        /// <summary>
         /// Подписывается на все глобальные источники необработанных исключений.
         /// Без этого ошибка в фоновой задаче или UI-потоке исчезала бесследно.
         /// </summary>
@@ -222,6 +372,17 @@ namespace Vellum.App
             services.AddSingleton<ISteamMetadataService, SteamMetadataService>();
 
             services.AddSingleton<IGameManager, GameManager>();
+
+            // Manifest based game updates and launcher self-update.
+            services.AddSingleton<IManifestSignatureVerifier, ManifestSignatureVerifier>();
+            services.AddSingleton<IUpdateManifestProvider, HttpUpdateManifestProvider>();
+            services.AddSingleton<IFileDiffService, FileDiffService>();
+            services.AddSingleton<IIntegrityVerifier, IntegrityVerifier>();
+            services.AddSingleton<IUpdateDownloadManager, UpdateDownloadManager>();
+            services.AddSingleton<IUpdateStateStore, UpdateStateStore>();
+            services.AddSingleton<IUpdateInstaller, UpdateInstaller>();
+            services.AddSingleton<IGameUpdateService, GameUpdateService>();
+            services.AddSingleton<ILauncherUpdateService, LauncherUpdateService>();
 
             // Notifications
             services.AddSingleton<NotificationService>();

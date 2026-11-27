@@ -28,6 +28,7 @@ namespace Vellum.Core.Services
         private readonly IFileVerifier _verifier;
         private readonly ISettingsService _settings;
         private readonly IDiskSpaceService _diskSpaceService;
+        private readonly IGameUpdateService? _gameUpdates;
         private static readonly string[] RutorFallbackTrackers =
         {
             "udp://tracker.opentrackr.org:1337/announce",
@@ -89,7 +90,8 @@ namespace Vellum.Core.Services
             IUpdater updater,
             IFileVerifier verifier,
             ISettingsService settings,
-            IDiskSpaceService diskSpaceService)
+            IDiskSpaceService diskSpaceService,
+            IGameUpdateService? gameUpdates = null)
         {
             _logger = logger;
             _catalog = catalog;
@@ -99,6 +101,9 @@ namespace Vellum.Core.Services
             _verifier = verifier;
             _settings = settings;
             _diskSpaceService = diskSpaceService;
+            _gameUpdates = gameUpdates;
+            if (_gameUpdates != null)
+                _gameUpdates.StatusChanged += OnManifestUpdateStatusChanged;
         }
 
         public GameInstallation GetInstallation(string gameId)
@@ -693,6 +698,9 @@ namespace Vellum.Core.Services
 
         public async Task PauseAsync(string gameId)
         {
+            if (_gameUpdates != null && _gameUpdates.GetStatus(gameId).HasUpdate)
+                await _gameUpdates.PauseAsync(gameId).ConfigureAwait(false);
+
             // Update the UI state immediately. Waiting for the engine can take a few
             // seconds, and the user should see "Continue" as soon as they press Pause.
             if (_installations.TryGetValue(gameId, out var installation))
@@ -728,6 +736,21 @@ namespace Vellum.Core.Services
         {
             if (!_installations.TryGetValue(gameId, out var installation))
                 return OperationResult.Fail($"Game '{gameId}' is not tracked.");
+
+            if (_gameUpdates != null)
+            {
+                var updateStatus = _gameUpdates.GetStatus(gameId);
+                if (updateStatus.Phase is GameUpdatePhase.Paused or GameUpdatePhase.Error
+                    && !string.IsNullOrWhiteSpace(updateStatus.AvailableVersion))
+                {
+                    SetState(installation, InstallState.Updating);
+                    var resumed = await _gameUpdates.ResumeUpdateAsync(gameId, progress, ct).ConfigureAwait(false);
+                    if (!resumed.Success && !resumed.CancelledByUser)
+                        SetState(installation, InstallState.Error);
+                    await SaveLibraryAsync().ConfigureAwait(false);
+                    return resumed;
+                }
+            }
 
             // If the previous attempt is still unwinding, give it a moment first.
             if (_activeOperations.ContainsKey(gameId)
@@ -810,10 +833,34 @@ namespace Vellum.Core.Services
             // while its files stayed on disk (and the update kept running). Refuse it and
             // let the update finish instead.
             if (_installations.TryGetValue(gameId, out var updatingInstallation)
-                && updatingInstallation.State == InstallState.Updating)
+                && updatingInstallation.State is InstallState.Updating or InstallState.Installing)
             {
                 _logger.LogWarning("Refusing to remove {GameId}: an update is currently being applied.", gameId);
                 return OperationResult.Fail("An update is currently being applied. Please wait for it to finish.");
+            }
+
+            if (_gameUpdates != null && _gameUpdates.GetStatus(gameId).HasUpdate)
+            {
+                await _gameUpdates.RemoveAsync(gameId).ConfigureAwait(false);
+                if (_installations.TryGetValue(gameId, out var updateInstallation))
+                {
+                    updateInstallation.UpdateAvailable = false;
+                    updateInstallation.AvailableVersion = null;
+                    updateInstallation.AvailableBuildId = null;
+                    updateInstallation.UpdateDownloadSizeBytes = 0;
+                    updateInstallation.UpdateChangedFiles = 0;
+                    updateInstallation.UpdateAddedFiles = 0;
+                    updateInstallation.UpdateDeletedFiles = 0;
+                    updateInstallation.IsQueued = false;
+                    updateInstallation.LastErrorMessage = null;
+                    ClearDownloadProgress(updateInstallation);
+                    SetState(updateInstallation, Directory.Exists(updateInstallation.InstallPath)
+                        && !string.IsNullOrWhiteSpace(updateInstallation.InstalledVersion)
+                        ? InstallState.Installed
+                        : InstallState.NotInstalled);
+                }
+                await SaveLibraryAsync().ConfigureAwait(false);
+                return OperationResult.Ok();
             }
 
             try
@@ -1061,6 +1108,24 @@ namespace Vellum.Core.Services
             if (!_installations.TryGetValue(gameId, out var installation))
                 return OperationResult.Fail("Game is not installed.");
 
+            if (_gameUpdates != null)
+            {
+                var manifestStatus = _gameUpdates.GetStatus(gameId);
+                if (manifestStatus.HasUpdate
+                    || (manifestStatus.Phase == GameUpdatePhase.Error
+                        && !string.IsNullOrWhiteSpace(manifestStatus.AvailableVersion)))
+                {
+                    SetState(installation, InstallState.Updating);
+                    await SaveLibraryAsync().ConfigureAwait(false);
+                    var manifestResult = await _gameUpdates.StartUpdateAsync(gameId, progress, ct)
+                        .ConfigureAwait(false);
+                    if (!manifestResult.Success && !manifestResult.CancelledByUser)
+                        SetState(installation, InstallState.Error);
+                    await SaveLibraryAsync().ConfigureAwait(false);
+                    return manifestResult;
+                }
+            }
+
             _removedDownloads.TryRemove(gameId, out _);
 
             var update = await _updater.CheckForUpdateAsync(definition, installation, ct);
@@ -1148,6 +1213,24 @@ namespace Vellum.Core.Services
                     SetState(inst, InstallState.UpdateAvailable);
                 }
             }
+
+            if (_gameUpdates != null)
+            {
+                foreach (var def in games.ToList())
+                {
+                    if (!_installations.TryGetValue(def.Id, out var inst)) continue;
+                    if (inst.State is not (InstallState.Installed or InstallState.UpdateAvailable)) continue;
+                    try
+                    {
+                        await _gameUpdates.CheckForUpdateAsync(def, inst, force: false, ct).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Manifest update check failed for {GameId}.", def.Id);
+                    }
+                }
+            }
+
             await SaveLibraryAsync();
         }
 
@@ -1427,6 +1510,12 @@ namespace Vellum.Core.Services
 
                 _logger.LogInformation("Library loaded: {Count} game(s)", _installations.Count);
 
+                if (_gameUpdates != null)
+                {
+                    try { await _gameUpdates.InitializeAsync().ConfigureAwait(false); }
+                    catch (Exception ex) { _logger.LogError(ex, "Failed to initialize the update service."); }
+                }
+
                 // Clean up any staging folders left behind when the launcher was closed
                 // mid-install (e.g. repack setup.exe was still running). Safe to run in
                 // the background — only touches temp\<gameId> folders of installed games.
@@ -1440,6 +1529,12 @@ namespace Vellum.Core.Services
 
         public async Task ShutdownAndSaveAllDownloadsAsync()
         {
+            if (_gameUpdates != null)
+            {
+                try { await _gameUpdates.ShutdownAsync().ConfigureAwait(false); }
+                catch (Exception ex) { _logger.LogWarning(ex, "Failed to pause the update queue during shutdown."); }
+            }
+
             var activeGameIds = _activeCts.Keys.ToList();
             if (activeGameIds.Count == 0)
                 return;
@@ -1621,6 +1716,7 @@ namespace Vellum.Core.Services
 
         public void NotifyMaxConcurrentDownloadsChanged()
         {
+            _gameUpdates?.NotifyConcurrencyChanged();
             List<QueuedDownloadWaiter>? toWake = null;
             List<string>? toPause = null;
             lock (_queueLock)
@@ -1675,6 +1771,11 @@ namespace Vellum.Core.Services
 
         public void MoveDownloadInQueue(string gameId, int delta)
         {
+            if (_gameUpdates != null && _gameUpdates.GetStatus(gameId).HasUpdate)
+            {
+                _gameUpdates.MoveInQueue(gameId, delta);
+                return;
+            }
             if (delta == 0 || !_installations.TryGetValue(gameId, out var target))
                 return;
 
@@ -1710,6 +1811,11 @@ namespace Vellum.Core.Services
 
         public void PromoteDownloadToFront(string gameId)
         {
+            if (_gameUpdates != null && _gameUpdates.GetStatus(gameId).HasUpdate)
+            {
+                _gameUpdates.Promote(gameId);
+                return;
+            }
             if (!_installations.TryGetValue(gameId, out var target))
                 return;
 
@@ -2109,6 +2215,151 @@ namespace Vellum.Core.Services
             SetState(installation, InstallState.Installed);
             await SaveLibraryAsync().ConfigureAwait(false);
         }
+
+        private void OnManifestUpdateStatusChanged(object? sender, GameUpdateStatus status)
+        {
+            if (status == null || string.IsNullOrWhiteSpace(status.GameId))
+                return;
+            if (!_installations.TryGetValue(status.GameId, out var installation))
+                return;
+
+            var immediate = false;
+            var changed = false;
+            switch (status.Phase)
+            {
+                case GameUpdatePhase.UpdateAvailable:
+                    installation.UpdateAvailable = true;
+                    installation.AvailableVersion = status.AvailableVersion;
+                    installation.AvailableBuildId = status.AvailableBuildId;
+                    installation.UpdateDownloadSizeBytes = status.UpdateSizeBytes;
+                    installation.UpdateChangedFiles = status.ChangedFileCount;
+                    installation.UpdateAddedFiles = status.AddedFileCount;
+                    installation.UpdateDeletedFiles = status.DeletedFileCount;
+                    installation.UpdateCheckedAtUtc = (status.LastCheckedUtc ?? DateTimeOffset.UtcNow).UtcDateTime;
+                    installation.LastErrorMessage = null;
+                    if (installation.State is InstallState.Installed or InstallState.UpdateAvailable)
+                        SetState(installation, InstallState.UpdateAvailable);
+                    immediate = changed = true;
+                    break;
+
+                case GameUpdatePhase.WaitingForDownload:
+                case GameUpdatePhase.Downloading:
+                    installation.UpdateAvailable = true;
+                    installation.AvailableVersion ??= status.AvailableVersion;
+                    installation.AvailableBuildId ??= status.AvailableBuildId;
+                    installation.UpdateDownloadSizeBytes = status.UpdateSizeBytes;
+                    installation.UpdateChangedFiles = status.ChangedFileCount;
+                    installation.UpdateAddedFiles = status.AddedFileCount;
+                    installation.UpdateDeletedFiles = status.DeletedFileCount;
+                    installation.IsQueued = status.Phase == GameUpdatePhase.WaitingForDownload;
+                    installation.DownloadedBytes = status.DownloadedBytes;
+                    installation.DownloadTotalBytes = status.TotalBytes;
+                    installation.LastErrorMessage = null;
+                    if (installation.State != InstallState.Downloading)
+                        SetState(installation, InstallState.Downloading);
+                    immediate = changed = true;
+                    break;
+
+                case GameUpdatePhase.Paused:
+                    installation.DownloadedBytes = status.DownloadedBytes;
+                    installation.DownloadTotalBytes = status.TotalBytes;
+                    installation.IsQueued = false;
+                    SetState(installation, InstallState.Paused);
+                    immediate = changed = true;
+                    break;
+
+                case GameUpdatePhase.Verifying:
+                    installation.IsQueued = false;
+                    SetState(installation, InstallState.Verifying);
+                    immediate = changed = true;
+                    break;
+
+                case GameUpdatePhase.Installing:
+                    installation.IsQueued = false;
+                    SetState(installation, InstallState.Installing);
+                    immediate = changed = true;
+                    break;
+
+                case GameUpdatePhase.Error:
+                    if (status.ErrorKind == GameUpdateErrorKind.Check)
+                    {
+                        // A failed update check is not an installation failure: the
+                        // installed build is still playable.
+                        if (!string.IsNullOrWhiteSpace(status.AvailableVersion))
+                        {
+                            installation.UpdateAvailable = true;
+                            installation.AvailableVersion = status.AvailableVersion;
+                            installation.AvailableBuildId = status.AvailableBuildId;
+                            if (installation.State == InstallState.Installed)
+                                SetState(installation, InstallState.UpdateAvailable);
+                        }
+                        immediate = changed = true;
+                        break;
+                    }
+
+                    installation.LastErrorMessage = status.ErrorMessage;
+                    if (!string.IsNullOrWhiteSpace(status.AvailableVersion))
+                    {
+                        installation.UpdateAvailable = true;
+                        installation.AvailableVersion = status.AvailableVersion;
+                        installation.AvailableBuildId = status.AvailableBuildId;
+                        SetState(installation, InstallState.Error);
+                    }
+                    immediate = changed = true;
+                    break;
+
+                case GameUpdatePhase.UpToDate:
+                    var wasWorking = installation.State is InstallState.Downloading
+                        or InstallState.Paused or InstallState.Verifying
+                        or InstallState.Installing or InstallState.Updating;
+                    installation.UpdateAvailable = false;
+                    installation.AvailableVersion = null;
+                    installation.AvailableBuildId = null;
+                    installation.UpdateDownloadSizeBytes = 0;
+                    installation.UpdateChangedFiles = 0;
+                    installation.UpdateAddedFiles = 0;
+                    installation.UpdateDeletedFiles = 0;
+                    installation.UpdateCheckedAtUtc = (status.LastCheckedUtc ?? DateTimeOffset.UtcNow).UtcDateTime;
+                    installation.RollbackAvailable = true;
+                    installation.LastErrorMessage = null;
+                    ClearDownloadProgress(installation);
+                    if (!string.IsNullOrWhiteSpace(status.CurrentVersion))
+                        installation.InstalledVersion = status.CurrentVersion;
+                    if (!string.IsNullOrWhiteSpace(status.CurrentBuildId))
+                        installation.InstalledBuildId = status.CurrentBuildId;
+                    if (wasWorking)
+                    {
+                        installation.LastUpdatedAt = DateTime.UtcNow;
+                        installation.CompletedInSession = true;
+                        SetState(installation, InstallState.Installed);
+                    }
+                    else if (installation.State == InstallState.UpdateAvailable)
+                    {
+                        SetState(installation, InstallState.Installed);
+                    }
+                    immediate = changed = true;
+                    break;
+
+                case GameUpdatePhase.Unknown:
+                case GameUpdatePhase.Checking:
+                default:
+                    return;
+            }
+
+            if (!changed)
+                return;
+
+            InstallationStateChanged?.Invoke(this, installation);
+
+            var now = Environment.TickCount64;
+            if (immediate || now - Interlocked.Read(ref _lastManifestSaveTicks) >= 2000)
+            {
+                Interlocked.Exchange(ref _lastManifestSaveTicks, now);
+                _ = SaveLibraryAsync();
+            }
+        }
+
+        private long _lastManifestSaveTicks;
 
         private void SetState(GameInstallation installation, InstallState state, bool force = false)
         {

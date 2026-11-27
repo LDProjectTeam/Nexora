@@ -44,6 +44,7 @@ namespace Vellum.App.ViewModels
         private readonly GameCardViewModel _game;
         private readonly IGameSearchAggregator _searchAggregator;
         private readonly ISteamMetadataService? _steamMetadataService;
+        private readonly IGameUpdateService? _gameUpdates;
         private readonly string _installPath;
         private readonly DispatcherTimer _artworkTimer;
         private readonly DispatcherTimer _notificationTimer;
@@ -80,6 +81,9 @@ namespace Vellum.App.ViewModels
             _game = game ?? throw new ArgumentNullException(nameof(game));
             _searchAggregator = searchAggregator ?? throw new ArgumentNullException(nameof(searchAggregator));
             _steamMetadataService = steamMetadataService;
+            _gameUpdates = global::Vellum.App.App.Services?.GetService(typeof(IGameUpdateService)) as IGameUpdateService;
+            if (_gameUpdates != null)
+                _gameUpdates.StatusChanged += OnGameUpdateStatusChanged;
             _installPath = string.IsNullOrWhiteSpace(installPath) ? @"C:\Games" : installPath;
             _candidate = _game.ReleaseCandidate;
             _catalogDescription = !string.IsNullOrWhiteSpace(_game.Description) && !IsCandidateGeneratedDescription(_game.Description)
@@ -111,6 +115,8 @@ namespace Vellum.App.ViewModels
             CloseCommand = new RelayCommand(() => CloseRequested?.Invoke(this, EventArgs.Empty));
             PrimaryActionCommand = new RelayCommand(ExecutePrimaryAction, () => CanExecutePrimaryAction);
             RefreshCommand = new AsyncRelayCommand(RefreshAllAsync, () => !_isRefreshing);
+            CheckForUpdatesCommand = new AsyncRelayCommand(CheckGameUpdateAsync, () => IsInstalled && _gameUpdates != null);
+            RollbackUpdateCommand = new AsyncRelayCommand(RollbackGameUpdateAsync, () => CanRollbackUpdate);
 
             StartActiveArtworkLoading();
             _ = InitializeAsync(forceSteamRefresh: false);
@@ -131,6 +137,8 @@ namespace Vellum.App.ViewModels
         public RelayCommand CloseCommand { get; }
         public RelayCommand PrimaryActionCommand { get; }
         public AsyncRelayCommand RefreshCommand { get; }
+        public AsyncRelayCommand CheckForUpdatesCommand { get; }
+        public AsyncRelayCommand RollbackUpdateCommand { get; }
 
         public AsyncRelayCommand VerifyCommand => _game.VerifyCommand;
         public AsyncRelayCommand UpdateCommand => _game.UpdateCommand;
@@ -766,6 +774,84 @@ namespace Vellum.App.ViewModels
 
         public bool CanOpenFolder => IsInstalled && !string.IsNullOrWhiteSpace(_game.InstallPath) && Directory.Exists(_game.InstallPath);
 
+        // ── Manifest update state ─────────────────────────────────────────────
+        private GameUpdateStatus CurrentUpdateStatus =>
+            _gameUpdates?.GetStatus(_game.Id) ?? new GameUpdateStatus { GameId = _game.Id };
+
+        public bool HasUpdateInfo => _game.UpdateInfoAvailable;
+        public string UpdateCurrentVersionDisplay => string.IsNullOrWhiteSpace(_game.InstalledVersion)
+            ? "—" : _game.InstalledVersion;
+        public string UpdateAvailableVersionDisplay => !string.IsNullOrWhiteSpace(_game.AvailableVersion)
+            ? _game.AvailableVersion
+            : CurrentUpdateStatus.AvailableVersion ?? "—";
+        public string UpdateSizeDisplay => _game.UpdateSizeDisplay;
+        public string UpdateFileSummary => _game.UpdateFileSummary;
+        public string UpdateStatusText
+        {
+            get
+            {
+                var status = CurrentUpdateStatus;
+                return status.Phase switch
+                {
+                    GameUpdatePhase.Checking => LocalizationManager.GetStringOrFallback(
+                        "UpdateStatusChecking", "Checking for updates…"),
+                    GameUpdatePhase.WaitingForDownload => LocalizationManager.GetStringOrFallback(
+                        "UpdateStatusQueued", "Waiting in the update queue…"),
+                    GameUpdatePhase.Downloading => LocalizationManager.GetStringOrFallback(
+                        "UpdateStatusDownloading", "Downloading update…"),
+                    GameUpdatePhase.Paused => LocalizationManager.GetStringOrFallback(
+                        "UpdateStatusPaused", "Update paused."),
+                    GameUpdatePhase.Verifying => LocalizationManager.GetStringOrFallback(
+                        "UpdateStatusVerifying", "Verifying update…"),
+                    GameUpdatePhase.Installing => LocalizationManager.GetStringOrFallback(
+                        "UpdateStatusInstalling", "Installing update…"),
+                    GameUpdatePhase.Error => status.ErrorMessage ?? LocalizationManager.GetStringOrFallback(
+                        "UpdateStatusError", "Update failed."),
+                    _ => HasUpdateInfo
+                        ? LocalizationManager.GetStringOrFallback("UpdateStatusAvailable", "Update available.")
+                        : LocalizationManager.GetStringOrFallback("UpdateStatusReady", "Up to date.")
+                };
+            }
+        }
+
+        public bool IsUpdateActive => CurrentUpdateStatus.Phase is GameUpdatePhase.Downloading
+            or GameUpdatePhase.WaitingForDownload or GameUpdatePhase.Verifying
+            or GameUpdatePhase.Installing;
+        public bool ShowCheckUpdateButton => !IsUpdateActive;
+        public bool IsUpdatePaused => CurrentUpdateStatus.Phase == GameUpdatePhase.Paused;
+        public bool IsUpdateError => CurrentUpdateStatus.Phase == GameUpdatePhase.Error;
+        public bool ShowInstallUpdateButton => HasUpdateInfo && !IsUpdateActive && !IsUpdateError;
+        public bool ShowRetryUpdateButton => IsUpdateError && HasUpdateInfo;
+        public bool ShowUpdateProgress => IsUpdateActive || IsUpdatePaused;
+        public bool ShowUpdatePanel => HasUpdateInfo || IsUpdateActive || IsUpdatePaused
+            || CurrentUpdateStatus.Phase is GameUpdatePhase.Checking or GameUpdatePhase.Error;
+        public int UpdateProgressPercent => (int)Math.Round(CurrentUpdateStatus.Fraction * 100);
+        public string UpdateProgressText
+        {
+            get
+            {
+                var status = CurrentUpdateStatus;
+                return status.TotalBytes > 0
+                    ? $"{PathHelper.FormatBytes(status.DownloadedBytes)} / {PathHelper.FormatBytes(status.TotalBytes)}"
+                    : "—";
+            }
+        }
+        public string UpdateSpeedText => CurrentUpdateStatus.SpeedBytesPerSec > 0
+            ? LocalizationManager.GetString("SpeedUnitFormat",
+                PathHelper.FormatBytes(CurrentUpdateStatus.SpeedBytesPerSec))
+            : string.Empty;
+        public string UpdateRemainingText => CurrentUpdateStatus.SecondsRemaining > 0
+            ? LocalizationManager.GetString("TimeRemainingFormat",
+                PathHelper.FormatTimeRemaining(CurrentUpdateStatus.SecondsRemaining))
+            : string.Empty;
+        public bool CanPauseUpdate => _game.PauseCommand.CanExecute(null);
+        public bool CanCancelUpdate => _game.RemoveDownloadCommand.CanExecute(null);
+        public bool CanRollbackUpdate => _game.Installation.RollbackAvailable && IsInstalled && !IsUpdateActive;
+
+        public AsyncRelayCommand PauseUpdateCommand => _game.PauseCommand;
+        public AsyncRelayCommand CancelUpdateCommand => _game.RemoveDownloadCommand;
+        public AsyncRelayCommand RetryUpdateCommand => _game.RetryDownloadCommand;
+
         // ── Primary action ────────────────────────────────────────────────────
         public string PrimaryActionLabel
         {
@@ -955,6 +1041,95 @@ namespace Vellum.App.ViewModels
         {
             await ResolvePreferredVersionAsync();
             await LoadSteamMetadataAsync(forceSteamRefresh);
+            if (_gameUpdates != null && IsInstalled)
+                await CheckGameUpdateAsync();
+        }
+
+        private async Task CheckGameUpdateAsync()
+        {
+            if (_gameUpdates == null || _isDisposed)
+                return;
+
+            try
+            {
+                await _gameUpdates.CheckForUpdateAsync(_game.Definition, _game.Installation, force: true);
+            }
+            catch (Exception ex)
+            {
+                AppLog.Warn("GameDetails", "Update check failed.", ex);
+            }
+            finally
+            {
+                RaiseUpdateProperties();
+            }
+        }
+
+        private async Task RollbackGameUpdateAsync()
+        {
+            if (_gameUpdates == null)
+                return;
+
+            var confirm = MessageBox.Show(
+                LocalizationManager.GetStringOrFallback(
+                    "UpdateRollbackQuestion",
+                    "Restore the previous version of this game? The current build will be replaced."),
+                LocalizationManager.GetStringOrFallback("UpdateRollbackTitle", "Roll back update"),
+                MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (confirm != MessageBoxResult.Yes)
+                return;
+
+            var result = await _gameUpdates.RollbackAsync(_game.Id);
+            if (result.Success)
+                ShowNotification(LocalizationManager.GetStringOrFallback(
+                    "UpdateRollbackDone", "The previous version was restored."));
+            else
+                MessageBox.Show(result.ErrorMessage ?? "Rollback failed.",
+                    LocalizationManager.GetStringOrFallback("UpdateRollbackTitle", "Roll back update"),
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+
+            RaiseUpdateProperties();
+        }
+
+        private void OnGameUpdateStatusChanged(object? sender, GameUpdateStatus status)
+        {
+            if (status == null || !string.Equals(status.GameId, _game.Id, StringComparison.OrdinalIgnoreCase))
+                return;
+
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher == null)
+                return;
+            if (!dispatcher.CheckAccess())
+                dispatcher.BeginInvoke(RaiseUpdateProperties);
+            else
+                RaiseUpdateProperties();
+        }
+
+        private void RaiseUpdateProperties()
+        {
+            OnPropertyChanged(nameof(HasUpdateInfo));
+            OnPropertyChanged(nameof(UpdateCurrentVersionDisplay));
+            OnPropertyChanged(nameof(UpdateAvailableVersionDisplay));
+            OnPropertyChanged(nameof(UpdateSizeDisplay));
+            OnPropertyChanged(nameof(UpdateFileSummary));
+            OnPropertyChanged(nameof(UpdateStatusText));
+            OnPropertyChanged(nameof(IsUpdateActive));
+            OnPropertyChanged(nameof(IsUpdatePaused));
+            OnPropertyChanged(nameof(ShowUpdateProgress));
+            OnPropertyChanged(nameof(ShowUpdatePanel));
+            OnPropertyChanged(nameof(ShowCheckUpdateButton));
+            OnPropertyChanged(nameof(IsUpdateError));
+            OnPropertyChanged(nameof(ShowInstallUpdateButton));
+            OnPropertyChanged(nameof(ShowRetryUpdateButton));
+            OnPropertyChanged(nameof(UpdateProgressPercent));
+            OnPropertyChanged(nameof(UpdateProgressText));
+            OnPropertyChanged(nameof(UpdateSpeedText));
+            OnPropertyChanged(nameof(UpdateRemainingText));
+            OnPropertyChanged(nameof(CanPauseUpdate));
+            OnPropertyChanged(nameof(CanCancelUpdate));
+            OnPropertyChanged(nameof(CanRollbackUpdate));
+            CheckForUpdatesCommand.RaiseCanExecuteChanged();
+            RollbackUpdateCommand.RaiseCanExecuteChanged();
+            UpdateCommand.RaiseCanExecuteChanged();
         }
 
         private async Task RefreshAllAsync()
@@ -1459,6 +1634,8 @@ namespace Vellum.App.ViewModels
             _notificationTimer.Stop();
             _game.PropertyChanged -= OnGamePropertyChanged;
             LocalizationManager.LanguageChanged -= OnLanguageChanged;
+            if (_gameUpdates != null)
+                _gameUpdates.StatusChanged -= OnGameUpdateStatusChanged;
         }
     }
 }

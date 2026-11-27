@@ -69,6 +69,9 @@ try {
     if (-not (Test-Path (Join-Path $appStage 'Vellum.exe'))) {
         throw "Published application executable was not found in $appStage."
     }
+    if (-not (Test-Path (Join-Path $appStage 'Bootstrapper\Vellum.Bootstrapper.exe'))) {
+        throw "Published bootstrapper was not found in $appStage\Bootstrapper."
+    }
 
     & $heat dir $appStage -cg AppFiles -dr INSTALLFOLDER -gg -g1 -srd -sfrag -var var.PublishDir -out $harvestFile
     if ($LASTEXITCODE -ne 0) { throw "heat.exe failed with exit code $LASTEXITCODE." }

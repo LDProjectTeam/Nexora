@@ -222,13 +222,20 @@
                                Margin="0,5,0,0" />
                 </StackPanel>
 
-                <Button Grid.Column="1"
-                        Content="{DynamicResource SettingsOpenDataFolder}"
-                        Style="{StaticResource SecondaryButtonStyle}"
-                        Command="{Binding OpenAppDataFolderCommand}"
-                        VerticalAlignment="Center"
-                        Height="36"
-                        Padding="14,0" />
+                <StackPanel Grid.Column="1"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Right">
+                    <Button Content="{DynamicResource SettingsOpenDataFolder}"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding OpenAppDataFolderCommand}"
+                            Height="36"
+                            Padding="14,0" />
+                    <TextBlock Text="{Binding LauncherVersionText}"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="11"
+                               HorizontalAlignment="Right"
+                               Margin="0,7,2,0" />
+                </StackPanel>
             </Grid>
 
             <!-- Inline Status Notification Banner -->
@@ -831,6 +838,197 @@
                                       AutomationProperties.Name="{DynamicResource SettingsAutoCheckUpdatesTitle}"
                                       VerticalAlignment="Center" />
                         </Grid>
+                    </Border>
+
+                    <!-- Game updates: automatic install -->
+                    <Border Style="{StaticResource SettingsRowContainer}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
+                                <TextBlock Text="{DynamicResource SettingsAutoUpdateGamesTitle}"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           FontSize="14" FontWeight="Medium" />
+                                <TextBlock Text="{DynamicResource SettingsAutoUpdateGamesDescription}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="12" TextWrapping="Wrap" Margin="0,3,0,0" />
+                            </StackPanel>
+                            <CheckBox Grid.Column="1" IsChecked="{Binding AutoUpdateGames}"
+                                      Style="{StaticResource SettingsToggleSwitch}"
+                                      VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+
+                    <!-- Update channel -->
+                    <Border Style="{StaticResource SettingsRowContainer}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
+                                <TextBlock Text="{DynamicResource SettingsUpdateChannelTitle}"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           FontSize="14" FontWeight="Medium" />
+                                <TextBlock Text="{DynamicResource SettingsUpdateChannelDescription}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="12" TextWrapping="Wrap" Margin="0,3,0,0" />
+                            </StackPanel>
+                            <WrapPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Content="{DynamicResource SettingsUpdateChannelStable}"
+                                        Style="{StaticResource SpeedPresetChipButton}"
+                                        Command="{Binding SelectUpdateChannelCommand}" CommandParameter="stable" />
+                                <Button Content="{DynamicResource SettingsUpdateChannelBeta}"
+                                        Style="{StaticResource SpeedPresetChipButton}"
+                                        Command="{Binding SelectUpdateChannelCommand}" CommandParameter="beta" />
+                            </WrapPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Launch behavior -->
+                    <Border Style="{StaticResource SettingsRowContainer}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
+                                <TextBlock Text="{DynamicResource SettingsUpdateLaunchBehaviorTitle}"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           FontSize="14" FontWeight="Medium" />
+                                <TextBlock Text="{DynamicResource SettingsUpdateLaunchBehaviorDescription}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="12" TextWrapping="Wrap" Margin="0,3,0,0" />
+                            </StackPanel>
+                            <WrapPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Content="{DynamicResource SettingsUpdateLaunchAsk}"
+                                        Style="{StaticResource SpeedPresetChipButton}"
+                                        Command="{Binding SetUpdateLaunchBehaviorCommand}" CommandParameter="ask" />
+                                <Button Content="{DynamicResource SettingsUpdateLaunchBlock}"
+                                        Style="{StaticResource SpeedPresetChipButton}"
+                                        Command="{Binding SetUpdateLaunchBehaviorCommand}" CommandParameter="block" />
+                                <Button Content="{DynamicResource SettingsUpdateLaunchAllow}"
+                                        Style="{StaticResource SpeedPresetChipButton}"
+                                        Command="{Binding SetUpdateLaunchBehaviorCommand}" CommandParameter="allow" />
+                            </WrapPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Check interval / parallel files -->
+                    <Border Style="{StaticResource SettingsRowContainer}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
+                                <TextBlock Text="{DynamicResource SettingsUpdateTimingTitle}"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           FontSize="14" FontWeight="Medium" />
+                                <TextBlock Text="{DynamicResource SettingsUpdateTimingDescription}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="12" TextWrapping="Wrap" Margin="0,3,0,0" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Width="120" Margin="0,0,10,0">
+                                <TextBox Text="{Binding UpdateCheckIntervalMinutes, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource ModernTextBox}"
+                                         PreviewTextInput="NumericOnly_PreviewTextInput"
+                                         DataObject.Pasting="NumericOnly_Pasting"
+                                         AutomationProperties.Name="{DynamicResource SettingsUpdateIntervalLabel}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Width="120">
+                                <TextBox Text="{Binding MaxConcurrentUpdateFiles, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource ModernTextBox}"
+                                         PreviewTextInput="NumericOnly_PreviewTextInput"
+                                         DataObject.Pasting="NumericOnly_Pasting"
+                                         AutomationProperties.Name="{DynamicResource SettingsUpdateParallelFilesLabel}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Max simultaneous game updates -->
+                    <Border Style="{StaticResource SettingsRowContainer}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
+                                <TextBlock Text="{DynamicResource SettingsUpdateMaxParallelTitle}"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           FontSize="14" FontWeight="Medium" />
+                                <TextBlock Text="{DynamicResource SettingsUpdateMaxParallelDescription}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="12" TextWrapping="Wrap" Margin="0,3,0,0" />
+                            </StackPanel>
+                            <TextBox Grid.Column="1" Width="120"
+                                     Text="{Binding MaxConcurrentDownloads, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource ModernTextBox}"
+                                     PreviewTextInput="NumericOnly_PreviewTextInput"
+                                     DataObject.Pasting="NumericOnly_Pasting"
+                                     AutomationProperties.Name="{DynamicResource SettingsUpdateMaxParallelTitle}" />
+                        </Grid>
+                    </Border>
+
+                    <!-- Manifest base URL -->
+                    <Border Style="{StaticResource SettingsRowContainer}">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource SettingsUpdateManifestUrlTitle}"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       FontSize="14" FontWeight="Medium" />
+                            <TextBlock Text="{DynamicResource SettingsUpdateManifestUrlDescription}"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       FontSize="12" TextWrapping="Wrap" Margin="0,3,0,8" />
+                            <TextBox Text="{Binding UpdateManifestBaseUrl, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource ModernTextBox}"
+                                     AutomationProperties.Name="{DynamicResource SettingsUpdateManifestUrlTitle}" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Launcher self-update -->
+                    <Border Style="{StaticResource SettingsRowContainer}">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="{DynamicResource SettingsLauncherUpdateTitle}"
+                                               Foreground="{StaticResource TextPrimaryBrush}"
+                                               FontSize="14" FontWeight="Medium" />
+                                    <TextBlock Text="{Binding LauncherUpdateStatusText}"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               FontSize="12" TextWrapping="Wrap" Margin="0,3,0,0" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button Content="{DynamicResource SettingsLauncherUpdateCheck}"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Command="{Binding CheckLauncherUpdateCommand}" Height="32" Padding="12,0" />
+                                    <Button Content="{DynamicResource SettingsLauncherUpdateDownload}"
+                                            Style="{StaticResource SecondaryButtonStyle}" Margin="8,0,0,0"
+                                            Command="{Binding DownloadLauncherUpdateCommand}" Height="32" Padding="12,0"
+                                            Visibility="{Binding CanDownloadLauncherUpdate, Converter={StaticResource BoolToVis}}" />
+                                    <Button Content="{DynamicResource SettingsLauncherUpdateRestart}"
+                                            Style="{StaticResource PrimaryButtonStyle}" Margin="8,0,0,0"
+                                            Command="{Binding RestartForLauncherUpdateCommand}" Height="32" Padding="12,0"
+                                            Visibility="{Binding CanRestartLauncherUpdate, Converter={StaticResource BoolToVis}}" />
+                                </StackPanel>
+                            </Grid>
+                            <ProgressBar Height="4" Margin="0,10,0,0" Minimum="0" Maximum="100"
+                                         Value="{Binding LauncherUpdateProgress, Mode=OneWay}"
+                                         Background="{StaticResource SurfaceLowerBrush}"
+                                         Foreground="{DynamicResource AccentBrush}"
+                                         Visibility="{Binding HasLauncherUpdate, Converter={StaticResource BoolToVis}}" />
+                            <TextBlock Text="{DynamicResource SettingsLauncherUpdateUrlTitle}"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       FontSize="12" Margin="0,10,0,6" />
+                            <TextBox Text="{Binding LauncherUpdateManifestUrl, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource ModernTextBox}" />
+                        </StackPanel>
                     </Border>
 
                     <Border Background="{StaticResource SurfaceDarkerBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0" CornerRadius="8" Padding="12,10">

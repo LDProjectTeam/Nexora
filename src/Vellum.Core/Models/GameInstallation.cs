@@ -39,6 +39,38 @@ namespace Vellum.Core.Models
         /// <summary>Version string of available update, if any.</summary>
         public string? AvailableVersion { get; set; }
 
+        // --- Manifest-based update state (managed by GameUpdateService) ---
+
+        /// <summary>Build id of the installed build.</summary>
+        public string InstalledBuildId { get; set; } = string.Empty;
+
+        /// <summary>Build id of the available update.</summary>
+        public string? AvailableBuildId { get; set; }
+
+        /// <summary>Bytes that must be downloaded for the available update.</summary>
+        public long UpdateDownloadSizeBytes { get; set; }
+
+        /// <summary>Number of files changed by the available update.</summary>
+        public int UpdateChangedFiles { get; set; }
+
+        /// <summary>Number of new files added by the available update.</summary>
+        public int UpdateAddedFiles { get; set; }
+
+        /// <summary>Number of files removed by the available update.</summary>
+        public int UpdateDeletedFiles { get; set; }
+
+        /// <summary>When the update source was last checked for this game.</summary>
+        public DateTime UpdateCheckedAtUtc { get; set; }
+
+        /// <summary>Update channel (stable/beta) associated with the pending update.</summary>
+        public string? UpdateChannel { get; set; }
+
+        /// <summary>Manifest URL used for the pending update; persisted so a paused update can resume.</summary>
+        public string? PendingManifestUrl { get; set; }
+
+        /// <summary>True when a previous build can be restored from the rollback backup.</summary>
+        public bool RollbackAvailable { get; set; }
+
         /// <summary>Release information saved for downloading or paused downloads so they can resume across launcher restarts.</summary>
         public GameReleaseCandidate? PendingRelease { get; set; }
 

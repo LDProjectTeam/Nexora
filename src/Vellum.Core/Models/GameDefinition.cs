@@ -56,6 +56,13 @@ namespace Vellum.Core.Models
         /// <summary>Available updates for this game.</summary>
         public List<GameUpdate> Updates { get; set; } = new();
 
+        /// <summary>
+        /// Signed manifest URL for this game. Supports the {channel} placeholder.
+        /// When empty the launcher falls back to the catalog updates and the global
+        /// manifest base URL from settings.
+        /// </summary>
+        public string ManifestUrl { get; set; } = string.Empty;
+
         /// <summary>System dependencies required (e.g. DirectX, VC++ Redist).</summary>
         public List<string> Dependencies { get; set; } = new();
 

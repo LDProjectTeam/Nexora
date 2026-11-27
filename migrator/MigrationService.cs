@@ -956,7 +956,12 @@ public sealed class MigrationService
 
         try
         {
-            var startInfo = new ProcessStartInfo(VellumExecutable)
+            var bootstrapper = Path.Combine(
+                Path.GetDirectoryName(VellumExecutable) ?? string.Empty,
+                "Bootstrapper",
+                "Vellum.Bootstrapper.exe");
+            var launchTarget = File.Exists(bootstrapper) ? bootstrapper : VellumExecutable;
+            var startInfo = new ProcessStartInfo(launchTarget)
             {
                 UseShellExecute = true,
                 WorkingDirectory = Path.GetDirectoryName(VellumExecutable) ?? string.Empty

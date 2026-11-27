@@ -82,7 +82,13 @@ Write-Host "============================================================" -Foreg
 Write-Host ""
 
 $psi = [System.Diagnostics.ProcessStartInfo]::new()
-$psi.FileName = $exe.FullName
+$bootstrapper = Join-Path $workingDir 'Bootstrapper\Vellum.Bootstrapper.exe'
+if (Test-Path -LiteralPath $bootstrapper -PathType Leaf) {
+    $psi.FileName = $bootstrapper
+}
+else {
+    $psi.FileName = $exe.FullName
+}
 $psi.WorkingDirectory = $workingDir
 $psi.UseShellExecute = $false
 $psi.RedirectStandardOutput = $true

@@ -35,6 +35,52 @@ namespace Vellum.Core.Models
 
         // --- Behaviour ---
         public bool AutoCheckUpdates { get; set; } = true;
+
+        /// <summary>Check installed games for newer builds every N minutes while the launcher is open. 0 disables the periodic check.</summary>
+        public int UpdateCheckIntervalMinutes { get; set; } = 30;
+
+        // --- Game updates (manifest based) ---
+        /// <summary>
+        /// Base URL of the manifest server. The launcher requests
+        /// {base}/{gameId}/{channel}/manifest.json when a game has no per-game manifest URL.
+        /// Leave empty when update sources are not configured.
+        /// </summary>
+        public string UpdateManifestBaseUrl { get; set; } = string.Empty;
+
+        /// <summary>stable or beta. Sent to the manifest server and stored with the game.</summary>
+        public string UpdateChannel { get; set; } = "stable";
+
+        /// <summary>Automatically download and install game updates when an update is detected.</summary>
+        public bool AutoUpdateGames { get; set; } = false;
+
+        /// <summary>ask | block | allow. What to do when an update is pending and the user launches the game.</summary>
+        public string UpdateLaunchBehavior { get; set; } = "ask";
+
+        /// <summary>Maximum number of files downloaded in parallel for a single update.</summary>
+        public int MaxConcurrentUpdateFiles { get; set; } = 3;
+
+        /// <summary>
+        /// PEM encoded RSA public keys trusted to sign game and launcher manifests.
+        /// When this list is empty manifests cannot be trusted and update checks fail closed.
+        /// </summary>
+        public List<string> UpdateTrustedPublicKeys { get; set; } = new();
+
+        /// <summary>
+        /// Signature verification is mandatory by default. Turning this off is intended for
+        /// local development only; production sources must always be signed.
+        /// </summary>
+        public bool RequireSignedManifests { get; set; } = true;
+
+        // --- Launcher self-update ---
+        /// <summary>URL of the signed launcher update manifest. Empty disables launcher self-update.</summary>
+        public string LauncherUpdateManifestUrl { get; set; } = string.Empty;
+
+        /// <summary>Automatically check for a newer launcher build.</summary>
+        public bool AutoCheckLauncherUpdates { get; set; } = true;
+
+        /// <summary>Automatically download launcher updates in the background.</summary>
+        public bool AutoDownloadLauncherUpdates { get; set; } = true;
+
         public bool LaunchWithWindows { get; set; } = false;
         public bool MinimizeToTray { get; set; } = true;
         public bool MinimizeOnGameLaunch { get; set; } = true;

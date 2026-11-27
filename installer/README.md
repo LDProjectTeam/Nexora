@@ -35,9 +35,14 @@ Requirements:
 ## Portable build
 
 The ZIP contains a single `Vellum` folder with `Vellum.exe`, the self-contained
-runtime, the catalog data, and the torrent engine. Extract it anywhere and run
-`Vellum.exe`; settings still live in `%AppData%\Vellum`, so it shares the profile
-with the installed build.
+runtime, `Bootstrapper\Vellum.Bootstrapper.exe`, the catalog data, and the torrent
+engine. Extract it anywhere and run `Vellum.exe` (or the bootstrapper directly);
+direct launches are redirected through the bootstrapper. Settings still live in
+`%AppData%\Vellum`, so it shares the profile with the installed build.
+
+Startup always goes through `Bootstrapper\Vellum.Bootstrapper.exe`, which checks for
+launcher updates, verifies files and only then starts `Vellum.exe`. The installer
+creates Start Menu and desktop shortcuts to the bootstrapper, not to the internal EXE.
 
 ## MSI
 

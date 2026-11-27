@@ -29,6 +29,9 @@ namespace Vellum.App.ViewModels
         private readonly ISteamFeaturedGamesService _steamFeaturedGamesService;
         private readonly NotificationService _notifications;
         private readonly ITaskbarProgressService _taskbarProgress;
+        private readonly IGameUpdateService _gameUpdates;
+        private readonly ILauncherUpdateService _launcherUpdates;
+        private readonly DispatcherTimer _updateCheckTimer = new();
         private CancellationTokenSource? _featuredGamesLoadCts;
         private List<GameCardViewModel>? _steamFeaturedGames;
         private GameBrowseOrder? _activeBrowseOrder;
@@ -94,7 +97,9 @@ namespace Vellum.App.ViewModels
             IGameArtworkService artworkService,
             ISteamFeaturedGamesService steamFeaturedGamesService,
             NotificationService notifications,
-            ITaskbarProgressService taskbarProgress)
+            ITaskbarProgressService taskbarProgress,
+            IGameUpdateService gameUpdates,
+            ILauncherUpdateService launcherUpdates)
         {
             _catalog = catalog;
             _gameManager = gameManager;
@@ -105,8 +110,15 @@ namespace Vellum.App.ViewModels
             _steamFeaturedGamesService = steamFeaturedGamesService;
             _notifications = notifications;
             _taskbarProgress = taskbarProgress;
+            _gameUpdates = gameUpdates;
+            _launcherUpdates = launcherUpdates;
 
-            SettingsVM = new SettingsViewModel(_settingsService, _catalog);
+            SettingsVM = new SettingsViewModel(_settingsService, _catalog, _gameUpdates, _launcherUpdates);
+            SettingsVM.SettingsChanged += (_, _) =>
+            {
+                ConfigureUpdateCheckTimer();
+                _gameManager.NotifyMaxConcurrentDownloadsChanged();
+            };
             LocalizationManager.LanguageChanged += (_, _) =>
             {
                 OnPropertyChanged(nameof(SectionTitle));
@@ -147,7 +159,10 @@ namespace Vellum.App.ViewModels
             ClearCompletedDownloadsCommand = new RelayCommand(ClearCompletedDownloads, () => CompletedDownloadsCount > 0);
             AddTorrentFileCommand = new AsyncRelayCommand(AddTorrentFromPickerAsync);
             CycleMaxConcurrentDownloadsCommand = new AsyncRelayCommand(CycleMaxConcurrentDownloadsAsync);
+            CheckForUpdatesCommand = new AsyncRelayCommand(() => _gameManager.CheckUpdatesAsync());
+            UpdateAllGamesCommand = new AsyncRelayCommand(UpdateAllGamesAsync, () => AvailableUpdatesCount > 0);
             _featuredTimer.Tick += (_, _) => ChangeFeaturedGame(1, false);
+            _updateCheckTimer.Tick += async (_, _) => await RunPeriodicUpdateCheckAsync();
 
             _gameLauncher.GameExited += OnGameExited;
             _gameManager.InstallationStateChanged += OnInstallationStateChanged;
@@ -216,6 +231,8 @@ namespace Vellum.App.ViewModels
         public RelayCommand ClearCompletedDownloadsCommand { get; }
         public AsyncRelayCommand AddTorrentFileCommand { get; }
         public AsyncRelayCommand CycleMaxConcurrentDownloadsCommand { get; }
+        public AsyncRelayCommand CheckForUpdatesCommand { get; }
+        public AsyncRelayCommand UpdateAllGamesCommand { get; }
         public ObservableCollection<FeaturedSlideIndicatorViewModel> FeaturedSlideIndicators { get; } = new();
         public ObservableCollection<GameCardViewModel> SurpriseRollItems { get; } = new();
         public bool HasFeaturedCarousel => _featuredGames.Count > 1;
@@ -419,6 +436,8 @@ namespace Vellum.App.ViewModels
         public int LibraryInstalledCount => AllGameCards.Count(card => card.IsInstalled);
         public int LibraryDownloadCount => AllGameCards.Count(card => card.IsDownloading || card.IsPaused);
         public int LibraryUpdateCount => AllGameCards.Count(card => card.State == InstallState.UpdateAvailable);
+        public int AvailableUpdatesCount => AllGameCards.Count(card => card.UpdateInfoAvailable);
+        public bool HasAvailableUpdates => AvailableUpdatesCount > 0;
         public bool HasLibraryGames => LibraryTotalCount > 0;
         public bool IsLibraryEmpty => !HasLibraryGames;
         public bool IsLibraryFilterEmpty => HasLibraryGames && _libraryView.IsEmpty;
@@ -1059,6 +1078,9 @@ namespace Vellum.App.ViewModels
                 });
             }
 
+            await SettingsVM.InitializeUpdatesAsync();
+            ConfigureUpdateCheckTimer();
+
             // Downloads resume only when the user explicitly clicks "Continue".
             UpdateTaskbarProgress();
         }
@@ -1067,11 +1089,48 @@ namespace Vellum.App.ViewModels
         {
             try
             {
+                _updateCheckTimer.Stop();
                 await _gameManager.ShutdownAndSaveAllDownloadsAsync();
             }
             finally
             {
                 _taskbarProgress.Reset();
+            }
+        }
+
+        private void ConfigureUpdateCheckTimer()
+        {
+            _updateCheckTimer.Stop();
+            var minutes = Math.Clamp(_settingsService.Settings.UpdateCheckIntervalMinutes, 0, 1440);
+            if (!_settingsService.Settings.AutoCheckUpdates || minutes <= 0)
+                return;
+            _updateCheckTimer.Interval = TimeSpan.FromMinutes(minutes);
+            _updateCheckTimer.Start();
+        }
+
+        private async Task RunPeriodicUpdateCheckAsync()
+        {
+            try
+            {
+                if (!_settingsService.Settings.AutoCheckUpdates)
+                    return;
+                await _gameManager.CheckUpdatesAsync();
+            }
+            catch (Exception ex)
+            {
+                AppLog.Warn("Updates", "Periodic update check failed.", ex);
+            }
+        }
+
+        private async Task UpdateAllGamesAsync()
+        {
+            try
+            {
+                await _gameUpdates.UpdateAllAsync();
+            }
+            catch (Exception ex)
+            {
+                AppLog.Warn("Updates", "Updating all games failed.", ex);
             }
         }
 
@@ -1848,10 +1907,13 @@ namespace Vellum.App.ViewModels
             OnPropertyChanged(nameof(TotalDownloadSpeedText));
             OnPropertyChanged(nameof(TotalUploadSpeedText));
             OnPropertyChanged(nameof(MaxConcurrentDownloads));
+            OnPropertyChanged(nameof(AvailableUpdatesCount));
+            OnPropertyChanged(nameof(HasAvailableUpdates));
 
             PauseAllDownloadsCommand.RaiseCanExecuteChanged();
             ResumeAllDownloadsCommand.RaiseCanExecuteChanged();
             ClearCompletedDownloadsCommand.RaiseCanExecuteChanged();
+            UpdateAllGamesCommand.RaiseCanExecuteChanged();
             NotifyLibrarySummaryChanged();
             UpdateTaskbarProgress();
         }

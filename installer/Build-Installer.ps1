@@ -80,6 +80,9 @@ try {
         if (-not (Test-Path $appExe)) {
             throw "Published application executable was not found: $appExe"
         }
+        if (-not (Test-Path (Join-Path $stageDir 'Bootstrapper\Vellum.Bootstrapper.exe'))) {
+            throw "Published bootstrapper was not found in $stageDir\Bootstrapper."
+        }
 
         & $iscc "/DPublishDir=$stageDir" "/DInstallerDir=$installerOutput" "/DAppVersion=$appVersion" $scriptPath
         if ($LASTEXITCODE -ne 0) {

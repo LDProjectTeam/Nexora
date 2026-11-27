@@ -1,33 +1,33 @@
 ﻿{
     "generatedFrom":  "src/Vellum.App/Vellum.App.csproj and artifacts/installer",
     "current":  {
-                    "version":  "1.0.71",
-                    "installer":  "downloads/Vellum-Setup-1.0.71-win-x64.exe",
-                    "filename":  "Vellum-Setup-1.0.71-win-x64.exe",
-                    "sizeBytes":  63687917,
-                    "fileModifiedUtc":  "2026-11-26T18:51:08Z",
+                    "version":  "1.0.72",
+                    "installer":  "downloads/Vellum-Setup-1.0.72-win-x64.exe",
+                    "filename":  "Vellum-Setup-1.0.72-win-x64.exe",
+                    "sizeBytes":  133989179,
+                    "fileModifiedUtc":  "2026-11-27T19:18:39Z",
                     "releaseDate":  null,
                     "architecture":  "x64",
                     "os":  "Windows 10 build 18362 or later; Windows 11",
                     "downloads":  {
                                       "installer":  {
-                                                        "filename":  "Vellum-Setup-1.0.71-win-x64.exe",
-                                                        "sizeBytes":  63687917,
-                                                        "url":  "downloads/Vellum-Setup-1.0.71-win-x64.exe"
+                                                        "filename":  "Vellum-Setup-1.0.72-win-x64.exe",
+                                                        "sizeBytes":  133989179,
+                                                        "url":  "downloads/Vellum-Setup-1.0.72-win-x64.exe"
                                                     },
                                       "msi":  {
-                                                  "filename":  "Vellum-1.0.71-win-x64.msi",
-                                                  "sizeBytes":  72799208,
-                                                  "url":  "downloads/Vellum-1.0.71-win-x64.msi"
+                                                  "filename":  "Vellum-1.0.72-win-x64.msi",
+                                                  "sizeBytes":  143942656,
+                                                  "url":  "downloads/Vellum-1.0.72-win-x64.msi"
                                               },
                                       "portable":  {
-                                                       "filename":  "Vellum-Portable-1.0.71-win-x64.zip",
-                                                       "sizeBytes":  88616305,
-                                                       "url":  "downloads/Vellum-Portable-1.0.71-win-x64.zip"
+                                                       "filename":  "Vellum-Portable-1.0.72-win-x64.zip",
+                                                       "sizeBytes":  160557799,
+                                                       "url":  "downloads/Vellum-Portable-1.0.72-win-x64.zip"
                                                    },
                                       "migrator":  {
                                                        "filename":  "Vellum-Migrator.exe",
-                                                       "sizeBytes":  71875093,
+                                                       "sizeBytes":  71875123,
                                                        "url":  "downloads/Vellum-Migrator.exe"
                                                    },
                                       "checksums":  {
@@ -39,10 +39,16 @@
                 },
     "history":  [
                     {
+                        "version":  "1.0.72",
+                        "filename":  "Vellum-Setup-1.0.72-win-x64.exe",
+                        "sizeBytes":  133989179,
+                        "fileModifiedUtc":  "2026-11-27T19:18:39Z"
+                    },
+                    {
                         "version":  "1.0.71",
                         "filename":  "Vellum-Setup-1.0.71-win-x64.exe",
-                        "sizeBytes":  63687917,
-                        "fileModifiedUtc":  "2026-11-26T18:51:08Z"
+                        "sizeBytes":  133988606,
+                        "fileModifiedUtc":  "2026-11-27T19:01:40Z"
                     },
                     {
                         "version":  "1.0.70",
@@ -63,5 +69,5 @@
                         "fileModifiedUtc":  "2026-11-23T21:42:54Z"
                     }
                 ],
-    "historyCount":  4
+    "historyCount":  5
 }

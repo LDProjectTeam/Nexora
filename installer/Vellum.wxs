@@ -42,7 +42,7 @@
       <Shortcut Id="VellumStartMenu"
                 Name="Vellum"
                 Description="Vellum game launcher"
-                Target="[INSTALLFOLDER]Vellum.exe"
+                Target="[INSTALLFOLDER]Bootstrapper\Vellum.Bootstrapper.exe"
                 WorkingDirectory="INSTALLFOLDER"
                 Icon="VellumIcon" />
       <RemoveFolder Id="RemoveVellumProgramsFolder" Directory="VellumProgramsFolder" On="uninstall" />

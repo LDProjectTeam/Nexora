@@ -145,6 +145,19 @@
                         Padding="12,7"
                         Margin="0,0,8,0" />
 
+                <!-- Check / Update all -->
+                <Button Content="{DynamicResource DownloadUpdateAll}"
+                        Command="{Binding UpdateAllGamesCommand}"
+                        Visibility="{Binding HasAvailableUpdates, Converter={StaticResource BoolToVis}}"
+                        Style="{StaticResource DownloadGhostButtonStyle}"
+                        Padding="12,7"
+                        Margin="0,0,8,0" />
+                <Button Content="{DynamicResource DownloadCheckUpdates}"
+                        Command="{Binding CheckForUpdatesCommand}"
+                        Style="{StaticResource DownloadGhostButtonStyle}"
+                        Padding="12,7"
+                        Margin="0,0,8,0" />
+
                 <!-- Pause All Button -->
                 <Button Content="{DynamicResource DownloadPauseAll}"
                         Command="{Binding PauseAllDownloadsCommand}"

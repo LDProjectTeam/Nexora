@@ -15,13 +15,25 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <Version>1.0.71</Version>
+    <Version>1.0.72</Version>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Vellum.Core\Vellum.Core.csproj" />
   </ItemGroup>
+
+  <Target Name="PublishLauncherBootstrapperToBuildOutput" BeforeTargets="Build">
+    <MSBuild Projects="..\Vellum.Bootstrapper\Vellum.Bootstrapper.csproj"
+             Targets="Publish"
+             Properties="Configuration=$(Configuration);TargetFramework=net8.0-windows;RuntimeIdentifier=win-x64;SelfContained=true;PublishSingleFile=true;IncludeNativeLibrariesForSelfExtract=true;PublishDir=$([System.IO.Path]::GetFullPath('$(OutDir)'))Bootstrapper\" />
+  </Target>
+
+  <Target Name="PublishLauncherBootstrapperToPublishOutput" BeforeTargets="Publish">
+    <MSBuild Projects="..\Vellum.Bootstrapper\Vellum.Bootstrapper.csproj"
+             Targets="Publish"
+             Properties="Configuration=$(Configuration);TargetFramework=net8.0-windows;RuntimeIdentifier=win-x64;SelfContained=true;PublishSingleFile=true;IncludeNativeLibrariesForSelfExtract=true;PublishDir=$([System.IO.Path]::GetFullPath('$(PublishDir)'))Bootstrapper\" />
+  </Target>
 
   <ItemGroup>
     <Resource Include="Assets\VELLUM_icon_light.ico" />

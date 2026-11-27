@@ -45,6 +45,9 @@ try {
     if (-not (Test-Path (Join-Path $appStage 'Vellum.exe'))) {
         throw "Published application executable was not found in $appStage."
     }
+    if (-not (Test-Path (Join-Path $appStage 'Bootstrapper\Vellum.Bootstrapper.exe'))) {
+        throw "Published bootstrapper was not found in $appStage\Bootstrapper."
+    }
 
     $zipName = "Vellum-Portable-$version-win-x64.zip"
     $zipPath = Join-Path $outputDir $zipName

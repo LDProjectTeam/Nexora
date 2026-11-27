@@ -1,8 +1,9 @@
 #define AppName "Vellum"
 #ifndef AppVersion
-  #define AppVersion "1.0.71"
+  #define AppVersion "1.0.72"
 #endif
 #define AppExeName "Vellum.exe"
+#define BootstrapperExeName "Bootstrapper\Vellum.Bootstrapper.exe"
 #define FwRuleTCP "Vellum - BitTorrent TCP 4240-4249"
 #define FwRuleUDP "Vellum - BitTorrent UDP 4240-4249"
 #define LegacyFwRuleTCP "Vellum - BitTorrent TCP 6881"
@@ -31,7 +32,7 @@ UsePreviousAppDir=no
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 UninstallDisplayName={#AppName}
-UninstallDisplayIcon={app}\{#AppExeName}
+UninstallDisplayIcon={app}\{#BootstrapperExeName}
 SetupIconFile=..\src\Vellum.App\Assets\VELLUM_icon_light.ico
 OutputDir={#InstallerDir}
 OutputBaseFilename=Vellum-Setup-{#AppVersion}-win-x64
@@ -60,9 +61,14 @@ Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription:
 [Files]
 Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
+[InstallDelete]
+; A setup replaces the launcher outside of the update system. Old launcher
+; journals/installed hashes refer to the previous build and must not roll it back.
+Type: filesandordirs; Name: "{userappdata}\Vellum\updates\launcher"
+
 [Icons]
-Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"
-Name: "{autodesktop}\{#AppName}";  Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#BootstrapperExeName}"; WorkingDir: "{app}"
+Name: "{autodesktop}\{#AppName}";  Filename: "{app}\{#BootstrapperExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Run]
 ; Firewall rules require administrator rights, while the app itself installs per-user
@@ -73,8 +79,8 @@ Filename: "powershell.exe"; \
   Flags: runhidden shellexec waituntilterminated skipifsilent; Verb: runas; \
   StatusMsg: "Configuring firewall…"
 
-; Launch app after install
-Filename: "{app}\{#AppExeName}"; Description: "Launch {#AppName}"; WorkingDir: "{app}"; Flags: postinstall nowait skipifsilent
+; Launch app after install through the mandatory bootstrapper entry point
+Filename: "{app}\{#BootstrapperExeName}"; Description: "Launch {#AppName}"; WorkingDir: "{app}"; Flags: postinstall nowait skipifsilent
 
 [UninstallRun]
 ; Removing firewall rules also needs elevation; best effort (declining UAC leaves
@@ -98,6 +104,7 @@ begin
 
   // Ask the running launcher to close, then force it only if it is still alive
   // (for example when it minimized to the tray instead of exiting).
+  Exec('taskkill.exe', '/im Vellum.Bootstrapper.exe', '', SW_HIDE, ewWaitUntilTerminated, ErrorCode);
   if CheckForMutexes('Local\Vellum.Launcher.SingleInstance') then
   begin
     Exec('taskkill.exe', '/im Vellum.exe', '', SW_HIDE, ewWaitUntilTerminated, ErrorCode);

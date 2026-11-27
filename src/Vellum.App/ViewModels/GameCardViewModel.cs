@@ -75,7 +75,7 @@ namespace Vellum.App.ViewModels
             PauseCommand = new AsyncRelayCommand(PauseAsync, () => State == InstallState.Downloading || State == InstallState.Installing || State == InstallState.Verifying);
             ResumeCommand = new AsyncRelayCommand(ResumeAsync, () => !IsBusy && (State == InstallState.Paused || (State == InstallState.Error && HasResumableSource)));
             RetryDownloadCommand = new AsyncRelayCommand(RetryDownloadAsync, () => !IsBusy && (State == InstallState.Error || State == InstallState.Paused));
-            RemoveDownloadCommand = new AsyncRelayCommand(RemoveDownloadAsync, () => IsDownloadQueueItem && !IsCompletedDownload && !_isRemovingDownload && State != InstallState.Updating);
+            RemoveDownloadCommand = new AsyncRelayCommand(RemoveDownloadAsync, () => IsDownloadQueueItem && !IsCompletedDownload && !_isRemovingDownload && State != InstallState.Updating && State != InstallState.Installing);
             DismissCompletedDownloadCommand = new RelayCommand(DismissCompletedDownload, () => IsCompletedDownload);
             OpenDownloadFolderCommand = new RelayCommand(OpenDownloadFolder);
             MoveQueueUpCommand = new RelayCommand(() => _gameManager.MoveDownloadInQueue(Id, -1), () => IsDownloadQueueItem && !IsCompletedDownload);
@@ -155,7 +155,7 @@ namespace Vellum.App.ViewModels
             PauseCommand = new AsyncRelayCommand(PauseAsync, () => State == InstallState.Downloading || State == InstallState.Installing || State == InstallState.Verifying);
             ResumeCommand = new AsyncRelayCommand(ResumeAsync, () => !IsBusy && (State == InstallState.Paused || (State == InstallState.Error && HasResumableSource)));
             RetryDownloadCommand = new AsyncRelayCommand(RetryDownloadAsync, () => !IsBusy && (State == InstallState.Error || State == InstallState.Paused));
-            RemoveDownloadCommand = new AsyncRelayCommand(RemoveDownloadAsync, () => IsDownloadQueueItem && !IsCompletedDownload && !_isRemovingDownload && State != InstallState.Updating);
+            RemoveDownloadCommand = new AsyncRelayCommand(RemoveDownloadAsync, () => IsDownloadQueueItem && !IsCompletedDownload && !_isRemovingDownload && State != InstallState.Updating && State != InstallState.Installing);
             DismissCompletedDownloadCommand = new RelayCommand(DismissCompletedDownload, () => IsCompletedDownload);
             OpenDownloadFolderCommand = new RelayCommand(OpenDownloadFolder);
             MoveQueueUpCommand = new RelayCommand(() => _gameManager.MoveDownloadInQueue(Id, -1), () => IsDownloadQueueItem && !IsCompletedDownload);
@@ -284,7 +284,7 @@ namespace Vellum.App.ViewModels
                 || ReleaseCandidate?.VersionType == GameVersionType.Portable)
                 return;
 
-            // We're switching from Repack → Portable: remember that both versions exist
+            // We're switching from Repack в†’ Portable: remember that both versions exist
             _hasAlternativeVersion = true;
 
             candidate.Id = Id;
@@ -333,9 +333,9 @@ namespace Vellum.App.ViewModels
             if (string.IsNullOrWhiteSpace(description))
                 return true;
 
-            return description.Contains("| Источник:")
+            return description.Contains("| РСЃС‚РѕС‡РЅРёРє:")
                 || description.Contains("| Source:")
-                || description.Contains("| Джерело:");
+                || description.Contains("| Р”Р¶РµСЂРµР»Рѕ:");
         }
 
         private static System.Collections.Generic.List<string> CreateReleaseCategories(GameReleaseCandidate candidate)
@@ -345,7 +345,7 @@ namespace Vellum.App.ViewModels
                 && published.Date >= DateTime.Today.AddDays(-6)
                 && published.Date <= DateTime.Today)
             {
-                categories.Add("Новинки");
+                categories.Add("РќРѕРІРёРЅРєРё");
             }
 
             categories.Add(candidate.SourceName);
@@ -360,8 +360,8 @@ namespace Vellum.App.ViewModels
             {
                 var parts = _definition.Categories.Select(category => category switch
                 {
-                    "Новинки" => LocalizationManager.GetString("CategoryNewReleases"),
-                    "Каталог Vellum" or "Vellum Catalog" => LocalizationManager.GetString("BuiltInCatalogName"),
+                    "РќРѕРІРёРЅРєРё" => LocalizationManager.GetString("CategoryNewReleases"),
+                    "РљР°С‚Р°Р»РѕРі Vellum" or "Vellum Catalog" => LocalizationManager.GetString("BuiltInCatalogName"),
                     _ => category
                 }).ToList();
 
@@ -404,10 +404,10 @@ namespace Vellum.App.ViewModels
             : 0;
         public string DownloadSpeedDisplay => CurrentDownloadSpeedBps > 0
             ? LocalizationManager.GetString("SpeedUnitFormat", PathHelper.FormatBytes(CurrentDownloadSpeedBps))
-            : "—";
+            : "вЂ”";
         public string UploadSpeedText => CurrentUploadSpeedBps > 0
             ? LocalizationManager.GetString("SpeedUnitFormat", PathHelper.FormatBytes(CurrentUploadSpeedBps))
-            : "—";
+            : "вЂ”";
         public string PeersDisplay
         {
             get
@@ -425,13 +425,13 @@ namespace Vellum.App.ViewModels
                 if (ReleaseCandidate?.Seeders > 0 && (IsDownloading || IsPaused || IsError))
                     return $"0 ({ReleaseCandidate.Seeders})";
 
-                return "—";
+                return "вЂ”";
             }
         }
 
         public string RemainingTimeDisplay => State == InstallState.Downloading && !IsQueued && _progress != null && _progress.SecondsRemaining > 0
             ? PathHelper.FormatTimeRemaining(_progress.SecondsRemaining)
-            : "—";
+            : "вЂ”";
 
         public bool IsTaskDetailsExpanded
         {
@@ -458,7 +458,7 @@ namespace Vellum.App.ViewModels
         public bool HasDownloadError => State == InstallState.Error || !string.IsNullOrWhiteSpace(_installation?.LastErrorMessage);
         public string DownloadErrorText => !string.IsNullOrWhiteSpace(_installation?.LastErrorMessage)
             ? _installation!.LastErrorMessage!
-            : LocalizationManager.GetString("DownloadSubError", "Произошла ошибка во время загрузки или установки.");
+            : LocalizationManager.GetString("DownloadSubError", "РџСЂРѕРёР·РѕС€Р»Р° РѕС€РёР±РєР° РІРѕ РІСЂРµРјСЏ Р·Р°РіСЂСѓР·РєРё РёР»Рё СѓСЃС‚Р°РЅРѕРІРєРё.");
         public bool IsDownloadStalled => State == InstallState.Downloading && !IsQueued && (_progress?.IsStalled == true);
         public string SourceProtocolDisplay => (_progress?.IsTorrent ?? HasTorrentSource) ? "BitTorrent" : "HTTP / Direct";
         public string CurrentFileText => !string.IsNullOrWhiteSpace(_progress?.CurrentFile) && !string.Equals(_progress.CurrentFile, Id, StringComparison.OrdinalIgnoreCase)
@@ -543,8 +543,8 @@ namespace Vellum.App.ViewModels
         private bool IsPhaseCheckingIntegrity(string phase)
             => string.Equals(phase, "Verifying", StringComparison.OrdinalIgnoreCase)
                || string.Equals(phase, LocalizationManager.GetString("TorrentPhaseCheckingIntegrity"), StringComparison.OrdinalIgnoreCase)
-               || phase.Contains("целостност", StringComparison.OrdinalIgnoreCase)
-               || phase.Contains("цілісност", StringComparison.OrdinalIgnoreCase)
+               || phase.Contains("С†РµР»РѕСЃС‚РЅРѕСЃС‚", StringComparison.OrdinalIgnoreCase)
+               || phase.Contains("С†С–Р»С–СЃРЅРѕСЃС‚", StringComparison.OrdinalIgnoreCase)
                || phase.Contains("integrity", StringComparison.OrdinalIgnoreCase);
 
         private bool IsPhasePreparing(string phase)
@@ -555,12 +555,12 @@ namespace Vellum.App.ViewModels
                 || string.Equals(phase, LocalizationManager.GetString("DownloadPhaseCheckingDiskSpace"), StringComparison.OrdinalIgnoreCase)
                 || string.Equals(phase, LocalizationManager.GetString("TorrentPhaseStarting"), StringComparison.OrdinalIgnoreCase)
                 || string.Equals(phase, LocalizationManager.GetString("TorrentPhaseFetchingMetadata"), StringComparison.OrdinalIgnoreCase)
-                || phase.Contains("метадан", StringComparison.OrdinalIgnoreCase)
+                || phase.Contains("РјРµС‚Р°РґР°РЅ", StringComparison.OrdinalIgnoreCase)
                 || phase.Contains("metadata", StringComparison.OrdinalIgnoreCase)
-                || phase.Contains("торрент-клиент", StringComparison.OrdinalIgnoreCase)
-                || phase.Contains("торент-клієнт", StringComparison.OrdinalIgnoreCase)
+                || phase.Contains("С‚РѕСЂСЂРµРЅС‚-РєР»РёРµРЅС‚", StringComparison.OrdinalIgnoreCase)
+                || phase.Contains("С‚РѕСЂРµРЅС‚-РєР»С–С”РЅС‚", StringComparison.OrdinalIgnoreCase)
                 || phase.Contains("torrent client", StringComparison.OrdinalIgnoreCase)
-                || phase.Contains("места на диске", StringComparison.OrdinalIgnoreCase))
+                || phase.Contains("РјРµСЃС‚Р° РЅР° РґРёСЃРєРµ", StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
@@ -575,8 +575,8 @@ namespace Vellum.App.ViewModels
         {
             if (string.Equals(phase, LocalizationManager.GetString("TorrentPhaseSearchingPeers"), StringComparison.OrdinalIgnoreCase)
                 || string.Equals(phase, LocalizationManager.GetString("TorrentPhaseSearchingPeersShort"), StringComparison.OrdinalIgnoreCase)
-                || phase.Contains("Поиск пиров", StringComparison.OrdinalIgnoreCase)
-                || phase.Contains("Пошук пірів", StringComparison.OrdinalIgnoreCase)
+                || phase.Contains("РџРѕРёСЃРє РїРёСЂРѕРІ", StringComparison.OrdinalIgnoreCase)
+                || phase.Contains("РџРѕС€СѓРє РїС–СЂС–РІ", StringComparison.OrdinalIgnoreCase)
                 || phase.Contains("Searching for peers", StringComparison.OrdinalIgnoreCase))
             {
                 return _progress == null || _progress.SpeedBytesPerSec <= 0;
@@ -586,16 +586,16 @@ namespace Vellum.App.ViewModels
 
         public string DownloadStatusText => DownloadVisualState switch
         {
-            "Queued" => LocalizationManager.GetString("DownloadStateQueued", "В очереди"),
-            "Preparing" => LocalizationManager.GetString("DownloadStatePreparing", "Подготовка"),
-            "Waiting" => LocalizationManager.GetString("DownloadStateWaiting", "Ожидание пиров"),
-            "Downloading" => LocalizationManager.GetString("StatusDownloading", "Загружается"),
-            "Paused" => LocalizationManager.GetString("StatusPaused", "Приостановлена"),
-            "Verifying" => LocalizationManager.GetString("DownloadStateVerifying", "Проверка файлов"),
-            "Installing" => LocalizationManager.GetString("StatusInstalling", "Установка"),
-            "Finalizing" => LocalizationManager.GetString("DownloadStateFinalizing", "Завершение"),
-            "Completed" => LocalizationManager.GetString("DownloadStateCompleted", "Завершена"),
-            "Error" => LocalizationManager.GetString("StatusError", "Ошибка"),
+            "Queued" => LocalizationManager.GetString("DownloadStateQueued", "Р’ РѕС‡РµСЂРµРґРё"),
+            "Preparing" => LocalizationManager.GetString("DownloadStatePreparing", "РџРѕРґРіРѕС‚РѕРІРєР°"),
+            "Waiting" => LocalizationManager.GetString("DownloadStateWaiting", "РћР¶РёРґР°РЅРёРµ РїРёСЂРѕРІ"),
+            "Downloading" => LocalizationManager.GetString("StatusDownloading", "Р—Р°РіСЂСѓР¶Р°РµС‚СЃСЏ"),
+            "Paused" => LocalizationManager.GetString("StatusPaused", "РџСЂРёРѕСЃС‚Р°РЅРѕРІР»РµРЅР°"),
+            "Verifying" => LocalizationManager.GetString("DownloadStateVerifying", "РџСЂРѕРІРµСЂРєР° С„Р°Р№Р»РѕРІ"),
+            "Installing" => LocalizationManager.GetString("StatusInstalling", "РЈСЃС‚Р°РЅРѕРІРєР°"),
+            "Finalizing" => LocalizationManager.GetString("DownloadStateFinalizing", "Р—Р°РІРµСЂС€РµРЅРёРµ"),
+            "Completed" => LocalizationManager.GetString("DownloadStateCompleted", "Р—Р°РІРµСЂС€РµРЅР°"),
+            "Error" => LocalizationManager.GetString("StatusError", "РћС€РёР±РєР°"),
             _ => StatusText
         };
 
@@ -606,21 +606,21 @@ namespace Vellum.App.ViewModels
                 var vs = DownloadVisualState;
                 return vs switch
                 {
-                    "Queued" => LocalizationManager.GetString("DownloadSubQueued", "Ожидание свободного слота в очереди…"),
-                    "Preparing" => LocalizeRawPhase(_progress?.Phase, LocalizationManager.GetString("DownloadSubPreparing", "Подготовка файлов и проверка хранилища…")),
-                    "Waiting" => LocalizeRawPhase(_progress?.Phase, LocalizationManager.GetString("TorrentPhaseSearchingPeers", "Поиск пиров через DHT и трекеры…")),
+                    "Queued" => LocalizationManager.GetString("DownloadSubQueued", "РћР¶РёРґР°РЅРёРµ СЃРІРѕР±РѕРґРЅРѕРіРѕ СЃР»РѕС‚Р° РІ РѕС‡РµСЂРµРґРёвЂ¦"),
+                    "Preparing" => LocalizeRawPhase(_progress?.Phase, LocalizationManager.GetString("DownloadSubPreparing", "РџРѕРґРіРѕС‚РѕРІРєР° С„Р°Р№Р»РѕРІ Рё РїСЂРѕРІРµСЂРєР° С…СЂР°РЅРёР»РёС‰Р°вЂ¦")),
+                    "Waiting" => LocalizeRawPhase(_progress?.Phase, LocalizationManager.GetString("TorrentPhaseSearchingPeers", "РџРѕРёСЃРє РїРёСЂРѕРІ С‡РµСЂРµР· DHT Рё С‚СЂРµРєРµСЂС‹вЂ¦")),
                     "Downloading" => CurrentPhaseKey == DownloadPhases.CopyingFiles
-                        ? LocalizationManager.GetString("DownloadPhaseCopyingFiles", "Копирование файлов…")
-                        : $"{SourceProtocolDisplay} • {VersionTypeDisplay}",
+                        ? LocalizationManager.GetString("DownloadPhaseCopyingFiles", "РљРѕРїРёСЂРѕРІР°РЅРёРµ С„Р°Р№Р»РѕРІвЂ¦")
+                        : $"{SourceProtocolDisplay} вЂў {VersionTypeDisplay}",
                     "Verifying" => !string.IsNullOrWhiteSpace(_progress?.CurrentFile) && !string.Equals(_progress.CurrentFile, Id, StringComparison.OrdinalIgnoreCase)
-                        ? $"{LocalizationManager.GetString("TorrentPhaseCheckingIntegrity", "Проверка целостности данных…")} ({Path.GetFileName(_progress.CurrentFile)})"
-                        : LocalizationManager.GetString("TorrentPhaseCheckingIntegrity", "Проверка целостности данных…"),
-                    "Installing" => LocalizeRawPhase(_progress?.Phase, LocalizationManager.GetString("DownloadSubInstalling", "Распаковка и установка файлов игры…")),
-                    "Finalizing" => LocalizationManager.GetString("DownloadSubFinalizing", "Завершение установки и очистка временных файлов…"),
-                    "Paused" => LocalizationManager.GetString("DownloadSubPaused", "Загрузка приостановлена — прогресс сохранён"),
-                    "Completed" => LocalizationManager.GetString("DownloadSubCompleted", "Игра успешно установлена и готова к запуску"),
+                        ? $"{LocalizationManager.GetString("TorrentPhaseCheckingIntegrity", "РџСЂРѕРІРµСЂРєР° С†РµР»РѕСЃС‚РЅРѕСЃС‚Рё РґР°РЅРЅС‹С…вЂ¦")} ({Path.GetFileName(_progress.CurrentFile)})"
+                        : LocalizationManager.GetString("TorrentPhaseCheckingIntegrity", "РџСЂРѕРІРµСЂРєР° С†РµР»РѕСЃС‚РЅРѕСЃС‚Рё РґР°РЅРЅС‹С…вЂ¦"),
+                    "Installing" => LocalizeRawPhase(_progress?.Phase, LocalizationManager.GetString("DownloadSubInstalling", "Р Р°СЃРїР°РєРѕРІРєР° Рё СѓСЃС‚Р°РЅРѕРІРєР° С„Р°Р№Р»РѕРІ РёРіСЂС‹вЂ¦")),
+                    "Finalizing" => LocalizationManager.GetString("DownloadSubFinalizing", "Р—Р°РІРµСЂС€РµРЅРёРµ СѓСЃС‚Р°РЅРѕРІРєРё Рё РѕС‡РёСЃС‚РєР° РІСЂРµРјРµРЅРЅС‹С… С„Р°Р№Р»РѕРІвЂ¦"),
+                    "Paused" => LocalizationManager.GetString("DownloadSubPaused", "Р—Р°РіСЂСѓР·РєР° РїСЂРёРѕСЃС‚Р°РЅРѕРІР»РµРЅР° вЂ” РїСЂРѕРіСЂРµСЃСЃ СЃРѕС…СЂР°РЅС‘РЅ"),
+                    "Completed" => LocalizationManager.GetString("DownloadSubCompleted", "РРіСЂР° СѓСЃРїРµС€РЅРѕ СѓСЃС‚Р°РЅРѕРІР»РµРЅР° Рё РіРѕС‚РѕРІР° Рє Р·Р°РїСѓСЃРєСѓ"),
                     "Error" => !string.IsNullOrWhiteSpace(Publisher)
-                        ? $"{SourceProtocolDisplay} • {Publisher}"
+                        ? $"{SourceProtocolDisplay} вЂў {Publisher}"
                         : SourceProtocolDisplay,
                     _ => Description
                 };
@@ -634,7 +634,7 @@ namespace Vellum.App.ViewModels
 
             // Never display a stale "Paused" phase string when the card is not paused.
             if (State != InstallState.Paused && (
-                string.Equals(rawPhase, "Пауза", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(rawPhase, "РџР°СѓР·Р°", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(rawPhase, "Paused", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(rawPhase, LocalizationManager.GetString("StatusPaused"), StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(rawPhase, LocalizationManager.GetString("TorrentPhasePaused"), StringComparison.OrdinalIgnoreCase)))
@@ -645,20 +645,20 @@ namespace Vellum.App.ViewModels
             return rawPhase switch
             {
                 "Downloading" => fallback,
-                "Checking available disk space" => LocalizationManager.GetString("DownloadPhaseCheckingDiskSpace", "Проверка места на диске…"),
-                "Copying files" => LocalizationManager.GetString("DownloadPhaseCopyingFiles", "Копирование файлов…"),
-                "Verifying" => LocalizationManager.GetString("TorrentPhaseCheckingIntegrity", "Проверка целостности данных…"),
-                "Installing" => LocalizationManager.GetString("DownloadSubInstalling", "Распаковка и установка файлов игры…"),
+                "Checking available disk space" => LocalizationManager.GetString("DownloadPhaseCheckingDiskSpace", "РџСЂРѕРІРµСЂРєР° РјРµСЃС‚Р° РЅР° РґРёСЃРєРµвЂ¦"),
+                "Copying files" => LocalizationManager.GetString("DownloadPhaseCopyingFiles", "РљРѕРїРёСЂРѕРІР°РЅРёРµ С„Р°Р№Р»РѕРІвЂ¦"),
+                "Verifying" => LocalizationManager.GetString("TorrentPhaseCheckingIntegrity", "РџСЂРѕРІРµСЂРєР° С†РµР»РѕСЃС‚РЅРѕСЃС‚Рё РґР°РЅРЅС‹С…вЂ¦"),
+                "Installing" => LocalizationManager.GetString("DownloadSubInstalling", "Р Р°СЃРїР°РєРѕРІРєР° Рё СѓСЃС‚Р°РЅРѕРІРєР° С„Р°Р№Р»РѕРІ РёРіСЂС‹вЂ¦"),
                 "Extracting" => !string.IsNullOrWhiteSpace(_progress?.CurrentFile)
-                    ? $"{LocalizationManager.GetString("DownloadPhaseExtracting", "Распаковка архива…")} ({Path.GetFileName(_progress.CurrentFile)})"
-                    : LocalizationManager.GetString("DownloadPhaseExtracting", "Распаковка архива…"),
-                "Mounting image" => LocalizationManager.GetString("DownloadPhaseMountingIso", "Монтирование ISO-образа…"),
-                "Running installer" => LocalizationManager.GetString("DownloadPhaseRunningInstaller", "Выполнение установщика…"),
-                "Waiting for installer" or "Waiting for installer (as Administrator)" => LocalizationManager.GetString("DownloadPhaseWaitingInstaller", "Ожидание завершения установщика…"),
-                "Installing prerequisites" => LocalizationManager.GetString("DownloadPhasePrerequisites", "Установка системных компонентов (VCRedist)…"),
-                "Moving files" => LocalizationManager.GetString("DownloadPhaseMovingFiles", "Перемещение файлов в библиотеку…"),
-                "Extracting installer tools" or "Extracting game files directly (installer crashed)" => LocalizationManager.GetString("DownloadPhaseDirectExtract", "Прямая распаковка игровых архивов…"),
-                "Extraction complete" or "Complete" => LocalizationManager.GetString("DownloadSubFinalizing", "Завершение установки и очистка временных файлов…"),
+                    ? $"{LocalizationManager.GetString("DownloadPhaseExtracting", "Р Р°СЃРїР°РєРѕРІРєР° Р°СЂС…РёРІР°вЂ¦")} ({Path.GetFileName(_progress.CurrentFile)})"
+                    : LocalizationManager.GetString("DownloadPhaseExtracting", "Р Р°СЃРїР°РєРѕРІРєР° Р°СЂС…РёРІР°вЂ¦"),
+                "Mounting image" => LocalizationManager.GetString("DownloadPhaseMountingIso", "РњРѕРЅС‚РёСЂРѕРІР°РЅРёРµ ISO-РѕР±СЂР°Р·Р°вЂ¦"),
+                "Running installer" => LocalizationManager.GetString("DownloadPhaseRunningInstaller", "Р’С‹РїРѕР»РЅРµРЅРёРµ СѓСЃС‚Р°РЅРѕРІС‰РёРєР°вЂ¦"),
+                "Waiting for installer" or "Waiting for installer (as Administrator)" => LocalizationManager.GetString("DownloadPhaseWaitingInstaller", "РћР¶РёРґР°РЅРёРµ Р·Р°РІРµСЂС€РµРЅРёСЏ СѓСЃС‚Р°РЅРѕРІС‰РёРєР°вЂ¦"),
+                "Installing prerequisites" => LocalizationManager.GetString("DownloadPhasePrerequisites", "РЈСЃС‚Р°РЅРѕРІРєР° СЃРёСЃС‚РµРјРЅС‹С… РєРѕРјРїРѕРЅРµРЅС‚РѕРІ (VCRedist)вЂ¦"),
+                "Moving files" => LocalizationManager.GetString("DownloadPhaseMovingFiles", "РџРµСЂРµРјРµС‰РµРЅРёРµ С„Р°Р№Р»РѕРІ РІ Р±РёР±Р»РёРѕС‚РµРєСѓвЂ¦"),
+                "Extracting installer tools" or "Extracting game files directly (installer crashed)" => LocalizationManager.GetString("DownloadPhaseDirectExtract", "РџСЂСЏРјР°СЏ СЂР°СЃРїР°РєРѕРІРєР° РёРіСЂРѕРІС‹С… Р°СЂС…РёРІРѕРІвЂ¦"),
+                "Extraction complete" or "Complete" => LocalizationManager.GetString("DownloadSubFinalizing", "Р—Р°РІРµСЂС€РµРЅРёРµ СѓСЃС‚Р°РЅРѕРІРєРё Рё РѕС‡РёСЃС‚РєР° РІСЂРµРјРµРЅРЅС‹С… С„Р°Р№Р»РѕРІвЂ¦"),
                 _ => rawPhase
             };
         }
@@ -845,6 +845,26 @@ namespace Vellum.App.ViewModels
 
         public string InstallPath => _installation?.InstallPath ?? string.Empty;
         public string InstalledVersion => _installation?.InstalledVersion ?? string.Empty;
+        public string InstalledBuildId => _installation?.InstalledBuildId ?? string.Empty;
+        public string AvailableVersion => _installation?.AvailableVersion ?? string.Empty;
+        public string AvailableBuildId => _installation?.AvailableBuildId ?? string.Empty;
+        public bool UpdateInfoAvailable => _installation?.UpdateAvailable == true
+            || State == InstallState.UpdateAvailable;
+        public long UpdateDownloadSizeBytes => _installation?.UpdateDownloadSizeBytes ?? 0;
+        public string UpdateSizeDisplay => UpdateDownloadSizeBytes > 0
+            ? PathHelper.FormatBytes(UpdateDownloadSizeBytes)
+            : "вЂ”";
+        public int UpdateChangedFiles => _installation?.UpdateChangedFiles ?? 0;
+        public int UpdateAddedFiles => _installation?.UpdateAddedFiles ?? 0;
+        public int UpdateDeletedFiles => _installation?.UpdateDeletedFiles ?? 0;
+        public string UpdateFileSummary => UpdateInfoAvailable
+            ? string.Format(LocalizationManager.GetStringOrFallback(
+                    "UpdateFileSummaryFormat", "{0} changed В· {1} new В· {2} removed"),
+                UpdateChangedFiles, UpdateAddedFiles, UpdateDeletedFiles)
+            : string.Empty;
+        public string UpdateChannelDisplay => !string.IsNullOrWhiteSpace(_installation?.UpdateChannel)
+            ? _installation!.UpdateChannel!
+            : LocalizationManager.GetStringOrFallback("UpdateChannelStable", "Stable");
 
         public bool IsInstalled => State == InstallState.Installed || State == InstallState.UpdateAvailable;
         public bool IsDownloading => State == InstallState.Downloading || State == InstallState.Installing || State == InstallState.Verifying || State == InstallState.Updating;
@@ -1129,7 +1149,7 @@ namespace Vellum.App.ViewModels
                     return $"{PathHelper.FormatBytes(downloaded)} / {PathHelper.FormatBytes(total)}";
                 if (downloaded > 0)
                     return PathHelper.FormatBytes(downloaded);
-                return "—";
+                return "вЂ”";
             }
         }
 
@@ -1199,6 +1219,17 @@ namespace Vellum.App.ViewModels
             OnPropertyChanged(nameof(InstallPath));
             OnPropertyChanged(nameof(DownloadPathDisplay));
             OnPropertyChanged(nameof(InstalledVersion));
+            OnPropertyChanged(nameof(InstalledBuildId));
+            OnPropertyChanged(nameof(AvailableVersion));
+            OnPropertyChanged(nameof(AvailableBuildId));
+            OnPropertyChanged(nameof(UpdateInfoAvailable));
+            OnPropertyChanged(nameof(UpdateDownloadSizeBytes));
+            OnPropertyChanged(nameof(UpdateSizeDisplay));
+            OnPropertyChanged(nameof(UpdateChangedFiles));
+            OnPropertyChanged(nameof(UpdateAddedFiles));
+            OnPropertyChanged(nameof(UpdateDeletedFiles));
+            OnPropertyChanged(nameof(UpdateFileSummary));
+            OnPropertyChanged(nameof(UpdateChannelDisplay));
             OnPropertyChanged(nameof(ProgressPercent));
             OnPropertyChanged(nameof(ProgressText));
             OnPropertyChanged(nameof(DownloadSpeedDisplay));
@@ -1236,7 +1267,7 @@ namespace Vellum.App.ViewModels
 
             if (_settingsService.Settings.AskInstallFolderOnEachInstall)
             {
-                // Пользователь включил «спрашивать папку» — показываем диалог
+                // РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ РІРєР»СЋС‡РёР» В«СЃРїСЂР°С€РёРІР°С‚СЊ РїР°РїРєСѓВ» вЂ” РїРѕРєР°Р·С‹РІР°РµРј РґРёР°Р»РѕРі
                 var folderDialog = new OpenFolderDialog
                 {
                     Title = LocalizationManager.GetString("BrowseGameInstallFolderFormat", Name),
@@ -1247,18 +1278,18 @@ namespace Vellum.App.ViewModels
 
                 chosenBase = PathHelper.GetLibraryRoot(folderDialog.FolderName);
 
-                // Запоминаем выбор как новый путь по умолчанию
+                // Р—Р°РїРѕРјРёРЅР°РµРј РІС‹Р±РѕСЂ РєР°Рє РЅРѕРІС‹Р№ РїСѓС‚СЊ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
                 _settingsService.Settings.DefaultInstallPath = chosenBase;
                 await _settingsService.SaveAsync();
             }
             else
             {
-                // Тихая установка — сразу в библиотеку из настроек
+                // РўРёС…Р°СЏ СѓСЃС‚Р°РЅРѕРІРєР° вЂ” СЃСЂР°Р·Сѓ РІ Р±РёР±Р»РёРѕС‚РµРєСѓ РёР· РЅР°СЃС‚СЂРѕРµРє
                 chosenBase = defaultBase;
                 PathHelper.EnsureDirectory(chosenBase);
             }
 
-            // If the install was started from the "Информация об игре" window, keep it as the owner
+            // If the install was started from the "РРЅС„РѕСЂРјР°С†РёСЏ РѕР± РёРіСЂРµ" window, keep it as the owner
             // (so the dialog is not hidden behind it) and close it once the download is confirmed.
             var detailsWindow = Application.Current.Windows
                 .OfType<GameDetailsWindow>()
@@ -1374,19 +1405,50 @@ namespace Vellum.App.ViewModels
         {
             if (string.IsNullOrWhiteSpace(error))
                 return LocalizationManager.GetString("LaunchErrorTitle");
-            if (error == "Эта игра уже запущена.")
+            if (error == "Р­С‚Р° РёРіСЂР° СѓР¶Рµ Р·Р°РїСѓС‰РµРЅР°.")
                 return LocalizationManager.GetString("LaunchAlreadyRunning");
-            if (error.StartsWith("Нельзя запустить игру, пока работает другая.", StringComparison.Ordinal))
+            if (error.StartsWith("РќРµР»СЊР·СЏ Р·Р°РїСѓСЃС‚РёС‚СЊ РёРіСЂСѓ, РїРѕРєР° СЂР°Р±РѕС‚Р°РµС‚ РґСЂСѓРіР°СЏ.", StringComparison.Ordinal))
                 return LocalizationManager.GetString("LaunchBlockedByRunningGame");
-            if (error.StartsWith("Не удалось определить exe-файл игры.", StringComparison.Ordinal))
+            if (error.StartsWith("РќРµ СѓРґР°Р»РѕСЃСЊ РѕРїСЂРµРґРµР»РёС‚СЊ exe-С„Р°Р№Р» РёРіСЂС‹.", StringComparison.Ordinal))
                 return LocalizationManager.GetString("LaunchExecutableNotFound");
-            if (error.StartsWith("Не удалось запустить игру: ", StringComparison.Ordinal))
-                return LocalizationManager.GetString("LaunchFailedFormat", error["Не удалось запустить игру: ".Length..]);
+            if (error.StartsWith("РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РїСѓСЃС‚РёС‚СЊ РёРіСЂСѓ: ", StringComparison.Ordinal))
+                return LocalizationManager.GetString("LaunchFailedFormat", error["РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РїСѓСЃС‚РёС‚СЊ РёРіСЂСѓ: ".Length..]);
             return error;
         }
 
         private async Task PlayAsync()
         {
+            if (State == InstallState.UpdateAvailable && UpdateInfoAvailable)
+            {
+                var behavior = _settingsService.Settings.UpdateLaunchBehavior;
+                if (string.Equals(behavior, "block", StringComparison.OrdinalIgnoreCase))
+                {
+                    MessageBox.Show(
+                        LocalizationManager.GetStringOrFallback(
+                            "UpdateLaunchBlockedMessage",
+                            "An update must be installed before this game can be launched."),
+                        LocalizationManager.GetStringOrFallback("StatusUpdateAvailable", "Update available"),
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                if (string.Equals(behavior, "ask", StringComparison.OrdinalIgnoreCase))
+                {
+                    var installNow = MessageBox.Show(
+                        LocalizationManager.GetStringOrFallback(
+                            "UpdateLaunchAskMessage",
+                            "An update is available. Install it now? Choose No to launch the current version."),
+                        LocalizationManager.GetStringOrFallback("StatusUpdateAvailable", "Update available"),
+                        MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    if (installNow == MessageBoxResult.Yes)
+                    {
+                        if (UpdateCommand.CanExecute(null))
+                            await UpdateCommand.ExecuteAsync();
+                        return;
+                    }
+                }
+            }
+
             IsBusy = true;
             try
             {
@@ -1469,7 +1531,7 @@ namespace Vellum.App.ViewModels
                     Progress = BuildPersistedProgress() ?? Progress;
 
                     // A user pause cancels _cts (see PauseAsync), so this only fires for
-                    // a genuine resume failure — surface the reason instead of failing
+                    // a genuine resume failure вЂ” surface the reason instead of failing
                     // silently and leaving the card stuck on "Continue". Declining the
                     // installer is a deliberate cancellation, not a failure.
                     if (!_cts.IsCancellationRequested && !result.CancelledByUser)
