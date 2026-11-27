@@ -60,10 +60,28 @@ namespace Vellum.Bootstrapper
         public bool ShowLaunchCurrent => IsFailed && CanLaunchCurrent && !IsBusy;
         public bool ShowError => IsFailed && !string.IsNullOrWhiteSpace(ErrorText);
 
+        public void BeginRun()
+        {
+            StageText = BootstrapperText.Get("CheckingUpdates");
+            Message = string.Empty;
+            Progress = 0;
+            IsIndeterminate = true;
+            Details = string.Empty;
+            ErrorText = string.Empty;
+            CanRetry = false;
+            CanLaunchCurrent = false;
+            IsFailed = false;
+            IsBusy = true;
+            OnPropertyChanged(nameof(ShowError));
+        }
+
         public void Apply(BootstrapperProgress progress)
         {
-            StageText = Label(progress.Stage);
-            Message = progress.Message;
+            var label = Label(progress.Stage);
+            StageText = label;
+            Message = string.Equals(progress.Message, label, StringComparison.Ordinal)
+                ? string.Empty
+                : progress.Message;
             Progress = Math.Clamp(progress.Fraction * 100, 0, 100);
             IsIndeterminate = progress.TotalBytes <= 0 && progress.Stage is not BootstrapperStage.StartingLauncher;
 
@@ -125,8 +143,10 @@ namespace Vellum.Bootstrapper
         private static string Label(BootstrapperStage stage) => stage switch
         {
             BootstrapperStage.CheckingUpdates => BootstrapperText.Get("CheckingUpdates"),
+            BootstrapperStage.NoUpdates => BootstrapperText.Get("NoUpdates"),
             BootstrapperStage.UpdatingBootstrapper => BootstrapperText.Get("UpdatingBootstrapper"),
             BootstrapperStage.CheckingIntegrity => BootstrapperText.Get("CheckingIntegrity"),
+            BootstrapperStage.AllChecksPassed => BootstrapperText.Get("AllChecksPassed"),
             BootstrapperStage.DownloadingUpdate => BootstrapperText.Get("DownloadingUpdate"),
             BootstrapperStage.InstallingUpdate => BootstrapperText.Get("InstallingUpdate"),
             BootstrapperStage.VerifyingFiles => BootstrapperText.Get("VerifyingFiles"),

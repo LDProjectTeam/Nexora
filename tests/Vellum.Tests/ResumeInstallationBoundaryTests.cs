@@ -69,7 +69,8 @@ public sealed class ResumeInstallationBoundaryTests
             await download.FirstCallStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
             var secondTask = manager.InstallReleaseAsync(secondRelease, root);
 
-            await WaitUntilAsync(() => second.IsQueued);
+            await WaitUntilAsync(() =>
+                second.IsQueued && second.State == InstallState.Downloading);
             Assert.Equal(InstallState.Downloading, second.State);
             Assert.Equal(1, download.Calls);
             Assert.Equal(0, installer.Calls);

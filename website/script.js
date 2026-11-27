@@ -4,7 +4,7 @@
   const intlLocale = locale.lang === 'en' ? 'en-US' : locale.lang === 'ua' ? 'uk-UA' : 'ru-RU';
   const menuButton = document.querySelector('.menu-toggle');
   const navigation = document.querySelector('.main-nav');
-  const DEFAULT_DOWNLOAD_VERSION = '1.0.72';
+  const DEFAULT_DOWNLOAD_VERSION = '1.0.73';
   let releaseData = null;
   let pendingDownloadDialog = false;
   let downloadDialog = null;

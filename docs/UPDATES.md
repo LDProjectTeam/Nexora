@@ -156,11 +156,14 @@ Startup order:
 6. It starts `Vellum.exe` with the original user arguments and working directory.
 7. It exits. Vellum only creates its window after the result of this sequence.
 
-The window shows: Checking for updates, Checking integrity, Downloading update,
-Installing update, Verifying files, Starting Vellum and Update failed, including
-progress, speed, remaining time and the error. The previous version can be started only
-when the transaction was rolled back successfully; a failed mandatory update cannot
-start a damaged launcher.
+The window shows: Checking for updates..., No updates available., Checking integrity...,
+All checks passed., Downloading update, Installing update, Verifying files, Starting Vellum...
+and Update failed, including progress, speed, remaining time and the error. A fast run
+keeps the accurate final status on screen until the window has been visible for at least
+1.2 seconds; the update/integrity workflow itself is never delayed. Errors, Retry and
+Start previous are shown immediately, and the window stays open for the user's choice.
+The previous version can be started only when the transaction was rolled back
+successfully; a failed mandatory update cannot start a damaged launcher.
 
 If a direct `Vellum.exe` launch starts the bootstrapper but no health marker appears
 within 20 seconds (or the bootstrapper exits early), Vellum shows an explicit error with

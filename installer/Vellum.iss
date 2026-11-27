@@ -1,6 +1,6 @@
 #define AppName "Vellum"
 #ifndef AppVersion
-  #define AppVersion "1.0.72"
+  #define AppVersion "1.0.73"
 #endif
 #define AppExeName "Vellum.exe"
 #define BootstrapperExeName "Bootstrapper\Vellum.Bootstrapper.exe"

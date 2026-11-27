@@ -42,9 +42,43 @@ namespace Vellum.Tests
             Assert.Equal(new[] { "--profile", "two words" }, starter.Calls[0].Args);
             Assert.Equal(temp.Root, starter.Calls[0].Directory);
             Assert.Contains(progress, p => p.Stage == BootstrapperStage.CheckingUpdates);
-            Assert.Contains(progress, p => p.Stage == BootstrapperStage.VerifyingFiles);
+            Assert.Contains(progress, p => p.Stage == BootstrapperStage.CheckingIntegrity);
+            Assert.Contains(progress, p => p.Stage == BootstrapperStage.AllChecksPassed);
             Assert.Contains(progress, p => p.Stage == BootstrapperStage.StartingLauncher);
             Assert.True(integrity.Calls >= 1);
+        }
+
+        [Fact]
+        public async Task Workflow_reports_clear_statuses_for_a_fast_successful_start()
+        {
+            using var temp = new TempApp();
+            var updater = new FakeLauncherUpdateService();
+            var starter = new FakeProcessStarter();
+            var progress = new InlineProgress();
+            var workflow = CreateWorkflow(updater, new FakeLauncherIntegrityService(), starter);
+
+            var result = await workflow.RunAsync(new BootstrapperRunRequest
+            {
+                AppDirectory = temp.Root,
+                CurrentAppVersion = "1.0.0"
+            }, progress);
+
+            Assert.True(result.Success, result.ErrorMessage);
+            Assert.Contains(progress.Events,
+                p => p.Stage == BootstrapperStage.CheckingUpdates
+                     && p.Message == "Checking for updates...");
+            Assert.Contains(progress.Events,
+                p => p.Stage == BootstrapperStage.NoUpdates
+                     && p.Message == "No updates available.");
+            Assert.Contains(progress.Events,
+                p => p.Stage == BootstrapperStage.CheckingIntegrity
+                     && p.Message == "Checking integrity...");
+            Assert.Contains(progress.Events,
+                p => p.Stage == BootstrapperStage.AllChecksPassed
+                     && p.Message == "All checks passed.");
+            Assert.Contains(progress.Events,
+                p => p.Stage == BootstrapperStage.StartingLauncher
+                     && p.Message == "Starting Vellum...");
         }
 
         [Fact]
@@ -596,6 +630,13 @@ namespace Vellum.Tests
                 integrity,
                 starter,
                 NullLogger<BootstrapperWorkflow>.Instance);
+
+        private sealed class InlineProgress : IProgress<BootstrapperProgress>
+        {
+            public List<BootstrapperProgress> Events { get; } = new();
+
+            public void Report(BootstrapperProgress value) => Events.Add(value);
+        }
 
         private sealed class TempApp : IDisposable
         {

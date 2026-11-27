@@ -6,8 +6,10 @@ namespace Vellum.Core.Models
     public enum BootstrapperStage
     {
         CheckingUpdates,
+        NoUpdates,
         UpdatingBootstrapper,
         CheckingIntegrity,
+        AllChecksPassed,
         DownloadingUpdate,
         InstallingUpdate,
         VerifyingFiles,

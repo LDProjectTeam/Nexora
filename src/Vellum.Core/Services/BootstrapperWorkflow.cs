@@ -74,11 +74,15 @@ namespace Vellum.Core.Services
                 var appliedUpdate = false;
                 if (!request.SkipLauncherUpdate)
                 {
-                    Report(progress, BootstrapperStage.CheckingUpdates, "Checking for launcher updates…");
+                    Report(progress, BootstrapperStage.CheckingUpdates, "Checking for updates...");
                     var status = await _launcherUpdates.CheckForUpdatesAsync(
                         currentVersion, autoDownload: false, ct).ConfigureAwait(false);
 
-                    if (status.Phase == LauncherUpdatePhase.UpdateAvailable
+                    if (status.Phase == LauncherUpdatePhase.UpToDate)
+                    {
+                        Report(progress, BootstrapperStage.NoUpdates, "No updates available.");
+                    }
+                    else if (status.Phase == LauncherUpdatePhase.UpdateAvailable
                         || status.Phase == LauncherUpdatePhase.ReadyToInstall)
                     {
                         Report(progress, BootstrapperStage.DownloadingUpdate,
@@ -169,7 +173,7 @@ namespace Vellum.Core.Services
                 }
 
                 // 3. Verify required files and the last signed installed manifest.
-                Report(progress, BootstrapperStage.VerifyingFiles, "Verifying launcher files…");
+                Report(progress, BootstrapperStage.CheckingIntegrity, "Checking integrity...");
                 var integrity = await VerifyAsync(appDir, request.LauncherExecutableName, ct)
                     .ConfigureAwait(false);
                 if (!integrity.Passed)
@@ -190,6 +194,7 @@ namespace Vellum.Core.Services
                             {
                                 currentVersion = afterRollback.Version;
                                 appliedUpdate = false;
+                                Report(progress, BootstrapperStage.AllChecksPassed, "All checks passed.");
                                 return Launch(request, executable, appDir, currentVersion, appliedUpdate, progress);
                             }
                         }
@@ -204,6 +209,7 @@ namespace Vellum.Core.Services
                 if (!appliedUpdate && !string.IsNullOrWhiteSpace(integrity.Version))
                     currentVersion = integrity.Version;
 
+                Report(progress, BootstrapperStage.AllChecksPassed, "All checks passed.");
                 return Launch(request, executable, appDir, currentVersion, appliedUpdate, progress);
             }
             catch (OperationCanceledException)
@@ -225,7 +231,7 @@ namespace Vellum.Core.Services
             string appDir, string version, bool appliedUpdate, IProgress<BootstrapperProgress>? progress)
         {
             Report(progress, BootstrapperStage.StartingLauncher,
-                "Starting Vellum…", percent: 100, canLaunchCurrent: true);
+                "Starting Vellum...", percent: 100, canLaunchCurrent: true);
             var arguments = request.LauncherArguments.ToList();
             string? handshakeToken = null;
             if (request.MarkBootstrappedLaunch)
