@@ -1,33 +1,33 @@
 ﻿{
     "generatedFrom":  "src/Vellum.App/Vellum.App.csproj and artifacts/installer",
     "current":  {
-                    "version":  "1.0.72",
-                    "installer":  "downloads/Vellum-Setup-1.0.72-win-x64.exe",
-                    "filename":  "Vellum-Setup-1.0.72-win-x64.exe",
-                    "sizeBytes":  133989179,
-                    "fileModifiedUtc":  "2026-11-27T19:18:39Z",
+                    "version":  "1.0.73",
+                    "installer":  "downloads/Vellum-Setup-1.0.73-win-x64.exe",
+                    "filename":  "Vellum-Setup-1.0.73-win-x64.exe",
+                    "sizeBytes":  133990124,
+                    "fileModifiedUtc":  "2026-11-27T20:38:16Z",
                     "releaseDate":  null,
                     "architecture":  "x64",
                     "os":  "Windows 10 build 18362 or later; Windows 11",
                     "downloads":  {
                                       "installer":  {
-                                                        "filename":  "Vellum-Setup-1.0.72-win-x64.exe",
-                                                        "sizeBytes":  133989179,
-                                                        "url":  "downloads/Vellum-Setup-1.0.72-win-x64.exe"
+                                                        "filename":  "Vellum-Setup-1.0.73-win-x64.exe",
+                                                        "sizeBytes":  133990124,
+                                                        "url":  "downloads/Vellum-Setup-1.0.73-win-x64.exe"
                                                     },
                                       "msi":  {
-                                                  "filename":  "Vellum-1.0.72-win-x64.msi",
+                                                  "filename":  "Vellum-1.0.73-win-x64.msi",
                                                   "sizeBytes":  143942656,
-                                                  "url":  "downloads/Vellum-1.0.72-win-x64.msi"
+                                                  "url":  "downloads/Vellum-1.0.73-win-x64.msi"
                                               },
                                       "portable":  {
-                                                       "filename":  "Vellum-Portable-1.0.72-win-x64.zip",
-                                                       "sizeBytes":  160557799,
-                                                       "url":  "downloads/Vellum-Portable-1.0.72-win-x64.zip"
+                                                       "filename":  "Vellum-Portable-1.0.73-win-x64.zip",
+                                                       "sizeBytes":  160562322,
+                                                       "url":  "downloads/Vellum-Portable-1.0.73-win-x64.zip"
                                                    },
                                       "migrator":  {
                                                        "filename":  "Vellum-Migrator.exe",
-                                                       "sizeBytes":  71875123,
+                                                       "sizeBytes":  71875118,
                                                        "url":  "downloads/Vellum-Migrator.exe"
                                                    },
                                       "checksums":  {
@@ -38,6 +38,12 @@
                                   }
                 },
     "history":  [
+                    {
+                        "version":  "1.0.73",
+                        "filename":  "Vellum-Setup-1.0.73-win-x64.exe",
+                        "sizeBytes":  133990124,
+                        "fileModifiedUtc":  "2026-11-27T20:38:16Z"
+                    },
                     {
                         "version":  "1.0.72",
                         "filename":  "Vellum-Setup-1.0.72-win-x64.exe",
@@ -69,5 +75,5 @@
                         "fileModifiedUtc":  "2026-11-23T21:42:54Z"
                     }
                 ],
-    "historyCount":  5
+    "historyCount":  6
 }
