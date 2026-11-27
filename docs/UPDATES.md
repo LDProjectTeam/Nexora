@@ -311,6 +311,33 @@ User settings live in AppData and are never part of the package.
 A running EXE cannot safely replace itself, which is why the swap happens in the
 separate bootstrapper.
 
+### GitHub Releases update feed
+
+The launcher does not poll the GitHub Releases API by itself. It checks the signed
+manifest URL configured in `LauncherUpdateManifestUrl`. To use GitHub as the update
+feed, publish these assets in every latest release:
+
+- `launcher-manifest.json` — signed `SignedManifestEnvelope` (payload + RSA signature);
+- `Vellum-Launcher-<version>.zip` — launcher files at the archive root, without
+  `Bootstrapper/`;
+- `Vellum.Bootstrapper.exe` — the matching single-file bootstrapper.
+
+The stable manifest URL is:
+
+```text
+https://github.com/LDProjectTeam/Vellum/releases/latest/download/launcher-manifest.json
+```
+
+The manifest references its package and bootstrapper with explicit tag URLs. The
+publisher public key must be present in `UpdateTrustedPublicKeys`. The private key
+stays outside the repository (`%USERPROFILE%\.vellum\keys\vellum-release-private.pem`)
+and must be backed up; losing it prevents signing future updates.
+
+`tools/ReleaseFeedTool` builds and verifies the three assets. Existing installations
+that predate the feed have no manifest URL/key and need one manual update (or a
+settings entry) before automatic updates can start. New builds should ship the feed URL
+and public key as defaults.
+
 ## Local state
 
 `updates.json` (atomic write + `.bak`) stores the queue, per-game installed manifest

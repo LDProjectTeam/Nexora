@@ -63,7 +63,10 @@ namespace Vellum.Core.Models
         /// PEM encoded RSA public keys trusted to sign game and launcher manifests.
         /// When this list is empty manifests cannot be trusted and update checks fail closed.
         /// </summary>
-        public List<string> UpdateTrustedPublicKeys { get; set; } = new();
+        public List<string> UpdateTrustedPublicKeys { get; set; } = new()
+        {
+            VellumUpdateDefaults.ReleasePublicKey
+        };
 
         /// <summary>
         /// Signature verification is mandatory by default. Turning this off is intended for
@@ -73,7 +76,7 @@ namespace Vellum.Core.Models
 
         // --- Launcher self-update ---
         /// <summary>URL of the signed launcher update manifest. Empty disables launcher self-update.</summary>
-        public string LauncherUpdateManifestUrl { get; set; } = string.Empty;
+        public string LauncherUpdateManifestUrl { get; set; } = VellumUpdateDefaults.ManifestUrl;
 
         /// <summary>Automatically check for a newer launcher build.</summary>
         public bool AutoCheckLauncherUpdates { get; set; } = true;
